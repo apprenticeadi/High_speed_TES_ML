@@ -22,7 +22,7 @@ class fitting_histogram:
     def finding_peaks(self, plot=True):
         '''
         use data smoothing method to find the peak positions of each bins of the histogram, 
-        will be useful for fitting the historgam
+        will be useful for fitting the histogram
         '''
         kernel_size = 10
         kernel = np.ones(kernel_size) / kernel_size
@@ -36,8 +36,8 @@ class fitting_histogram:
         #heights,bins,_ = plt.hist(overlap_list,bins=1000,range=(-0.1e10,1.5e10))
         if plot == True:
             plt.plot(self.midBins[peaks], amplitudes, "x")
-            plt.plot(np.zeros_like(data_convolved_10), "--", color="gray")
-        plt.show()
+            plt.plot(self.midBins, np.zeros_like(data_convolved_10), "--", color="gray")
+        # plt.show()
         return peaks, amplitudes
 
     def func(self, x, *params):
@@ -56,7 +56,7 @@ class fitting_histogram:
         '''
         fitting the histogram
         '''
-        peaks, amplitudes = self.finding_peaks(plot=True)
+        peaks, amplitudes = self.finding_peaks(plot=False)
 
         # initial guess for fitting the historgams (calculated from smoothing method defined in finding_peaks)
         positions = self.midBins[peaks]  # peak positions
@@ -81,7 +81,7 @@ class fitting_histogram:
 
         x = np.linspace(min(self.midBins), max(self.midBins), 10000)
         fit = self.func(x, *sorted_popt)
-        plt.figure(figsize=(8, 5))
+        plt.figure('fit', figsize=(8, 5))
         plt.hist(self.overlap, bins=1000)
         plt.plot(x, fit)
         plt.xlabel('overlap', size=14)
@@ -98,7 +98,7 @@ class fitting_histogram:
             plt.vlines(lower, 0, self.func(lower, *sorted_popt), color='red')
             upper_list.append(upper)
             lower_list.append(lower)
-        plt.show()
+        # plt.show()
         self.lower_list = np.sort(lower_list)
         self.upper_list = np.sort(upper_list)
         return self.lower_list, self.upper_list
