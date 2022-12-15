@@ -52,12 +52,12 @@ class fitting_histogram:
             y = y + amp * np.exp(-((x - mu)/abs(sig))**2)
         return y
 
-    def fitting(self):
+    def fitting(self, figname = 'fit'):
         '''
         fitting the histogram
         '''
-        plt.figure('fit', figsize=(8, 5))
-        peaks, amplitudes = self.finding_peaks(plot=True)
+        plt.figure(figname, figsize=(8, 5))
+        peaks, amplitudes = self.finding_peaks(plot=False)
 
         # initial guess for fitting the historgams (calculated from smoothing method defined in finding_peaks)
         positions = self.midBins[peaks]  # peak positions
@@ -83,8 +83,8 @@ class fitting_histogram:
         x = np.linspace(min(self.midBins), max(self.midBins), 10000)
         fit = self.func(x, *sorted_popt)
 
-        plt.hist(self.overlap, bins=1000)
-        plt.plot(x, fit)
+        plt.hist(self.overlap, bins=1000, color='aquamarine')
+        plt.plot(x, fit, 'r-')
         plt.xlabel('overlap', size=14)
         plt.ylabel('entries', size=14)
 
@@ -92,11 +92,13 @@ class fitting_histogram:
         lower_list = []
         for i in range(0, self.numPeaks):
             mu = sorted_popt[i*3]
+            amplitude = sorted_popt[i*3+1]
             width = sorted_popt[i*3+2] * self.multiplier
             upper = mu + width
             lower = mu - width
-            plt.vlines(upper, 0, self.func(upper, *sorted_popt), color='red')
-            plt.vlines(lower, 0, self.func(lower, *sorted_popt), color='red')
+            plt.plot(mu, amplitude, "kx")
+            plt.vlines(upper, 0, self.func(upper, *sorted_popt), color='gray', linestyle='dashed')
+            plt.vlines(lower, 0, self.func(lower, *sorted_popt), color='gray', linestyle='dashed')
             upper_list.append(upper)
             lower_list.append(lower)
         # plt.show()
@@ -104,6 +106,7 @@ class fitting_histogram:
         self.upper_list = np.sort(upper_list)
         return self.lower_list, self.upper_list
 
+    # TODO: np digitize is a bad idea when the fit is bad and two photon number bins overlap.
     def trace_bin(self, data):
         '''
         grouping the traces corresponding to each photon numbers 
