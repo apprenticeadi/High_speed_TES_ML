@@ -35,6 +35,11 @@ for i in range(100):
 plt.ylabel('voltage')
 plt.xlabel('time (in sample)')
 plt.xlim(0, 200)
+min_voltage = np.amin(data_100)
+max_voltage = np.amax(data_100)
+ymin = 5000 * (min_voltage // 5000)
+ymax = 5000 * (max_voltage // 5000 + 1)
+plt.ylim(ymin, ymax)
 # plt.show()
 # %%
 # plot average trace
@@ -48,6 +53,7 @@ ave_trace = np.mean(data_100, axis=0)
 plt.plot(ave_trace)
 plt.ylabel('voltage')
 plt.xlabel('time (in sample)')
+plt.ylim(ymin, ymax)
 plt.title('average trace')
 # plt.show()
 # # %%
@@ -65,33 +71,39 @@ binning_index, binning_traces_100 = hist_fit.trace_bin(data_100)
 
 # # %%
 '''
-plotting the first 50 traces for each photon number
+plotting the first x traces for each photon number
 '''
-plt.figure('traces for each photon number')
+
 for PN in range(numPeaks):
-    for trace in binning_traces_100[PN][:5]:
+    plt.figure(f'{PN} photon traces')
+    for trace in binning_traces_100[PN][:50]:
         plt.plot(trace)
-plt.ylabel('voltage')
-plt.xlabel('time (in sample)')
-plt.title('traces for each photon numbers')
+    plt.ylim(ymin, ymax)
+    plt.ylabel('voltage')
+    plt.xlabel('time (in sample)')
+    plt.title(f'traces for {PN}')
 # plt.show()
 # # %%
-# '''
-# plot the average trace for each photon number
-# '''
-# mean_trace_100 = [np.mean(traces, axis=0) for traces in binning_traces_100]
-# for mean_trace in mean_trace_100:
-#     plt.plot(mean_trace)
-# plt.ylabel('voltage')
-# plt.xlabel('time (in sample)')
-# plt.title('average trace for each photon numbers')
+'''
+plot the average trace for each photon number
+'''
+mean_trace_100 = {}
+for PN in range(numPeaks):
+    mean_trace = np.mean(binning_traces_100[PN], axis=0)
+    mean_trace_100[PN] = mean_trace
+    plt.figure(f'{PN} photon traces')
+    plt.plot(mean_trace, 'k--', label='mean trace')
+    plt.legend()
+
+    plt.figure('Mean traces')
+    plt.plot(mean_trace, label=f'{PN} photons')
+    plt.ylabel('voltage')
+    plt.xlabel('time (in sample)')
+    plt.title('average trace for each photon numbers')
 # plt.show()
-#
-#
-#
-# '''
-# rest of the analysis is to do with the 600kHz
-# '''
+'''
+rest of the analysis is to do with the 600kHz
+'''
 # # %%
 # '''
 # splitting the 600kHz data
