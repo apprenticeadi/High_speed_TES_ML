@@ -140,13 +140,13 @@ plt.plot(ave_trace_600)
 '''
 Plot first x traces of 600kHz
 '''
-# num_600_traces = 1000
-# plt.figure(f'First {num_600_traces} traces of {frequency}kHz')
-# for i in range(num_600_traces):
-#     plt.plot(data_600[i])
-# plt.xlim(0, period)
-# # plt.show()
-# # # %%
+num_600_traces = 1000
+plt.figure(f'First {num_600_traces} traces of {frequency}kHz')
+for i in range(num_600_traces):
+    plt.plot(data_600[i])
+plt.xlim(0, period)
+# plt.show()
+# # %%
 '''
 fit and bin the 600kHz data, here only the 0 photon trace matter
 '''
@@ -158,38 +158,38 @@ midBins_600 = (bins_600[1:] + bins_600[:-1]) / 2
 multiplier = 0.6
 hist_fit = fitting_histogram(heights_600, midBins_600, overlaps_600, multiplier)
 lower_list, upper_list = hist_fit.fitting(figname = f'fit {frequency}kHz raw')
-# binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_600)
+binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_600)
 # #%%
 '''
 shift the data such that the zero photon data have mean overlap=0
 '''
-# mean_0 = np.mean(binning_traces_600[0], axis=0)
-# sig_0 = np.sqrt(np.var(binning_traces_600[0], axis=0))
-# plt.figure(f'{frequency}kHz traces mean and std')
-# plt.plot(mean_0)
-# plt.plot(sig_0)
-# offset = min(mean_0)
-# print(offset)
-#
-# data_shifted = np.array(data_600) - offset
-# ave_trace_shifted = ave_trace_600 - offset
-# #binning_traces_shifted = [ [data_shifted[index] for index in index_list]  for index_list in binning_index]
-# #%%
-# overlap_list_shifted = [ np.dot(ave_trace_shifted,amplitude)  for amplitude in data_shifted]
-# heights_shifted,bins_shifted,_=plt.hist(overlap_list_shifted,bins=1000)
-#
-# midBins_shifted= (bins_shifted[1:] + bins_shifted[:-1])/2
-# multiplier = 0.6
-# hist_fit = fitting_histogram(heights_shifted, midBins_shifted, overlap_list_shifted, multiplier)
-# lower_list, upper_list = hist_fit.fitting()
-# binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_shifted)
-#
-# mean_trace_600 = [np.mean(traces,axis=0)  for traces in binning_traces_600]
-# for mean in mean_trace_600 :
-#     plt.plot(mean)
-# plt.ylabel('voltage')
-# plt.xlabel('time (in sample)')
-# plt.title('average trace for each photon numbers')
+mean_0 = np.mean(binning_traces_600[0], axis=0)
+sig_0 = np.sqrt(np.var(binning_traces_600[0], axis=0))
+plt.figure(f'{frequency}kHz traces mean and std')
+plt.plot(mean_0)
+plt.plot(sig_0)
+offset = min(mean_0)
+print(offset)
+
+data_shifted = np.array(data_600) - offset
+ave_trace_shifted = ave_trace_600 - offset
+binning_traces_shifted = [ [data_shifted[index] for index in index_list]  for index_list in binning_index]
+#%%
+overlap_list_shifted = [ np.dot(ave_trace_shifted,amplitude)  for amplitude in data_shifted]
+heights_shifted,bins_shifted,_=plt.hist(overlap_list_shifted,bins=1000)
+
+midBins_shifted= (bins_shifted[1:] + bins_shifted[:-1])/2
+multiplier = 0.6
+hist_fit = fitting_histogram(heights_shifted, midBins_shifted, overlap_list_shifted, multiplier)
+lower_list, upper_list = hist_fit.fitting()
+binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_shifted)
+
+mean_trace_600 = [np.mean(traces,axis=0)  for traces in binning_traces_600]
+for mean in mean_trace_600 :
+    plt.plot(mean)
+plt.ylabel('voltage')
+plt.xlabel('time (in sample)')
+plt.title('average trace for each photon numbers')
 # plt.show()
 # #%%
 # '''mapping the mean traces from 100kHz data to 600kHz data'''
