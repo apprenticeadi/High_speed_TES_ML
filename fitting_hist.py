@@ -112,14 +112,20 @@ class fitting_histogram:
         grouping the traces corresponding to each photon numbers 
         '''
 
-        photon_bins = np.array([i for j in zip(self.lower_list, self.upper_list) for i in j])
-        bin_indices = np.digitize(self.overlap, photon_bins)  # bin 0 for overlap left of lower[0], bin 1 for photon_num=0, bin 3 for photon_num=1, bin 5 for photon_num=2 etc.
+        # photon_bins = np.array([i for j in zip(self.lower_list, self.upper_list) for i in j])
+        # bin_indices = np.digitize(self.overlap, photon_bins)  # bin 0 for overlap left of lower[0], bin 1 for photon_num=0, bin 3 for photon_num=1, bin 5 for photon_num=2 etc.
+        #
+        # binning_index = {}
+        # binning_traces = {}
+        # for photon_number in range(self.numPeaks):
+        #     binning = np.nonzero(bin_indices == 2 * photon_number + 1)[0]
+        #     binning_index[photon_number] = binning
+        #     binning_traces[photon_number] = data[binning]
+        #
+        # return binning_index, binning_traces
 
-        binning_index = {}
-        binning_traces = {}
-        for photon_number in range(self.numPeaks):
-            binning = np.nonzero(bin_indices == 2 * photon_number + 1)[0]
-            binning_index[photon_number] = binning
-            binning_traces[photon_number] = data[binning]
-
+        binning_index = [[i for i in range(len(self.overlap)) if
+                          self.lower_list[photon_number] < self.overlap[i] < self.upper_list[photon_number]] for
+                         photon_number in range(0, self.numPeaks)]
+        binning_traces = [[data[index] for index in index_list] for index_list in binning_index]
         return binning_index, binning_traces
