@@ -35,7 +35,6 @@ ymax = 5000 * (max_voltage // 5000 + 1)
 '''
 plot first 100 traces in 100kHZ data
 '''
-
 plt.figure('100kHz traces')
 for i in range(100):
     plt.plot(data_100[i][:200])
@@ -45,10 +44,10 @@ plt.xlim(0, 200)
 plt.ylim(ymin, ymax)
 # plt.show()
 # %%
+
 '''
 plot average trace
 '''
-
 ave_trace = np.mean(data_100, axis=0)
 #
 offset = min(ave_trace)
@@ -63,6 +62,7 @@ plt.ylim(ymin, ymax)
 plt.title('average trace')
 # plt.show()
 # # %%
+
 '''
 100kHz stegosaurus
 '''
@@ -76,13 +76,13 @@ multiplier = 0.6
 hist_fit = fitting_histogram(heights, midBins, overlaps, multiplier)
 lower_list, upper_list = hist_fit.fitting(figname='fit 100kHz')
 numPeaks = hist_fit.numPeaks
+
 binning_index, binning_traces_100 = hist_fit.trace_bin(data_100)
 
 # # %%
 '''
 plotting the first x traces for each photon number
 '''
-
 # for PN in range(numPeaks):
 #     plt.figure(f'{PN} photon traces')
 #     for trace in binning_traces_100[PN][:50]:
@@ -91,6 +91,7 @@ plotting the first x traces for each photon number
 #     plt.ylabel('voltage')
 #     plt.xlabel('time (in sample)')
 #     plt.title(f'traces for {PN}')
+
 # plt.show()
 # # %%
 '''
@@ -110,6 +111,7 @@ for PN in range(numPeaks):
     plt.ylabel('voltage')
     plt.xlabel('time (in sample)')
     plt.title('average trace for each photon numbers')
+    plt.legend()
 # # plt.show()
 '''
 rest of the analysis is to do with the 600kHz
@@ -117,14 +119,23 @@ rest of the analysis is to do with the 600kHz
 # # # %%
 '''  
 splitting the 600kHz data
+100 kHz data corresponds to 10us period, which is represented by 500 datapoints per trace. The time between two 
+datapoints is thus 10ns. 
+For 600kHz, the number of datapoints per trace should be 500 * (100kHz / 600kHz) = 83.33. 
+However, when Ruidi tried to save 83 datapoints per trace, for some reason the traces were not continuous, which makes 
+tail subtraction impossible. So instead Ruidi saved 500*83 datapoints per row. 
+
+This section manually splits into the correct trace lengths. 
 '''
+
 idealSamples = 5e4 / frequency
-samples = np.floor(idealSamples) * 500
+samples = np.floor(idealSamples) * 500  # This should be the length of row of data_600_
 period = int(idealSamples)
 
 data_600 = []
 for data_set in data_600_:
-    for i in range(int(samples / idealSamples)):
+    for i in range(1, 499):  # skip the first trace and last trace
+
         start = int(i * idealSamples)
         if start + period < samples:
             trace = data_set[start:start + period]
@@ -132,6 +143,7 @@ for data_set in data_600_:
         else:
             pass
 data_600 = np.asarray(data_600)
+
 # # %%
 plt.figure(f'average {frequency}kHz trace')
 ave_trace_600 = np.mean(data_600, axis=0)
