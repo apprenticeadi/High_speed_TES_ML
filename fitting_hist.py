@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 # %%
+
+
 class fitting_histogram:
     def __init__(self, heights, midBins, overlap, multiplier):
         # heights and positions of each bins in histogram
@@ -68,9 +70,9 @@ class fitting_histogram:
         for i in range(self.numPeaks):
             guess += [positions[i], amplitudes[i], sigma]
 
-        popt, pcov = curve_fit(self.func, self.midBins, self.heights, p0=guess)
+        popt, pcov = curve_fit(self.func, self.midBins, self.heights, p0=guess)  # popt contains [position, amplitude, sigma] of each Gaussian peak
 
-        sort = np.argsort(popt[::3])
+        sort = np.argsort(popt[::3])  # Every three element
 
         sorted_popt = []
         for i in sort:
@@ -91,12 +93,12 @@ class fitting_histogram:
         upper_list = []
         lower_list = []
         for i in range(0, self.numPeaks):
-            mu = sorted_popt[i*3]
+            mu = sorted_popt[i*3]  # position of peak
             amplitude = sorted_popt[i*3+1]
             width = sorted_popt[i*3+2] * self.multiplier
             upper = mu + width
             lower = mu - width
-            plt.plot(mu, amplitude, "kx")
+            plt.plot(mu, amplitude, "kx")  # black x at top of peak
             plt.vlines(upper, 0, self.func(upper, *sorted_popt), color='gray', linestyle='dashed')
             plt.vlines(lower, 0, self.func(lower, *sorted_popt), color='gray', linestyle='dashed')
             upper_list.append(upper)
@@ -106,26 +108,31 @@ class fitting_histogram:
         self.upper_list = np.sort(upper_list)
         return self.lower_list, self.upper_list
 
-    # TODO: np digitize is a bad idea when the fit is bad and two photon number bins overlap.
+
     def trace_bin(self, data):
         '''
         grouping the traces corresponding to each photon numbers 
         '''
 
+        # np digitize is a bad idea when the fit is bad and two photon number bins overlap.
         # photon_bins = np.array([i for j in zip(self.lower_list, self.upper_list) for i in j])
         # bin_indices = np.digitize(self.overlap, photon_bins)  # bin 0 for overlap left of lower[0], bin 1 for photon_num=0, bin 3 for photon_num=1, bin 5 for photon_num=2 etc.
-        #
-        # binning_index = {}
-        # binning_traces = {}
-        # for photon_number in range(self.numPeaks):
-        #     binning = np.nonzero(bin_indices == 2 * photon_number + 1)[0]
-        #     binning_index[photon_number] = binning
-        #     binning_traces[photon_number] = data[binning]
-        #
-        # return binning_index, binning_traces
 
-        binning_index = [[i for i in range(len(self.overlap)) if
-                          self.lower_list[photon_number] < self.overlap[i] < self.upper_list[photon_number]] for
-                         photon_number in range(0, self.numPeaks)]
-        binning_traces = [[data[index] for index in index_list] for index_list in binning_index]
+        binning_index = {}
+        binning_traces = {}
+        for photon_number in range(self.numPeaks):
+            indices = np.where(np.logical_and(self.overlap >= self.lower_list[photon_number], self.overlap < self.upper_list[photon_number]))[0]  # np.where gives a tuple
+            traces_to_bin = data[indices]
+
+            binning_index[photon_number] = indices
+            binning_traces[photon_number] = traces_to_bin
+
         return binning_index, binning_traces
+
+
+    # def trace_bin_old(self, data):
+    #     binning_index = [[i for i in range(len(self.overlap)) if
+    #                       self.lower_list[photon_number] < self.overlap[i] < self.upper_list[photon_number]] for
+    #                      photon_number in range(0, self.numPeaks)]
+    #     binning_traces = [[data[index] for index in index_list] for index_list in binning_index]
+    #     return binning_index, binning_traces
