@@ -9,22 +9,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+
 from fitting_hist import fitting_histogram
+from utils import read_raw_data, read_high_freq_data
 
 # %%
-data_100_ = np.loadtxt('Data/all_traces_100kHz_middle.txt',
-                       delimiter=',', unpack=True)
-data_100 = np.transpose(data_100_)
+# data_100_ = np.loadtxt('Data/all_traces_100kHz_middle.txt',
+#                        delimiter=',', unpack=True)
+# data_100 = np.transpose(data_100_)
+
+data_100 = read_raw_data(100)
 # %%
 '''600kHz data'''
-data_600_ = np.loadtxt('Data/all_traces_600kHz.txt',
-                       delimiter=',', unpack=True)
-data_600_ = np.transpose(data_600_)
+# data_600_ = np.loadtxt('Data/all_traces_600kHz.txt',
+#                        delimiter=',', unpack=True)
+# data_600_ = np.transpose(data_600_)
 
 frequency = 600  # 600kHz data, remember to update this value if you want to use a different frequency
+data_600 = read_high_freq_data(frequency)
+
+idealSamples = 5e4 / frequency
+samples = np.floor(idealSamples) * 500  # This should be the length of row of data_600_
+period = int(idealSamples)
 
 '''
-Analysis for 100kHz, to find the characteristic shape of the waveform for each photon number 
+Analysis for 100kHz, to find the characteristic shape of the waveform for each photon number
 '''
 # %%
 min_voltage = np.amin(data_100)
@@ -117,32 +126,32 @@ for PN in range(numPeaks):
 rest of the analysis is to do with the 600kHz
 '''
 # # # %%
-'''  
-splitting the 600kHz data
-100 kHz data corresponds to 10us period, which is represented by 500 datapoints per trace. The time between two 
-datapoints is thus 10ns. 
-For 600kHz, the number of datapoints per trace should be 500 * (100kHz / 600kHz) = 83.33. 
-However, when Ruidi tried to save 83 datapoints per trace, for some reason the traces were not continuous, which makes 
-tail subtraction impossible. So instead Ruidi saved 500*83 datapoints per row. 
-
-This section manually splits into the correct trace lengths. 
-'''
-
-idealSamples = 5e4 / frequency
-samples = np.floor(idealSamples) * 500  # This should be the length of row of data_600_
-period = int(idealSamples)
-
-data_600 = []
-for data_set in data_600_:
-    for i in range(1, 499):  # skip the first trace and last trace
-
-        start = int(i * idealSamples)
-        if start + period < samples:
-            trace = data_set[start:start + period]
-            data_600.append(trace)
-        else:
-            pass
-data_600 = np.asarray(data_600)
+# '''
+# splitting the 600kHz data
+# 100 kHz data corresponds to 10us period, which is represented by 500 datapoints per trace. The time between two
+# datapoints is thus 10ns.
+# For 600kHz, the number of datapoints per trace should be 500 * (100kHz / 600kHz) = 83.33.
+# However, when Ruidi tried to save 83 datapoints per trace, for some reason the traces were not continuous, which makes
+# tail subtraction impossible. So instead Ruidi saved 500*83 datapoints per row.
+#
+# This section manually splits into the correct trace lengths.
+# '''
+#
+# idealSamples = 5e4 / frequency
+# samples = np.floor(idealSamples) * 500  # This should be the length of row of data_600_
+# period = int(idealSamples)
+#
+# data_600 = []
+# for data_set in data_600_:
+#     for i in range(1, 499):  # skip the first trace and last trace
+#
+#         start = int(i * idealSamples)
+#         if start + period < samples:
+#             trace = data_set[start:start + period]
+#             data_600.append(trace)
+#         else:
+#             pass
+# data_600 = np.asarray(data_600)
 
 # # %%
 plt.figure(f'average {frequency}kHz trace')
