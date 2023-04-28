@@ -3,41 +3,19 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
-
+from utils import read_high_freq_data, read_raw_data
 
 frequency = 600
 
-t_max = np.floor(5e4 / frequency) * 500
+t_max = int(np.floor(5e4 / frequency))
 
 ## TODO: make this if else statement less 'manual'
 if frequency == 100:
+    data_raw = read_raw_data(frequency)
 
-    data_raw_ = np.loadtxt(r'../Data/all_traces_100kHz_middle.txt',
-                           delimiter=',', unpack=True)
-    data_raw = np.transpose(data_raw_)
 elif frequency == 600:
-    data_raw_ = np.loadtxt(r'../Data/all_traces_600kHz.txt',
-                           delimiter=',', unpack=True)
-    data_raw_ = np.transpose(data_raw_)
+    data_raw = read_high_freq_data(frequency)
 
-    '''  
-    splitting the high frequency data
-    '''
-    idealSamples = 5e4 / frequency
-    samples = np.floor(idealSamples) * 500
-    period = int(idealSamples)
-
-    ## TODO: Replace list operations with np array
-    data_raw = []
-    for data_set in data_raw_:
-        for i in range(int(samples / idealSamples)):
-            start = int(i * idealSamples)
-            if start + period < samples:
-                trace = data_set[start:start + period]
-                data_raw.append(trace)
-            else:
-                pass
-    data_raw = np.asarray(data_raw)
 else:
     raise Exception('Code not good enough for this frequency ')
 
@@ -66,12 +44,12 @@ To perform PCA, first zero the mean along each column
 '''
 col_means = np.mean(data, axis=0)
 data_zeroed = data - col_means
-plt.figure(f'{frequency}kHz traces with mean zeroed')
-for i in range(num_traces):
-    plt.plot(data_zeroed[i])
-plt.ylabel('voltage')
-plt.xlabel('time (in sample)')
-plt.xlim(0, t_max)
+# plt.figure(f'{frequency}kHz traces with mean zeroed')
+# for i in range(num_traces):
+#     plt.plot(data_zeroed[i])
+# plt.ylabel('voltage')
+# plt.xlabel('time (in sample)')
+# plt.xlim(0, t_max)
 
 '''
 Singular value decomposition to find factor scores and loading matrix
@@ -100,19 +78,19 @@ plt.xlabel('time (in sample)')
 plt.xlim(0, t_max)
 plt.ylim(ymin, ymax)
 
-'''
-Plot of loadings
-'''
-# This is definitely not the correlation plot shown in abdi&williams.
-F2_truncated = F2[:, :num_comp]
-loading = F2_truncated / inertia_observation[:, None]
-plt.figure(f'Plot of each trace loading')
-for i in range(num_traces):
-    plt.plot(loading[i,0], loading[i,1], 'rx')
-theta = np.linspace(0, 2*np.pi, 100)
-plt.plot(np.cos(theta), np.sin(theta), 'b-')
-plt.xlabel('F1^2/d^2')
-plt.ylabel('F2^2/d^2')
-plt.axis('scaled')
-plt.xlim(-2, 2)
-plt.ylim(-2,2)
+# '''
+# Plot of loadings
+# '''
+# # This is definitely not the correlation plot shown in abdi&williams.
+# F2_truncated = F2[:, :num_comp]
+# loading = F2_truncated / inertia_observation[:, None]
+# plt.figure(f'Plot of each trace loading')
+# for i in range(num_traces):
+#     plt.plot(loading[i,0], loading[i,1], 'rx')
+# theta = np.linspace(0, 2*np.pi, 100)
+# plt.plot(np.cos(theta), np.sin(theta), 'b-')
+# plt.xlabel('F1^2/d^2')
+# plt.ylabel('F2^2/d^2')
+# plt.axis('scaled')
+# plt.xlim(-2, 2)
+# plt.ylim(-2,2)
