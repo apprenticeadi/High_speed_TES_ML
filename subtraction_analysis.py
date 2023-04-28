@@ -42,7 +42,7 @@ ymin = 5000 * (min_voltage // 5000)
 ymax = 5000 * (max_voltage // 5000 + 1)
 
 '''
-plot first 100 traces in 100kHZ data
+plot first _ traces in 100kHZ data
 '''
 plt.figure('100kHz traces')
 for i in range(100):
