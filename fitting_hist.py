@@ -130,9 +130,9 @@ class fitting_histogram:
         return binning_index, binning_traces
 
 
-    # def trace_bin_old(self, data):
-    #     binning_index = [[i for i in range(len(self.overlap)) if
-    #                       self.lower_list[photon_number] < self.overlap[i] < self.upper_list[photon_number]] for
-    #                      photon_number in range(0, self.numPeaks)]
-    #     binning_traces = [[data[index] for index in index_list] for index_list in binning_index]
-    #     return binning_index, binning_traces
+    def trace_bin_old(self, data):
+        binning_index = [[i for i in range(len(self.overlap)) if
+                          self.lower_list[photon_number] < self.overlap[i] < self.upper_list[photon_number]] for
+                         photon_number in range(0, self.numPeaks)]
+        binning_traces = [[data[index] for index in index_list] for index_list in binning_index]
+        return binning_index, binning_traces
