@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+
+
 # %%
 
 
@@ -34,7 +36,7 @@ class fitting_histogram:
                               distance=30, prominence=1, width=10)
         amplitudes = data_convolved_10[peaks]
 
-        #heights,bins,_ = plt.hist(overlap_list,bins=1000,range=(-0.1e10,1.5e10))
+        # heights,bins,_ = plt.hist(overlap_list,bins=1000,range=(-0.1e10,1.5e10))
         if plot == True:
             plt.plot(self.midBins, data_convolved_10)
             plt.plot(self.midBins[peaks], amplitudes, "x")
@@ -47,14 +49,14 @@ class fitting_histogram:
         functions used to fit the histogram (sum of multiple Gaussians)
         '''
         y = np.zeros_like(x)
-        for i in range(0, len(params)-1, 3):
+        for i in range(0, len(params) - 1, 3):
             mu = params[i]
-            amp = params[i+1]
-            sig = params[i+2]
-            y = y + amp * np.exp(-((x - mu)/abs(sig))**2)
+            amp = params[i + 1]
+            sig = params[i + 2]
+            y = y + amp * np.exp(-((x - mu) / abs(sig)) ** 2)
         return y
 
-    def fitting(self, plot = True, figname = 'fit'):
+    def fitting(self, plot=True, fig_name='fit'):
         '''
         fitting the histogram
         '''
@@ -70,23 +72,24 @@ class fitting_histogram:
         for i in range(self.numPeaks):
             guess += [positions[i], amplitudes[i], sigma]
 
-        popt, pcov = curve_fit(self.func, self.midBins, self.heights, p0=guess)  # popt contains [position, amplitude, sigma] of each Gaussian peak
+        popt, pcov = curve_fit(self.func, self.midBins, self.heights,
+                               p0=guess)  # popt contains [position, amplitude, sigma] of each Gaussian peak
 
         sort = np.argsort(popt[::3])  # Every three element
 
         sorted_popt = []
         for i in sort:
-            count = 3*i
-            popt[count+2] = abs(popt[count+2])
+            count = 3 * i
+            popt[count + 2] = abs(popt[count + 2])
             # print(f'{i}th peak:', popt[count:count+3])
-            sorted_popt.append(list(popt[count:count+3]))
+            sorted_popt.append(list(popt[count:count + 3]))
         sorted_popt = list(np.array(sorted_popt).flat)
 
         x = np.linspace(min(self.midBins), max(self.midBins), 10000)
         fit = self.func(x, *sorted_popt)
 
         if plot:
-            plt.figure(figname, figsize=(8, 5))
+            plt.figure(fig_name, figsize=(8, 5))
             plt.hist(self.overlap, bins=1000, color='aquamarine')
             plt.plot(x, fit, 'r-')
             plt.xlabel('overlap', size=14)
@@ -95,9 +98,9 @@ class fitting_histogram:
         upper_list = []
         lower_list = []
         for i in range(0, self.numPeaks):
-            mu = sorted_popt[i*3]  # position of peak
-            amplitude = sorted_popt[i*3+1]
-            width = sorted_popt[i*3+2] * self.multiplier
+            mu = sorted_popt[i * 3]  # position of peak
+            amplitude = sorted_popt[i * 3 + 1]
+            width = sorted_popt[i * 3 + 2] * self.multiplier
             upper = mu + width
             lower = mu - width
             if plot:
@@ -113,7 +116,6 @@ class fitting_histogram:
 
         return np.sort(lower_list), np.sort(upper_list)
 
-
     def trace_bin(self, data):
         '''
         grouping the traces corresponding to each photon numbers 
@@ -128,14 +130,15 @@ class fitting_histogram:
         binning_index = {}
         binning_traces = {}
         for photon_number in range(self.numPeaks):
-            indices = np.where(np.logical_and(self.overlap >= lower_list[photon_number], self.overlap < upper_list[photon_number]))[0]  # np.where gives a tuple
+            indices = np.where(
+                np.logical_and(self.overlap >= lower_list[photon_number], self.overlap < upper_list[photon_number]))[
+                0]  # np.where gives a tuple
             traces_to_bin = data[indices]
 
             binning_index[photon_number] = indices
             binning_traces[photon_number] = traces_to_bin
 
         return binning_index, binning_traces
-
 
     def trace_bin_old(self, data):
         binning_index = [[i for i in range(len(self.overlap)) if
