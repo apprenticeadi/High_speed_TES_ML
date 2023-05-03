@@ -54,11 +54,11 @@ class fitting_histogram:
             y = y + amp * np.exp(-((x - mu)/abs(sig))**2)
         return y
 
-    def fitting(self, figname = 'fit'):
+    def fitting(self, plot = True, figname = 'fit'):
         '''
         fitting the histogram
         '''
-        plt.figure(figname, figsize=(8, 5))
+
         peaks, amplitudes = self.finding_peaks(plot=False)
 
         # initial guess for fitting the historgams (calculated from smoothing method defined in finding_peaks)
@@ -78,17 +78,19 @@ class fitting_histogram:
         for i in sort:
             count = 3*i
             popt[count+2] = abs(popt[count+2])
-            print(f'{i}th peak:', popt[count:count+3])
+            # print(f'{i}th peak:', popt[count:count+3])
             sorted_popt.append(list(popt[count:count+3]))
         sorted_popt = list(np.array(sorted_popt).flat)
 
         x = np.linspace(min(self.midBins), max(self.midBins), 10000)
         fit = self.func(x, *sorted_popt)
 
-        plt.hist(self.overlap, bins=1000, color='aquamarine')
-        plt.plot(x, fit, 'r-')
-        plt.xlabel('overlap', size=14)
-        plt.ylabel('entries', size=14)
+        if plot:
+            plt.figure(figname, figsize=(8, 5))
+            plt.hist(self.overlap, bins=1000, color='aquamarine')
+            plt.plot(x, fit, 'r-')
+            plt.xlabel('overlap', size=14)
+            plt.ylabel('entries', size=14)
 
         upper_list = []
         lower_list = []
@@ -98,9 +100,10 @@ class fitting_histogram:
             width = sorted_popt[i*3+2] * self.multiplier
             upper = mu + width
             lower = mu - width
-            plt.plot(mu, amplitude, "kx")  # black x at top of peak
-            plt.vlines(upper, 0, self.func(upper, *sorted_popt), color='gray', linestyle='dashed')
-            plt.vlines(lower, 0, self.func(lower, *sorted_popt), color='gray', linestyle='dashed')
+            if plot:
+                plt.plot(mu, amplitude, "kx")  # black x at top of peak
+                plt.vlines(upper, 0, self.func(upper, *sorted_popt), color='gray', linestyle='dashed')
+                plt.vlines(lower, 0, self.func(lower, *sorted_popt), color='gray', linestyle='dashed')
             upper_list.append(upper)
             lower_list.append(lower)
         # plt.show()
