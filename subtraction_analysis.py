@@ -310,7 +310,7 @@ def mean_trace_subtraction(index,subtract):
 
 
 # =============================================================================
-    if index >=5 and index <10:
+    if index <5:
         plt.figure(f'{index} trace subtraction')
         plt.plot(data_shifted[index], label='shifted raw data')
         plt.plot(fit[:period], label='fit')
