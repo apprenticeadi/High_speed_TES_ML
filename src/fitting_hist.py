@@ -107,9 +107,11 @@ class fitting_histogram:
             upper_list.append(upper)
             lower_list.append(lower)
         # plt.show()
-        self.lower_list = np.sort(lower_list)
-        self.upper_list = np.sort(upper_list)
-        return self.lower_list, self.upper_list
+        # self.lower_list = np.sort(lower_list)
+        # self.upper_list = np.sort(upper_list)
+        # return self.lower_list, self.upper_list
+
+        return np.sort(lower_list), np.sort(upper_list)
 
 
     def trace_bin(self, data):
@@ -121,10 +123,12 @@ class fitting_histogram:
         # photon_bins = np.array([i for j in zip(self.lower_list, self.upper_list) for i in j])
         # bin_indices = np.digitize(self.overlap, photon_bins)  # bin 0 for overlap left of lower[0], bin 1 for photon_num=0, bin 3 for photon_num=1, bin 5 for photon_num=2 etc.
 
+        lower_list, upper_list = self.fitting(plot=False)
+
         binning_index = {}
         binning_traces = {}
         for photon_number in range(self.numPeaks):
-            indices = np.where(np.logical_and(self.overlap >= self.lower_list[photon_number], self.overlap < self.upper_list[photon_number]))[0]  # np.where gives a tuple
+            indices = np.where(np.logical_and(self.overlap >= lower_list[photon_number], self.overlap < upper_list[photon_number]))[0]  # np.where gives a tuple
             traces_to_bin = data[indices]
 
             binning_index[photon_number] = indices
