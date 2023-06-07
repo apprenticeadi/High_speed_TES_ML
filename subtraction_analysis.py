@@ -81,7 +81,7 @@ midBins = (bins[1:] + bins[:-1]) / 2
 
 multiplier = 0.6
 hist_fit = fitting_histogram(heights, midBins, overlaps, multiplier)
-lower_list, upper_list = hist_fit.fitting(figname='fit 100kHz')
+lower_list, upper_list = hist_fit.fitting(fig_name='fit 100kHz')
 numPeaks = hist_fit.numPeaks
 
 binning_index, binning_traces_100 = hist_fit.trace_bin(data_100)
@@ -177,7 +177,7 @@ heights_600, bins_600, _ = plt.hist(overlaps_600, bins=1000)
 midBins_600 = (bins_600[1:] + bins_600[:-1]) / 2
 multiplier = 0.6
 hist_fit = fitting_histogram(heights_600, midBins_600, overlaps_600, multiplier)
-lower_list, upper_list = hist_fit.fitting(figname=f'fit {frequency}kHz raw')
+lower_list, upper_list = hist_fit.fitting(fig_name=f'fit {frequency}kHz raw')
 binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_600)
 # %%
 '''
@@ -211,7 +211,7 @@ Fit the shifted data but only the 1-photon peak is important here.
 midBins_shifted = (bins_shifted[1:] + bins_shifted[:-1]) / 2
 multiplier = 0.6
 hist_fit = fitting_histogram(heights_shifted, midBins_shifted, overlap_list_shifted, multiplier)
-lower_list, upper_list = hist_fit.fitting(figname=f'fit {frequency}kHz shifted')
+lower_list, upper_list = hist_fit.fitting(fig_name=f'fit {frequency}kHz shifted')
 binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_shifted)
 
 # The mean photon traces for higher photon numbers are likely to be incorrect.
@@ -291,7 +291,7 @@ mean_argmax = [np.argmax(mean)  for mean in mean_trace_100_pad.values()]
 mean_trace_period = [mean_scaled_100[i][:period] for i in mean_scaled_100.keys()]
 #mean_trace_2period = [mean_scaled_100[i][period:2*period] for i in range(len(mean_scaled_100))]
 def mean_trace_subtraction(index,subtract):
-    trace = np.array(data_shifted[index]) - subtract  # The subtract is updated everytime by previous trace
+    trace = data_shifted[index, :] - subtract  # The subtract is updated everytime by previous trace
     diff = [  np.mean( abs(trace - mean_trace_period[i]) )   for i in range(len(mean_scaled_100))]
 
     #TODO: it's not clear to me that this is a valid way of identifying the photon number of the trace
@@ -300,8 +300,8 @@ def mean_trace_subtraction(index,subtract):
         subtract = 0
         fit=np.zeros(period)
     else:
-        trace_max = max(trace[:60])
-        trace_argmax = np.argmax(trace[:60])
+        trace_max = max(trace)
+        trace_argmax = np.argmax(trace)
 
         offset_diff = mean_argmax[PN] - trace_argmax
 
@@ -310,9 +310,9 @@ def mean_trace_subtraction(index,subtract):
 
 
 # =============================================================================
-    if index <5:
+    if index >=5 and index < 10:
         plt.figure(f'{index} trace subtraction')
-        plt.plot(data_shifted[index], label='shifted raw data')
+        plt.plot(data_shifted[index], 'x', label='shifted raw data')
         plt.plot(fit[:period], label='fit')
         plt.plot(trace, label='subtracted trace')
         plt.plot(subtract, label='tail to be subtracted from the next one')
