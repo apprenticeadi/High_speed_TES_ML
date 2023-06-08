@@ -7,7 +7,7 @@ from src.utils import read_high_freq_data, read_raw_data
 # A script that performs PCA on raw data traces. However, so far the improvement in fitting histogram is very limited.
 
 
-frequency = 600  # currently this code is only tested for 600kHz
+frequency = 800
 
 if frequency == 100:
     data_raw = read_raw_data(frequency)
