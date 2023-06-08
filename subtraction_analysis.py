@@ -275,7 +275,7 @@ for i in mean_trace_600.keys():
         plt.plot(mean_trace_600[i],color='red')
 plt.ylabel('voltage')
 plt.xlabel('time (in sample)')
-plt.xlim([0, period])
+plt.xlim([0, 100])
 plt.ylim([0, 35000])
 plt.title('average trace for each photon numbers')
 plt.legend()
@@ -300,8 +300,8 @@ def mean_trace_subtraction(index,subtract):
         subtract = 0
         fit=np.zeros(period)
     else:
-        trace_max = max(trace)
-        trace_argmax = np.argmax(trace)
+        trace_max = max(trace[:60])
+        trace_argmax = np.argmax(trace[:60])
 
         offset_diff = mean_argmax[PN] - trace_argmax
 
@@ -310,7 +310,7 @@ def mean_trace_subtraction(index,subtract):
 
 
 # =============================================================================
-    if index >=5 and index < 10:
+    if index <5:
         plt.figure(f'{index} trace subtraction')
         plt.plot(data_shifted[index], 'x', label='shifted raw data')
         plt.plot(fit[:period], label='fit')
