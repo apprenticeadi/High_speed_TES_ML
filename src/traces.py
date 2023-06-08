@@ -228,3 +228,22 @@ class Traces:
 
         return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
 
+    def pca_cleanup(self, num_components=1):
+        data = self.get_data()
+        # To perform PCA, first zero the mean along each column
+        col_means = np.mean(data, axis=0)
+        data_zeroed = data - col_means
+
+        # Singular value decomposition to find factor scores and loading matrix
+        P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
+        F = P * Delta  # Factor scores
+
+        '''
+        Truncate at first few principal components
+        '''
+        F_truncated = F[:, :num_components]
+        data_cleaned = F_truncated @ QT[:num_components, :] + col_means
+
+        return data_cleaned
+
+
