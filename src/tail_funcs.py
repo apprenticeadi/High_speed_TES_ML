@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 
 
 def pad_trace(trace, pad_length=40):
+    """
+    Pad a certain length of the trace's tail to its head
+    """
     if len(trace.shape) == 1:
         padded = np.insert(trace, 0, trace[-pad_length:])
     elif len(trace.shape) == 2:
@@ -13,6 +16,9 @@ def pad_trace(trace, pad_length=40):
 
 
 def shift_trace(target_trace, traces, pad_length=40, id = 1):
+    """
+    Shift traces such that traces[id] has the same peak position as target trace
+    """
     padded_traces = pad_trace(traces, pad_length=pad_length)
     if len(traces.shape) == 1:
         diff_arg = np.argmax(padded_traces) - np.argmax(target_trace)
