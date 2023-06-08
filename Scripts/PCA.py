@@ -1,55 +1,39 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 
-from sklearn.model_selection import train_test_split
-from utils import read_high_freq_data, read_raw_data
+from src.traces import Traces
+from src.utils import read_high_freq_data, read_raw_data
 
-frequency = 600
+# A script that performs PCA on raw data traces. However, so far the improvement in fitting histogram is very limited.
 
-t_max = int(np.floor(5e4 / frequency))
 
-## TODO: make this if else statement less 'manual'
+frequency = 600  # currently this code is only tested for 600kHz
+
 if frequency == 100:
     data_raw = read_raw_data(frequency)
-
-elif frequency == 600:
+else:
     data_raw = read_high_freq_data(frequency)
 
-else:
-    raise Exception('Code not good enough for this frequency ')
+rawTraces = Traces(frequency=frequency, data=data_raw)
 
-
-min_voltage = np.amin(data_raw)
-max_voltage = np.amax(data_raw)
-ymin = 5000 * (min_voltage // 5000)
-ymax = 5000 * (max_voltage // 5000 + 1)
 
 
 '''
-take first x traces 
+Plot first x traces 
 '''
-num_traces = 100
-data = data_raw[:num_traces, :t_max]  # This is the data we care about
-plt.figure(f'{frequency}kHz traces raw')
-for i in range(num_traces):
-    plt.plot(data[i])
-plt.ylabel('voltage')
-plt.xlabel('time (in sample)')
-plt.xlim(0, t_max)
-plt.ylim(ymin, ymax)
+num_traces = 20
+offset, data_shifted = rawTraces.subtract_offset()
+rawTraces.plot_traces(num_traces=num_traces, fig_name=f'first {num_traces} raw but shifted traces')
+raw_hist_fit = rawTraces.fit_histogram(plot=True, fig_name='Raw histogram fit')
+raw_char_traces = rawTraces.characteristic_traces_pn(plot=True, fig_name='raw char traces')
 
 '''
 To perform PCA, first zero the mean along each column
 '''
-col_means = np.mean(data, axis=0)
-data_zeroed = data - col_means
-# plt.figure(f'{frequency}kHz traces with mean zeroed')
-# for i in range(num_traces):
-#     plt.plot(data_zeroed[i])
-# plt.ylabel('voltage')
-# plt.xlabel('time (in sample)')
-# plt.xlim(0, t_max)
+col_means = np.mean(data_shifted, axis=0)
+data_zeroed = data_shifted - col_means
+zeroedTraces = Traces(frequency=frequency, data=data_zeroed)
+zeroedTraces.plot_traces(num_traces=num_traces, fig_name=f'first {num_traces} column mean zeroed traces')
 
 '''
 Singular value decomposition to find factor scores and loading matrix
@@ -67,30 +51,11 @@ component_importance = inertia_component / total_inertia
 '''
 Truncate at first few principal components
 '''
-num_comp = 2
+num_comp = 1
 F_truncated = F[:, :num_comp]
 data_cleaned = F_truncated @ QT[:num_comp, :] + col_means
-plt.figure(f'{frequency}kHz traces truncated at {num_comp} principal components')
-for i in range(num_traces):
-    plt.plot(data_cleaned[i])
-plt.ylabel('voltage')
-plt.xlabel('time (in sample)')
-plt.xlim(0, t_max)
-plt.ylim(ymin, ymax)
+cleanedTraces = Traces(frequency=frequency, data=data_cleaned)
 
-# '''
-# Plot of loadings
-# '''
-# # This is definitely not the correlation plot shown in abdi&williams.
-# F2_truncated = F2[:, :num_comp]
-# loading = F2_truncated / inertia_observation[:, None]
-# plt.figure(f'Plot of each trace loading')
-# for i in range(num_traces):
-#     plt.plot(loading[i,0], loading[i,1], 'rx')
-# theta = np.linspace(0, 2*np.pi, 100)
-# plt.plot(np.cos(theta), np.sin(theta), 'b-')
-# plt.xlabel('F1^2/d^2')
-# plt.ylabel('F2^2/d^2')
-# plt.axis('scaled')
-# plt.xlim(-2, 2)
-# plt.ylim(-2,2)
+cleanedTraces.plot_traces(num_traces=num_traces, fig_name=f'first {num_traces} PCA cleaned traces')
+clean_hist_fit = cleanedTraces.fit_histogram(plot=True, fig_name='cleaned histogram fit')
+clean_char_traces = cleanedTraces.characteristic_traces_pn(plot=True, fig_name='cleaned char traces')
