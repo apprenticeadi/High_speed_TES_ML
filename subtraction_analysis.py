@@ -90,7 +90,7 @@ binning_index, binning_traces_100 = hist_fit.trace_bin(data_100)
 
 # %%
 '''
-plotting the first 50 traces for each photon number
+plotting the first x traces for each photon number
 '''
 
 # for PN in range(numPeaks):
@@ -158,7 +158,7 @@ rest of the analysis is to do with the 600kHz
 plt.figure(f'average {frequency}kHz trace')
 ave_trace_600 = np.mean(data_600, axis=0)
 plt.plot(ave_trace_600)
-plt.show()
+# plt.show()
 # %%
 for i in range(1000):
     plt.plot(data_600[i])

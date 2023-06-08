@@ -32,16 +32,16 @@ class fitting_histogram:
         kernel = np.ones(kernel_size) / kernel_size
         data_convolved_10 = np.convolve(self.heights, kernel, mode='same')
 
-        plt.plot(self.midBins, data_convolved_10)
         peaks, _ = find_peaks(data_convolved_10, height=2,
                               distance=30, prominence=1, width=10)
         amplitudes = data_convolved_10[peaks]
 
         # heights,bins,_ = plt.hist(overlap_list,bins=1000,range=(-0.1e10,1.5e10))
-        if plot == True:
+        if plot:
+            plt.plot(self.midBins, data_convolved_10)
             plt.plot(self.midBins[peaks], amplitudes, "x")
-            plt.plot(np.zeros_like(data_convolved_10), "--", color="gray")
-        plt.show()
+            plt.plot(self.midBins, np.zeros_like(data_convolved_10), "--", color="gray")
+        # plt.show()
         return peaks, amplitudes
 
     def func(self, x, *params):
