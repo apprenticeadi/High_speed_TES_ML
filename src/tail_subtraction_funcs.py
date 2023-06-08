@@ -56,8 +56,8 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
         # =============================================================================
         if plot and i in plot_range:
             plt.figure(f'{i}-th trace')
-            plt.plot(data[i], 'x', label='raw data')
-            plt.plot(trace, label='tail subtracted trace')
+            # plt.plot(data[i], 'x', label='raw data')
+            plt.plot(trace, 'x', label='tail subtracted trace')
             plt.plot(char_trace[:period], label='identified photon number characteristic trace')
             # plt.plot(char_trace_pad, label='padded char trace')
             plt.plot(fit[:period], label='fit')
