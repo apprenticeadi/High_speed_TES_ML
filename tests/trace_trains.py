@@ -21,11 +21,12 @@ plt.plot(train_100_zeroed)
 
 
 
-frequency = 500
+frequency = 800
 period = int(5e4 / frequency)
-data_high = read_raw_data(frequency)
+data_high = read_high_freq_data(frequency)
+train_high = data_high[:num_traces, :].flatten()
 plt.figure(f'{frequency}kHz trace train')
-plt.plot(data_high[0, :period * num_traces])
+plt.plot(train_high)
 
 
 train_100_overlapped = np.zeros(period * (num_traces-1) + 500)
