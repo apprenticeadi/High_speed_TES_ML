@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from src.utils import read_high_freq_data, read_raw_data
 from src.traces import Traces
-from src.tail_subtraction_funcs import pad_trace, subtract_tails
+from src.tail_funcs import pad_trace, subtract_tails, shift_trace
 
 # This script is built on Ruidi's original subtraction_analysis script
 # %%
@@ -53,25 +53,10 @@ Scale calibration characteristic traces to the shape of higher frequency data.
 More specifically, they are scaled to have the peak position of the higher frequency 1-photon 
 characteristic trace. 
 '''
-cal_chars_pad = pad_trace(cal_chars, pad_length=guess_peak*2)
-# plt.figure('Padded 100kHz characteristic traces')
-# for i in range(len(cal_chars_pad)):
-#     plt.plot(cal_chars_pad[i])
-
-# Find the ratio of peaks, and difference in peak position between 1 photon characteristic traces of calibration data
-# and raw higher frequency data
-# diff_max = max(tar_chars[1]) / max(cal_chars_pad[1])
-diff_arg = np.argmax(cal_chars_pad[1]) - np.argmax(tar_chars[1])
-
-scaled_cal_chars = {}
-for photon_number in range(len(cal_chars_pad)):
-    if photon_number == 0:
-        scaled_cal_chars[photon_number] = cal_chars[photon_number]
-    else:
-        scaled_cal_chars[photon_number] = cal_chars_pad[photon_number][diff_arg:] # * diff_max
+scaled_cal_chars = shift_trace(tar_chars[1], cal_chars)
 
 plt.figure('Scaled calibration characteristic traces')
-for i in scaled_cal_chars.keys():
+for i in range(len(scaled_cal_chars)):
     if i == 0:
         plt.plot(scaled_cal_chars[i], color='black', label='100kHz')
     else:
