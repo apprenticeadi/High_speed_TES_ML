@@ -30,6 +30,7 @@ idealSamples = 5e4 / frequency
 samples = np.floor(idealSamples) * 500  # This should be the length of row of data_600_
 period = int(idealSamples)
 
+
 '''
 Analysis for 100kHz, to find the characteristic shape of the waveform for each photon number
 '''
@@ -56,7 +57,7 @@ plt.ylim(ymin, ymax)
 plot average trace
 '''
 ave_trace = np.mean(data_100, axis=0)
-#
+
 offset = min(ave_trace)
 data_100 -= offset
 
@@ -77,19 +78,21 @@ plt.figure('100 kHz stegosaurus')
 overlaps = ave_trace @ data_100.T
 heights, bins, _ = plt.hist(overlaps, bins=1000, color='aquamarine')
 
-midBins = (bins[1:] + bins[:-1]) / 2
-
+midBins = (bins[1:] + bins[:-1])/2
 multiplier = 0.6
+
 hist_fit = fitting_histogram(heights, midBins, overlaps, multiplier)
 lower_list, upper_list = hist_fit.fitting(fig_name='fit 100kHz')
+
 numPeaks = hist_fit.numPeaks
 
 binning_index, binning_traces_100 = hist_fit.trace_bin(data_100)
 
-# # %%
+# %%
 '''
-plotting the first x traces for each photon number
+plotting the first 50 traces for each photon number
 '''
+
 # for PN in range(numPeaks):
 #     plt.figure(f'{PN} photon traces')
 #     for trace in binning_traces_100[PN][:50]:
@@ -155,10 +158,14 @@ rest of the analysis is to do with the 600kHz
 plt.figure(f'average {frequency}kHz trace')
 ave_trace_600 = np.mean(data_600, axis=0)
 plt.plot(ave_trace_600)
-# plt.show()
-# # %%
+plt.show()
+# %%
+for i in range(1000):
+    plt.plot(data_600[i])
+plt.show()
+# %%
 '''
-Plot first x traces of 600kHz
+fit and bin the 600kHz data
 '''
 num_600_traces = 100
 plt.figure(f'First {num_600_traces} traces of {frequency}kHz')
@@ -174,8 +181,10 @@ plt.figure(f'{frequency}kHz raw stegosaurus')
 overlaps_600 = ave_trace_600 @ data_600.T  # [np.dot(ave_trace_600, amplitude) for amplitude in data_600]
 heights_600, bins_600, _ = plt.hist(overlaps_600, bins=1000)
 
-midBins_600 = (bins_600[1:] + bins_600[:-1]) / 2
+
+midBins_600 = (bins_600[1:] + bins_600[:-1])/2
 multiplier = 0.6
+
 hist_fit = fitting_histogram(heights_600, midBins_600, overlaps_600, multiplier)
 lower_list, upper_list = hist_fit.fitting(fig_name=f'fit {frequency}kHz raw')
 binning_index_600, binning_traces_600 = hist_fit.trace_bin(data_600)
@@ -189,6 +198,7 @@ plt.figure(f'{frequency}kHz 0-photon traces mean and std')
 plt.plot(mean_0, label='mean')
 plt.plot(sig_0, label='std')
 plt.legend()
+
 offset = min(mean_0)
 print(offset)
 
@@ -228,6 +238,8 @@ plt.xlim(0, 500)
 plt.legend()
 # plt.show()
 # %%
+
+
 '''mapping the mean traces from 100kHz data to 600kHz data'''
 # =============================================================================
 # max_mean_500 = [max(mean)  for mean in mean_trace_500]
@@ -236,6 +248,7 @@ plt.legend()
 # mean_trace_100_pad = [ np.insert(mean,0,list(mean[-40:]))  for mean in mean_trace_100]
 # argmax_mean_100 = [np.argmax(mean)  for mean in mean_trace_100_pad]
 # =============================================================================
+
 
 mean_trace_100_pad = {}
 for photon_number in mean_trace_100.keys():
@@ -281,10 +294,12 @@ plt.title('average trace for each photon numbers')
 plt.legend()
 # plt.show()
 # #%%
+
 '''
 tail subtraction
 '''
 subtract=0
+
 mean_max = [max(mean)  for mean in mean_trace_100_pad.values()]
 mean_argmax = [np.argmax(mean)  for mean in mean_trace_100_pad.values()]
 
@@ -295,6 +310,7 @@ def mean_trace_subtraction(index,subtract):
     diff = [  np.mean( abs(trace - mean_trace_period[i]) )   for i in range(len(mean_scaled_100))]
 
     #TODO: it's not clear to me that this is a valid way of identifying the photon number of the trace
+
     PN = np.argmin(diff)  # photon number correspond to this trace
     if PN ==0:
         subtract = 0
@@ -305,9 +321,9 @@ def mean_trace_subtraction(index,subtract):
 
         offset_diff = mean_argmax[PN] - trace_argmax
 
+
         fit = mean_trace_100_pad[PN][ offset_diff :] / mean_max[PN] * trace_max   # fit the tail of the corresponding 100kHz mean trace , but rescaled to have the same peak position and height
         subtract = fit[period:2*period]
-
 
 # =============================================================================
     if index <5:
@@ -321,6 +337,7 @@ def mean_trace_subtraction(index,subtract):
         plt.legend()
         plt.show()
 # =============================================================================
+
     return trace,subtract
 
 #number_store=[0]
@@ -330,17 +347,22 @@ for i in range(len(data_shifted)):
     subtracted_trace.append(trace)
 #%%
 ave_subtracted = np.mean(subtracted_trace,axis=0)
+
 plt.figure('Mean trace after tail subtraction')
+
 plt.plot(ave_subtracted)
 plt.ylabel('voltage')
 plt.xlabel('time (in sample)')
 plt.title('mean trace after tail subtraction')
+
 # plt.show()
 #%%
 plt.figure('histogram after subtraction')
+
 overlap = [ np.dot(ave_subtracted,amplitude)  for amplitude in subtracted_trace]
 plt.hist(overlap,bins=1000)
 plt.ylabel('frequencies')
 plt.xlabel('overlap')
 plt.title('historgams after subtraction')
+
 # plt.show()

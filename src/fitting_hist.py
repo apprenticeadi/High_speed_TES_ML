@@ -26,22 +26,22 @@ class fitting_histogram:
     def finding_peaks(self, plot=True):
         '''
         use data smoothing method to find the peak positions of each bins of the histogram, 
-        will be useful for fitting the histogram
+        will be useful for fitting the historgam
         '''
         kernel_size = 10
         kernel = np.ones(kernel_size) / kernel_size
         data_convolved_10 = np.convolve(self.heights, kernel, mode='same')
 
+        plt.plot(self.midBins, data_convolved_10)
         peaks, _ = find_peaks(data_convolved_10, height=2,
                               distance=30, prominence=1, width=10)
         amplitudes = data_convolved_10[peaks]
 
         # heights,bins,_ = plt.hist(overlap_list,bins=1000,range=(-0.1e10,1.5e10))
         if plot == True:
-            plt.plot(self.midBins, data_convolved_10)
             plt.plot(self.midBins[peaks], amplitudes, "x")
-            plt.plot(self.midBins, np.zeros_like(data_convolved_10), "--", color="gray")
-        # plt.show()
+            plt.plot(np.zeros_like(data_convolved_10), "--", color="gray")
+        plt.show()
         return peaks, amplitudes
 
     def func(self, x, *params):
@@ -88,6 +88,7 @@ class fitting_histogram:
         x = np.linspace(min(self.midBins), max(self.midBins), 10000)
         fit = self.func(x, *sorted_popt)
 
+
         if plot:
             plt.figure(fig_name, figsize=(8, 5))
             plt.hist(self.overlap, bins=1000, color='aquamarine')
@@ -95,9 +96,11 @@ class fitting_histogram:
             plt.xlabel('overlap', size=14)
             plt.ylabel('entries', size=14)
 
+
         upper_list = []
         lower_list = []
         for i in range(0, self.numPeaks):
+
             mu = sorted_popt[i * 3]  # position of peak
             amplitude = sorted_popt[i * 3 + 1]
             width = sorted_popt[i * 3 + 2] * self.multiplier
@@ -137,6 +140,7 @@ class fitting_histogram:
 
             binning_index[photon_number] = indices
             binning_traces[photon_number] = traces_to_bin
+
 
         return binning_index, binning_traces
 
