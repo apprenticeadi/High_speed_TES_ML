@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import itertools
 
 
 def pad_trace(trace, pad_length=40):
@@ -86,3 +87,18 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
         # =============================================================================
 
     return subtracted_data, tails
+
+
+def composite_char_traces(char_traces, period):
+    max_pn = len(char_traces) - 1
+
+    composite_traces = np.zeros(((max_pn+1)**2, period))
+    pn_pairs = np.zeros(((max_pn+1)**2, 2))
+    id = 0
+    for (i,j) in itertools.product(range(max_pn+1), range(max_pn+1)):
+        composite_traces[id] = char_traces[i, :period] + char_traces[j, period: 2*period]
+        pn_pairs[id] = np.asarray([i,j])
+
+        id += 1
+
+    return pn_pairs, composite_traces
