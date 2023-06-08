@@ -42,7 +42,6 @@ class Traces:
         return self.period // 3
 
     def plot_traces(self, num_traces, x_max=None, fig_name = '', plt_title=''):
-
         if fig_name == '':
             fig_name = f'{self.freq_str} first {num_traces} traces'
 
@@ -60,6 +59,28 @@ class Traces:
         if plt_title == '':
             plt_title = f'First {num_traces} traces of {self.freq_str}'
         plt.title(plt_title)
+
+    def plot_trace_trains(self, num_trains, num_traces, x_max=None, fig_name='', plt_title=''):
+        if fig_name == '':
+            fig_name = f'{self.freq_str} first {num_trains} trace trains'
+
+        if x_max == None:
+            x_max = self.period * num_traces
+
+        plt.figure(fig_name)
+        for i in range(num_trains):
+            train = self.data[i*num_traces: (i+1)*num_traces, :].flatten()
+            plt.plot(train)
+        plt.ylabel('voltage')
+        plt.xlabel('time (in sample)')
+        plt.xlim(0, x_max)
+        plt.ylim(self.ymin, self.ymax)
+
+        if plt_title == '':
+            plt_title = f'First {num_trains} trace trains of {self.freq_str}'
+        plt.title(plt_title)
+
+
 
     def average_trace(self, plot=False, fig_name='', plt_title=''):
         """
@@ -83,7 +104,7 @@ class Traces:
 
         return ave_trace
 
-    def overlaps(self):
+    def inner_products(self):
 
         ave_trace = self.average_trace()
         overlaps = ave_trace @ self.data.T
@@ -91,7 +112,7 @@ class Traces:
         return overlaps
 
     def raw_histogram(self, plot=True, fig_name='', plt_title=''):
-        overlaps = self.overlaps()
+        overlaps = self.inner_products()
 
         if plot:
 
@@ -191,7 +212,19 @@ class Traces:
 
         return offset, data_shifted
 
+    def overlap_to_high_freq(self, high_frequency, num_traces=0):
 
+        if high_frequency <= self.frequency:
+            raise ValueError(f'New frequency {high_frequency}kHz is lower than current frequency {self.frequency}')
 
+        current_data = self.get_data()
+        if num_traces==0:
+            num_traces = current_data.shape[0]
 
+        new_period = int(5e4 / high_frequency)
+        data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
+        for i in range(num_traces):
+            data_overlapped[i*new_period: i*new_period + self.period] = current_data[i, :]
+
+        return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
 
