@@ -35,6 +35,12 @@ class Traces:
     def set_num_bins(self, num_bins):
         self.num_bins = num_bins
 
+    def get_data(self):
+        return copy.deepcopy(self.data)
+
+    def guess_peak(self):
+        return self.period // 3
+
     def plot_traces(self, num_traces, x_max=None, fig_name = '', plt_title=''):
 
         if fig_name == '':
@@ -164,14 +170,19 @@ class Traces:
         trace.
         3. In his code for 600kHz, he subtracts the minimum value of the average 0-photon trace from every trace.
 
-        Here I'm going to try a slightly different 4-th method: subtract the average value of the average 0-photon trace
+        I think one should instead subtract the average value of the average 0-photon trace
         from every trace. The reasoning is, the whole point of offset subtraction is such that 0 photon should on
         average incur 0 voltage.
         '''
 
-        binning_index_600, binning_traces_600 = self.bin_traces()
+        # if self.frequency == 100:
+        #     offset = np.min(self.average_trace())
+        # else:
+        #     binning_index, binning_traces = self.bin_traces()
+        #     offset = np.min(np.mean(binning_traces[0], axis=0))  # voltage mean value of zero photon traces
 
-        offset = np.mean(binning_traces_600[0])  # voltage mean value of zero photon traces
+        binning_index, binning_traces = self.bin_traces()
+        offset = np.mean(np.mean(binning_traces[0], axis=0))  # voltage mean value of zero photon traces
 
         data_shifted = self.data - offset
         self.data = data_shifted
@@ -179,8 +190,6 @@ class Traces:
         self.ymin = self.ymin - offset
 
         return offset, data_shifted
-
-
 
 
 
