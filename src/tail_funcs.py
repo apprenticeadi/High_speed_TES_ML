@@ -4,19 +4,30 @@ import matplotlib.pyplot as plt
 
 def pad_trace(trace, pad_length=40):
     if len(trace.shape) == 1:
-        pad_trace = np.insert(trace, 0, trace[-pad_length:])
+        padded = np.insert(trace, 0, trace[-pad_length:])
     elif len(trace.shape) == 2:
-        pad_trace = np.insert(trace, [0], trace[:, -pad_length:], axis=1)
+        padded = np.insert(trace, [0], trace[:, -pad_length:], axis=1)
     else:
         raise ValueError('Trace can only be 1d or 2d')
-    return pad_trace
+    return padded
+
+
+def shift_trace(target_trace, traces, pad_length=40, id = 1):
+    padded_traces = pad_trace(traces, pad_length=pad_length)
+    if len(traces.shape) == 1:
+        diff_arg = np.argmax(padded_traces) - np.argmax(target_trace)
+        return padded_traces[diff_arg:]
+
+    else:
+        diff_arg = np.argmax(padded_traces[id]) - np.argmax(target_trace)
+        return padded_traces[:, diff_arg:]
 
 
 def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.arange(5)):
     """
     Performs tail subtraction on the data array.
     :param data: Each row is a TES raw trace.
-    :param char_traces: Dictionary for the characteristic trace for each photon number.
+    :param char_traces: Array the characteristic trace for each photon number.
 
     :return: tail subtracted data
     """
@@ -34,7 +45,7 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
         # Identify the photon number of the tail-subtracted trace
         # photon number identified by the lowest mean absolute difference between trace and char trace
         # TODO: this is probably not the best way to do it.
-        diff = [np.mean(np.abs(trace - c_t[:period])) for c_t in char_traces.values()]
+        diff = np.mean(np.abs(trace - char_traces[:, :period]), axis=1)
         PN = np.argmin(diff)
         char_trace = char_traces[PN]
         char_trace_pad = pad_trace(char_trace, pad_length=guess_peak * 2)
