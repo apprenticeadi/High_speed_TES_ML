@@ -8,6 +8,7 @@ from src.traces import Traces
 multiplier = 0.6
 num_bins = 1000
 guess_peak = 30
+pca_components = 1
 
 '''Calibration data'''
 data_100 = read_raw_data(100)
@@ -23,12 +24,13 @@ frequency = 600
 data_high = read_high_freq_data(frequency)  # unshifted
 
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
-offset_target, data_high_shifted = targetTraces.subtract_offset()  # shift the data such that the characteristic 0 photon trace has mean 0
+offset_target, _ = targetTraces.subtract_offset()  # shift the data such that the characteristic 0 photon trace has mean 0
+data_cleaned = targetTraces.pca_cleanup(num_components=pca_components)
 freq_str = targetTraces.freq_str
 tar_ave_trace = targetTraces.average_trace(plot=True)
 
 '''shift calibration characteristic traces to have the same peak position as the target average trace'''
-shifted_cal_chars = shift_trace(tar_ave_trace, cal_chars, id=1)
+shifted_cal_chars = shift_trace(tar_ave_trace, cal_chars, pad_length=guess_peak*2, id=1)
 
 plt.figure('Shifted char traces')
 plt.plot(tar_ave_trace, color='red', label=f'{freq_str} overall average trace')
@@ -53,7 +55,7 @@ for i, pn_pair in enumerate(pn_pairs):
 test_num = 10
 closest_k = 5
 for i in range(test_num):
-    trace = data_high_shifted[i]
+    trace = data_cleaned[i]
     plt.figure(f'{i}-th trace')
     plt.plot(trace, label='raw data')
 
@@ -69,3 +71,10 @@ for i in range(test_num):
     plt.xlim([0, targetTraces.period])
 
 # TODO: How to identify photon number, and how to benchmark uncertainty? Just like in stegosaurus?
+# Here's a thought: Identify the photon number of each trace, and keep record of the diff=mean(abs(difference)). In the
+# end, plot a histogram of this diff. The closer this histogram is concentrated to 0 the better. And compare this with
+# dot product stegosaurus method.
+
+
+
+
