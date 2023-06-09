@@ -93,11 +93,12 @@ class TraceUtils:
         total_comps = (max_pn + 1) ** comp_num
 
         comp_traces = np.zeros((total_comps, period))
-        comp_pns = np.zeros((total_comps, comp_num))
+        comp_pns = np.zeros((total_comps, comp_num), dtype=int)
 
         for id in range(total_comps):
             for digit in range(comp_num):
-                n_i = (id % (max_pn ** (digit + 1))) // (max_pn ** digit)
+                n_i = (id % ((max_pn+1) ** (digit + 1))) // ( (max_pn+1) ** digit)
+
                 comp_traces[id] += char_traces[n_i, digit * period: (digit + 1) * period]
                 comp_pns[id, digit] = n_i
 
