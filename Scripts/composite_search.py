@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
+from src.composite_funcs import identify_by_area_diff
 
 multiplier = 0.6
 num_bins = 1000
 guess_peak = 30
-pca_components = 2
-composite_num = 4
+pca_components = 1  # it's really doubtful if pca helps at all
+composite_num = 3
 
 
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
@@ -17,6 +18,9 @@ calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, 
 
 '''Shift data such that 0-photon trace has mean 0'''
 offset_cal, _ = calibrationTraces.subtract_offset()
+
+'''PCA cleanup calibration data'''
+# calibrationTraces.pca_cleanup(num_components=pca_components)
 
 '''Find characteristic trace for each photon number'''
 cal_chars = calibrationTraces.characteristic_traces_pn(plot=False)  # find characteristic trace for each photon number
@@ -32,7 +36,7 @@ freq_str = targetTraces.freq_str
 offset_target, _ = targetTraces.subtract_offset()
 
 '''PCA cleanup'''
-_ = targetTraces.pca_cleanup(num_components=pca_components)
+# _ = targetTraces.pca_cleanup(num_components=pca_components)
 
 # <<<<<<<<<<<<<<<<<<< Calibration characteristic traces  >>>>>>>>>>>>>>>>>>
 '''Shift calibration characteristic traces'''
@@ -51,22 +55,22 @@ plt.ylim([targetTraces.ymin, targetTraces.ymax])
 plt.legend()
 
 '''Find the composite characteristic traces'''
-pn_pairs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
+pn_tuples, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
 
 plt.figure(f'{composite_num}-composite char traces')
-for i, pn_pair in enumerate(pn_pairs):
-    if np.max(pn_pair) <= 4:
-        plt.plot(comp_cal_chars[i], label=f'{pn_pair}')
+for i, pn_tuple in enumerate(pn_tuples):
+    if np.max(pn_tuple) <= 4:
+        plt.plot(comp_cal_chars[i], label=f'{pn_tuple}')
 
 # <<<<<<<<<<<<<<<<<<< Perform composite search  >>>>>>>>>>>>>>>>>>
 target_data = targetTraces.get_data()
 
 '''Test and plot the method'''
-test_num = 10
-initial_trace = 1000
-closest_k = 5
-fig = plt.figure("Identify trace number by composite characteristic traces", figsize=(20, 16))
-axgrid = fig.add_gridspec(10, 8)
+test_num = 8
+initial_trace = 3000
+closest_k = 4  # half the number of composite char traces that will be identified
+fig = plt.figure("Identify trace number by composite characteristic traces", figsize=(16, ((test_num+1) // 2)*3))
+axgrid = fig.add_gridspec( ((test_num+1) // 2) *2, 8)
 for i in range(test_num):
     trace = target_data[initial_trace+i]
 
@@ -74,14 +78,12 @@ for i in range(test_num):
     col_num = i % 2
     ax = fig.add_subplot(axgrid[row_num*2 : (row_num+1)*2, col_num*4 : (col_num+1)*4])
 
-    ax.plot(trace, label='raw data')
+    ax.plot(trace, '--', color='black', label='raw data')
 
-    diff = np.mean(np.abs(trace - comp_cal_chars), axis=1)
-    idx_sort = np.argpartition(diff, closest_k)
+    idx_sort, diffs = identify_by_area_diff(trace, comp_cal_chars, abs=False, k=closest_k)
 
-
-    for idx in idx_sort[:closest_k]:
-        plt.plot(comp_cal_chars[idx], label=f'{pn_pairs[idx]}')
+    for idx in idx_sort:
+        plt.plot(comp_cal_chars[idx], label=f'{pn_tuples[idx]}')
 
     ax.legend(loc=1, fontsize='x-small')
     ax.set_ylim([targetTraces.ymin, targetTraces.ymax])
