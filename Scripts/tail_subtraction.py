@@ -22,10 +22,10 @@ offset_cal, _ = calibrationTraces.subtract_offset()
 Here I also test tail subtraction method on artificially overlapped higher frequency data. It seems that the method 
 actually makes the stegosaurus worse. 
 '''
-frequency = 600
-data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
+frequency = 700
+# data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
 
-# data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
+data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 offset_target, _ = targetTraces.subtract_offset()  # shift the data such that the characteristic 0 photon trace has mean 0
 freq_str = targetTraces.freq_str
@@ -41,8 +41,8 @@ cal_chars = calibrationTraces.characteristic_traces_pn(plot=True)  # find charac
 '''
 Analysis for raw higher frequency data
 '''
-targetTraces.plot_traces(10)
-targetTraces.plot_trace_trains(num_trains=1, num_traces=10)
+# targetTraces.plot_traces(10)
+# targetTraces.plot_trace_trains(num_trains=1, num_traces=10)
 # The hope is the fit on raw data is accurate for the 0 and 1 photon.
 tar_hist_fit = targetTraces.fit_histogram(plot=True)
 tar_chars = targetTraces.characteristic_traces_pn(plot=False)
@@ -55,30 +55,36 @@ characteristic trace.
 '''
 scaled_cal_chars = TraceUtils.shift_trace(tar_chars[1], cal_chars)
 
-plt.figure('Scaled calibration characteristic traces')
-for i in range(len(scaled_cal_chars)):
-    if i == 0:
-        plt.plot(scaled_cal_chars[i], color='black', label='100kHz')
-    else:
-        plt.plot(scaled_cal_chars[i], color='black')
-for i in range(len(tar_chars)):
-    if i==0:
-        plt.plot(tar_chars[i], color='red', label=f'{frequency}kHz')
-    else:
-        plt.plot(tar_chars[i],color='red')
-plt.ylabel('voltage')
-plt.xlabel('time (in sample)')
-plt.xlim([0, 100])
-plt.ylim([-3000, 35000])
-plt.title('average trace for each photon numbers')
-plt.legend()
+# plt.figure('Scaled calibration characteristic traces')
+# for i in range(len(scaled_cal_chars)):
+#     if i == 0:
+#         plt.plot(scaled_cal_chars[i], color='black', label='100kHz')
+#     else:
+#         plt.plot(scaled_cal_chars[i], color='black')
+# for i in range(len(tar_chars)):
+#     if i==0:
+#         plt.plot(tar_chars[i], color='red', label=f'{frequency}kHz')
+#     else:
+#         plt.plot(tar_chars[i],color='red')
+# plt.ylabel('voltage')
+# plt.xlabel('time (in sample)')
+# plt.xlim([0, 100])
+# plt.ylim([-3000, 35000])
+# plt.title('average trace for each photon numbers')
+# plt.legend()
 
 '''
 Perform tail subtraction
 '''
 shifted_data = targetTraces.get_data()
-subtracted_data, _ = subtract_tails(shifted_data, scaled_cal_chars, guess_peak=guess_peak, plot=True)
+subtracted_data, _ = subtract_tails(shifted_data, scaled_cal_chars, guess_peak=guess_peak, plot=False)
 
-subTraces = Traces(frequency=frequency, data=subtracted_data, multiplier=multiplier, num_bins=num_bins)
+subTraces = Traces(frequency=frequency, data=subtracted_data, multiplier=1.2, num_bins=num_bins)
 # subTraces.plot_traces(50, fig_name='First 50 of subtracted traces')
-sub_histfit = subTraces.fit_histogram(plot=True, fig_name='Histogram of subtracted traces')
+# sub_histfit = subTraces.fit_histogram(plot=True, fig_name='Histogram of subtracted traces')
+
+binning_index, binning_traces = subTraces.bin_traces(plot=True, fig_name='Histogram of subtracted traces')
+max_pn_steg = max(binning_index.keys())
+num_trace_per_pn = [len(binning_index[pn]) for pn in range(max_pn_steg + 1)]
+plt.figure('Bar plot of photon numbers after tail subtraction')
+plt.bar(list(range(max_pn_steg+1)), num_trace_per_pn)
