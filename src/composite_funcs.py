@@ -70,39 +70,42 @@ def search_smallest_diff(target_data, comp_char_traces, pn_combs):
 
 #TODO: finish the code below
 
-# def search_maj_voting(target_data, comp_char_traces, pn_combs, k=2):
-#     """
-#     Determine the photon number of each trace by identifying the 2*k closest composite characteristic trace, and perform
-#     majority voting. Ties are settled by area difference.
-#     """
-#     pns = np.zeros(len(target_data), dtype=int)
-#     errors = np.zeros(len(target_data), dtype=float)
-#
-#     for i in range(len(target_data)):
-#         idx_sort, diffs = identify_by_area_diff(target_data[i], comp_char_traces, abs=True, k=k)
-#
-#         # The 2k closest photon number combinations: [n0, n1, n2]. n0 is pn of this trace, n1 is previous trace, and n2
-#         # is the trace before previous.
-#         comb_candidates = pn_combs[idx_sort]
-#
-#         '''First perform majority voting on the main body'''
-#         body_candidates = voting(comb_candidates, component=0)
-#         # Single winner in majority voting
-#         if len(body_candidates) == 1:
-#             winner = body_candidates[0]
-#             winner_idx = np.argwhere(comb_candidates[:, 0]==winner).flatten()
-#
-#             pns[i] = winner
-#             errors[i] = min(diffs[winner_idx], key=abs)
-#
-#         # A tie in main body candidates, then resolve tie by lowest difference
-#         else:
-#
-#             for candidate in body_candidates:
-#                 candidates_idx = np.argwhere(comb_candidates[:,1]==candidate).flatten()
-#
-#
-#
-#
-#
+def search_maj_voting(target_data, comp_char_traces, pn_combs, k=4):
+    """
+    Determine the photon number of each trace by identifying the 2*k closest composite characteristic trace, and perform
+    majority voting. Ties are settled by area difference.
+    """
+    pns = np.zeros(len(target_data), dtype=int)
+    errors = np.zeros(len(target_data), dtype=float)
+
+    for i in range(len(target_data)):
+        idx_sort, diffs = identify_by_area_diff(target_data[i], comp_char_traces, abs=True, k=k)
+
+        # The 2k closest photon number combinations: [n0, n1, n2]. n0 is pn of this trace, n1 is previous trace, and n2
+        # is the trace before previous.
+        comb_candidates = pn_combs[idx_sort]
+
+        '''First perform majority voting on the main body'''
+        body_candidates = voting(comb_candidates, component=0)
+        # Single winner in majority voting
+        if len(body_candidates) == 1:
+            winner = body_candidates[0]
+            candidates_idx = np.argwhere(comb_candidates[:, 0]==winner).flatten()
+
+            pns[i] = winner
+            errors[i] = min(diffs[candidates_idx], key=abs)
+
+        # A tie in main body candidates, then resolve tie by lowest difference
+        else:
+            diff_tie_breaker = np.zeros(len(body_candidates))
+            for i_can, candidate in enumerate(body_candidates):
+                candidates_idx = np.argwhere(comb_candidates[:,0]==candidate).flatten()
+                diff_tie_breaker[i_can] = min(diffs[candidates_idx], key=abs)
+
+            winner_idx = np.argmin(np.abs(diff_tie_breaker))
+
+            pns[i] = body_candidates[winner_idx]
+            errors[i] = diff_tie_breaker[winner_idx]
+
+    return pns, errors
 
