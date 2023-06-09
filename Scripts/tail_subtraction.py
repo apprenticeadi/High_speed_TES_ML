@@ -22,7 +22,7 @@ offset_cal, _ = calibrationTraces.subtract_offset()
 Here I also test tail subtraction method on artificially overlapped higher frequency data. It seems that the method 
 actually makes the stegosaurus worse. 
 '''
-frequency = 700
+frequency = 900
 # data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
 
 data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
