@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
-from src.composite_funcs import identify_by_area_diff
+from src.composite_funcs import identify_by_area_diff, search_smallest_diff
 
 multiplier = 0.6
 num_bins = 1000
@@ -24,7 +24,7 @@ offset_cal, _ = calibrationTraces.subtract_offset()
 
 '''Find characteristic trace for each photon number'''
 cal_chars = calibrationTraces.characteristic_traces_pn(plot=False)  # find characteristic trace for each photon number
-
+max_photon_number = len(cal_chars) - 1
 
 # <<<<<<<<<<<<<<<<<<< Target data  >>>>>>>>>>>>>>>>>>
 frequency = 600
@@ -55,19 +55,19 @@ plt.ylim([targetTraces.ymin, targetTraces.ymax])
 plt.legend()
 
 '''Find the composite characteristic traces'''
-pn_tuples, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
+pn_combs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
 
 plt.figure(f'{composite_num}-composite char traces')
-for i, pn_tuple in enumerate(pn_tuples):
+for i, pn_tuple in enumerate(pn_combs):
     if np.max(pn_tuple) <= 4:
         plt.plot(comp_cal_chars[i], label=f'{pn_tuple}')
 
-# <<<<<<<<<<<<<<<<<<< Perform composite search  >>>>>>>>>>>>>>>>>>
+# <<<<<<<<<<<<<<<<<<< Test the composite search method  >>>>>>>>>>>>>>>>>>
 target_data = targetTraces.get_data()
 
-'''Test and plot the method'''
+'''For some traces, find and plot the closest composite characteristic traces'''
 test_num = 8
-initial_trace = 3000
+initial_trace = 0
 closest_k = 4  # half the number of composite char traces that will be identified
 fig = plt.figure("Identify trace number by composite characteristic traces", figsize=(16, ((test_num+1) // 2)*3))
 axgrid = fig.add_gridspec( ((test_num+1) // 2) *2, 8)
@@ -83,7 +83,7 @@ for i in range(test_num):
     idx_sort, diffs = identify_by_area_diff(trace, comp_cal_chars, abs=False, k=closest_k)
 
     for idx in idx_sort:
-        plt.plot(comp_cal_chars[idx], label=f'{pn_tuples[idx]}')
+        plt.plot(comp_cal_chars[idx], label=f'{pn_combs[idx]}')
 
     ax.legend(loc=1, fontsize='x-small')
     ax.set_ylim([targetTraces.ymin, targetTraces.ymax])
@@ -98,11 +98,12 @@ for i in range(test_num):
         ax.set_yticks([])
 
 
-# TODO: How to identify photon number, and how to benchmark uncertainty? Just like in stegosaurus?
-# Here's a thought: Identify the photon number of each trace, and keep record of the diff=mean(abs(difference)). In the
-# end, plot a histogram of this diff. The closer this histogram is concentrated to 0 the better. And compare this with
-# dot product stegosaurus method.
+# <<<<<<<<<<<<<<<<<<< Run the composite search method  >>>>>>>>>>>>>>>>>>
+target_data = targetTraces.get_data()
 
+'''Run a simple method: identify each trace with the closest comp char trace by smallest area diff'''
+pns, errors = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
 
-
+plt.figure('Photon number histogram')
+plt.hist(pns, bins= np.array(range(max_photon_number + 2)) - 0.5)
 
