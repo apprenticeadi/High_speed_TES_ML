@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.utils import DataUtils, TraceUtils
-
 from src.traces import Traces
+from src.method_funcs import identify_char
 
 multiplier = 0.6
 num_bins = 1000
 guess_peak = 30
 pca_components = 2
-composite_num = 3
+composite_num = 4
 
 
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
@@ -77,11 +77,9 @@ for i in range(test_num):
 
     ax.plot(trace, label='raw data')
 
-    diff = np.mean(np.abs(trace - comp_cal_chars), axis=1)
-    idx_sort = np.argpartition(diff, closest_k)
+    closest_idxs, closest_diffs = identify_char(trace, comp_cal_chars, k=closest_k)
 
-
-    for idx in idx_sort[:closest_k]:
+    for idx in closest_idxs:
         plt.plot(comp_cal_chars[idx], label=f'{pn_pairs[idx]}')
 
     ax.legend(loc=1, fontsize='x-small')
