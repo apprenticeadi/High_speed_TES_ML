@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
-from src.composite_funcs import identify_by_area_diff, search_smallest_diff
+from src.composite_funcs import identify_by_area_diff, search_smallest_diff, search_maj_voting
 
-multiplier = 0.6
+multiplier = 1.2
 num_bins = 1000
 guess_peak = 30
 pca_components = 1  # it's really doubtful if pca helps at all
-composite_num = 3
+composite_num = 4
 
 
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
@@ -27,8 +27,9 @@ cal_chars = calibrationTraces.characteristic_traces_pn(plot=False)  # find chara
 max_photon_number = len(cal_chars) - 1
 
 # <<<<<<<<<<<<<<<<<<< Target data  >>>>>>>>>>>>>>>>>>
-frequency = 600
-data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
+frequency = 900
+data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
+# data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 freq_str = targetTraces.freq_str
 
@@ -104,6 +105,21 @@ target_data = targetTraces.get_data()
 '''Run a simple method: identify each trace with the closest comp char trace by smallest area diff'''
 pns, errors = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
 
-plt.figure('Photon number histogram')
-plt.hist(pns, bins= np.array(range(max_photon_number + 2)) - 0.5)
+plt.figure('smallest area difference')
+plt.hist(pns, bins= np.array(range(max_photon_number + 2)) - 0.5, alpha=0.5)
 
+
+'''Run a simple majority voting method, where ties are settled by smallest area difference'''
+pns2, errors2 = search_maj_voting(target_data, comp_cal_chars, pn_combs, k=4)
+
+plt.figure('majority voting')
+plt.hist(pns2, bins= np.array(range(max_photon_number + 2)) - 0.5, alpha=0.5)
+
+
+# <<<<<<<<<<<<<<<<<<< Compare with simple inner product stegosaurus method  >>>>>>>>>>>>>>>>>>
+'''Raw stegosaurus'''
+calibrationTraces.fit_histogram(plot=True)
+calibrationTraces.pn_bar_plot()
+
+targetTraces.fit_histogram(plot=True)
+targetTraces.pn_bar_plot()
