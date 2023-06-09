@@ -89,16 +89,18 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
     return subtracted_data, tails
 
 
-def composite_char_traces(char_traces, period):
+def composite_char_traces(char_traces, period, comp_num=2):
     max_pn = len(char_traces) - 1
 
-    composite_traces = np.zeros(((max_pn+1)**2, period))
-    pn_pairs = np.zeros(((max_pn+1)**2, 2))
-    id = 0
-    for (i,j) in itertools.product(range(max_pn+1), range(max_pn+1)):
-        composite_traces[id] = char_traces[i, :period] + char_traces[j, period: 2*period]
-        pn_pairs[id] = np.asarray([i,j])
+    total_comps = (max_pn+1) ** comp_num
 
-        id += 1
+    comp_traces = np.zeros((total_comps, period))
+    comp_pns = np.zeros((total_comps, comp_num))
 
-    return pn_pairs, composite_traces
+    for id in range(total_comps):
+        for digit in range(comp_num):
+            n_i = (id % (max_pn**(digit+1)) ) // (max_pn**digit)
+            comp_traces[id] += char_traces[n_i, digit * period : (digit+1) * period]
+            comp_pns[id, digit] = n_i
+
+    return comp_pns, comp_traces
