@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from src.utils import TraceUtils
 
 
-def identify_by_area_diff(target_trace, comp_char_traces, abs=False, k=4):
+def identify_by_area_diff(target_trace, comp_char_traces, abs=True, k=4):
     """
     Identify the 2*k characteristic traces that are closest to the target trace.
     Closeness defined as sum of area difference.
@@ -12,7 +12,7 @@ def identify_by_area_diff(target_trace, comp_char_traces, abs=False, k=4):
     If abs is False, then k+1//2 closest char traces with negative sum of area difference, and k+1//2 with positive are identified
     """
     period = len(target_trace)
-    diffs = np.sum(target_trace - comp_char_traces[:, :period], axis=1)
+    diffs = np.sum(np.abs(target_trace - comp_char_traces[:, :period]), axis=1)
 
     if abs:
         idx_sort = np.argpartition(np.abs(diffs), k)[:k]

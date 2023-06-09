@@ -58,10 +58,10 @@ plt.legend()
 '''Find the composite characteristic traces'''
 pn_combs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
 
-plt.figure(f'{composite_num}-composite char traces')
-for i, pn_tuple in enumerate(pn_combs):
-    if np.max(pn_tuple) <= 4:
-        plt.plot(comp_cal_chars[i], label=f'{pn_tuple}')
+# plt.figure(f'{composite_num}-composite char traces')
+# for i, pn_tuple in enumerate(pn_combs):
+#     if np.max(pn_tuple) <= 3:
+#         plt.plot(comp_cal_chars[i], label=f'{pn_tuple}')
 
 # <<<<<<<<<<<<<<<<<<< Test the composite search method  >>>>>>>>>>>>>>>>>>
 target_data = targetTraces.get_data()
@@ -81,7 +81,7 @@ for i in range(test_num):
 
     ax.plot(trace, '--', color='black', label='raw data')
 
-    idx_sort, diffs = identify_by_area_diff(trace, comp_cal_chars, abs=False, k=closest_k)
+    idx_sort, diffs = identify_by_area_diff(trace, comp_cal_chars, abs=True, k=closest_k)
 
     for idx in idx_sort:
         plt.plot(comp_cal_chars[idx], label=f'{pn_combs[idx]}')
@@ -108,13 +108,15 @@ pns, errors = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
 plt.figure('smallest area difference')
 plt.hist(pns, bins= np.array(range(max_photon_number + 2)) - 0.5, alpha=0.5)
 
-
 '''Run a simple majority voting method, where ties are settled by smallest area difference'''
 pns2, errors2 = search_maj_voting(target_data, comp_cal_chars, pn_combs, k=4)
 
 plt.figure('majority voting')
 plt.hist(pns2, bins= np.array(range(max_photon_number + 2)) - 0.5, alpha=0.5)
 
+plt.figure('majority voting bar')
+plt.bar(list(range(max_photon_number + 1)), np.bincount(pns2))
+plt.ylim([0, 6000])
 
 # <<<<<<<<<<<<<<<<<<< Compare with simple inner product stegosaurus method  >>>>>>>>>>>>>>>>>>
 '''Raw stegosaurus'''
