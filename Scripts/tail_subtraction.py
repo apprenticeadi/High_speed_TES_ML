@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
-from src.method_funcs import subtract_tails
+from src.tail_funcs import subtract_tails
 
 # This script is built on Ruidi's original subtraction_analysis script
 # %%

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
-from src.method_funcs import identify_char
 
 multiplier = 0.6
 num_bins = 1000
@@ -77,9 +76,11 @@ for i in range(test_num):
 
     ax.plot(trace, label='raw data')
 
-    closest_idxs, closest_diffs = identify_char(trace, comp_cal_chars, k=closest_k)
+    diff = np.mean(np.abs(trace - comp_cal_chars), axis=1)
+    idx_sort = np.argpartition(diff, closest_k)
 
-    for idx in closest_idxs:
+
+    for idx in idx_sort[:closest_k]:
         plt.plot(comp_cal_chars[idx], label=f'{pn_pairs[idx]}')
 
     ax.legend(loc=1, fontsize='x-small')

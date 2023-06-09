@@ -5,19 +5,6 @@ import itertools
 from src.utils import TraceUtils
 
 
-def identify_char(target_trace, char_traces, k = 1):
-    '''
-    Identify the k closest characteristic traces to the target_trace
-    '''
-
-    period = len(target_trace)
-
-    diff = np.sum(target_trace - char_traces[:, :period], axis=1)
-    idx_sort = np.argpartition(np.abs(diff), k)
-
-    return idx_sort[:k], diff[idx_sort[:k]]
-
-
 def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.arange(5)):
     """
     Performs tail subtraction on the data array.
@@ -39,8 +26,8 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
 
         # Identify the photon number of the tail-subtracted trace
         # photon number identified by the lowest mean absolute difference between trace and char trace
-        idx_sort, _ = identify_char(trace, char_traces, k=1)
-        PN = idx_sort[0]
+        diff = np.mean(np.abs(trace - char_traces[:, :period]), axis=1)
+        PN = np.argmin(diff)
         char_trace = char_traces[PN]
         char_trace_pad = TraceUtils.pad_trace(char_trace, pad_length=guess_peak * 2)
         if PN == 0:
