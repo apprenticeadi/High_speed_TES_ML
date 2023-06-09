@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.utils import read_high_freq_data, read_raw_data
-from src.tail_funcs import shift_trace, pad_trace, composite_char_traces
+from src.utils import DataUtils, TraceUtils
+
 from src.traces import Traces
 
 multiplier = 0.6
@@ -13,7 +13,7 @@ composite_num = 3
 
 
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
-data_100 = read_raw_data(100)
+data_100 = DataUtils.read_raw_data(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
 '''Shift data such that 0-photon trace has mean 0'''
@@ -25,7 +25,7 @@ cal_chars = calibrationTraces.characteristic_traces_pn(plot=False)  # find chara
 
 # <<<<<<<<<<<<<<<<<<< Target data  >>>>>>>>>>>>>>>>>>
 frequency = 600
-data_high = read_high_freq_data(frequency)  # unshifted
+data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 freq_str = targetTraces.freq_str
 
@@ -38,7 +38,7 @@ _ = targetTraces.pca_cleanup(num_components=pca_components)
 # <<<<<<<<<<<<<<<<<<< Calibration characteristic traces  >>>>>>>>>>>>>>>>>>
 '''Shift calibration characteristic traces'''
 tar_ave_trace = targetTraces.average_trace(plot=False)
-shifted_cal_chars = shift_trace(tar_ave_trace, cal_chars, pad_length=guess_peak*2, id=1)
+shifted_cal_chars = TraceUtils.shift_trace(tar_ave_trace, cal_chars, pad_length=guess_peak*2, id=1)
 
 plt.figure('Shifted char traces')
 plt.plot(tar_ave_trace, color='red', label=f'{freq_str} overall average trace')
@@ -52,7 +52,7 @@ plt.ylim([targetTraces.ymin, targetTraces.ymax])
 plt.legend()
 
 '''Find the composite characteristic traces'''
-pn_pairs, comp_cal_chars = composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
+pn_pairs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
 
 plt.figure(f'{composite_num}-composite char traces')
 for i, pn_pair in enumerate(pn_pairs):

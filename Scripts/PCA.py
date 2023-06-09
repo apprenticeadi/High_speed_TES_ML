@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.traces import Traces
-from src.utils import read_high_freq_data, read_raw_data
+from src.utils import DataUtils
 
 # A script that performs PCA on raw data traces. However, so far the improvement in fitting histogram is very limited.
 
@@ -10,9 +10,9 @@ from src.utils import read_high_freq_data, read_raw_data
 frequency = 800
 
 if frequency == 100:
-    data_raw = read_raw_data(frequency)
+    data_raw = DataUtils.read_raw_data(frequency)
 else:
-    data_raw = read_high_freq_data(frequency)
+    data_raw = DataUtils.read_high_freq_data(frequency)
 
 rawTraces = Traces(frequency=frequency, data=data_raw)
 
