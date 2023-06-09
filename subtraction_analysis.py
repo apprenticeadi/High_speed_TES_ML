@@ -9,14 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.fitting_hist import fitting_histogram
-from src.utils import read_raw_data, read_high_freq_data
+from src.utils import DataUtils
 
 # %%
 # data_100_ = np.loadtxt('Data/all_traces_100kHz_middle.txt',
 #                        delimiter=',', unpack=True)
 # data_100 = np.transpose(data_100_)
 
-data_100 = read_raw_data(100)
+data_100 = DataUtils.read_raw_data(100)
 # %%
 '''600kHz data'''
 # data_600_ = np.loadtxt('Data/all_traces_600kHz.txt',
@@ -24,7 +24,7 @@ data_100 = read_raw_data(100)
 # data_600_ = np.transpose(data_600_)
 
 frequency = 600  # 600kHz data, remember to update this value if you want to use a different frequency
-data_600 = read_high_freq_data(frequency)
+data_600 = DataUtils.read_high_freq_data(frequency)
 
 idealSamples = 5e4 / frequency
 samples = np.floor(idealSamples) * 500  # This should be the length of row of data_600_

@@ -2,33 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import itertools
 
-
-def pad_trace(trace, pad_length=40):
-    """
-    Pad a certain length of the trace's tail to its head
-    """
-    if len(trace.shape) == 1:
-        padded = np.insert(trace, 0, trace[-pad_length:])
-    elif len(trace.shape) == 2:
-        padded = np.insert(trace, [0], trace[:, -pad_length:], axis=1)
-    else:
-        raise ValueError('Trace can only be 1d or 2d')
-    return padded
-
-
-def shift_trace(target_trace, traces, pad_length=40, id = 1):
-    """
-    Shift traces such that traces[id] has the same peak position as target trace
-    """
-    padded_traces = pad_trace(traces, pad_length=pad_length)
-    if len(traces.shape) == 1:
-        diff_arg = np.argmax(padded_traces) - np.argmax(target_trace)
-        return padded_traces[diff_arg:]
-
-    else:
-        diff_arg = np.argmax(padded_traces[id]) - np.argmax(target_trace)
-        return padded_traces[:, diff_arg:]
-
+from src.utils import TraceUtils
 
 def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.arange(5)):
     """
@@ -51,11 +25,10 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
 
         # Identify the photon number of the tail-subtracted trace
         # photon number identified by the lowest mean absolute difference between trace and char trace
-        # TODO: this is probably not the best way to do it.
         diff = np.mean(np.abs(trace - char_traces[:, :period]), axis=1)
         PN = np.argmin(diff)
         char_trace = char_traces[PN]
-        char_trace_pad = pad_trace(char_trace, pad_length=guess_peak * 2)
+        char_trace_pad = TraceUtils.pad_trace(char_trace, pad_length=guess_peak * 2)
         if PN == 0:
             subtract = np.zeros(period)
             fit = np.zeros(period)
@@ -89,18 +62,4 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
     return subtracted_data, tails
 
 
-def composite_char_traces(char_traces, period, comp_num=2):
-    max_pn = len(char_traces) - 1
 
-    total_comps = (max_pn+1) ** comp_num
-
-    comp_traces = np.zeros((total_comps, period))
-    comp_pns = np.zeros((total_comps, comp_num))
-
-    for id in range(total_comps):
-        for digit in range(comp_num):
-            n_i = (id % (max_pn**(digit+1)) ) // (max_pn**digit)
-            comp_traces[id] += char_traces[n_i, digit * period : (digit+1) * period]
-            comp_pns[id, digit] = n_i
-
-    return comp_pns, comp_traces

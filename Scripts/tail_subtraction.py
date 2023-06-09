@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.utils import read_high_freq_data, read_raw_data
+from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
-from src.tail_funcs import pad_trace, subtract_tails, shift_trace
+from src.tail_funcs import subtract_tails
 
 # This script is built on Ruidi's original subtraction_analysis script
 # %%
@@ -13,7 +13,7 @@ num_bins = 1000
 guess_peak = 30
 
 '''Calibration data'''
-data_100 = read_raw_data(100)
+data_100 = DataUtils.read_raw_data(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 offset_cal, _ = calibrationTraces.subtract_offset()
 # %%
@@ -23,7 +23,7 @@ Here I also test tail subtraction method on artificially overlapped higher frequ
 actually makes the stegosaurus worse. 
 '''
 frequency = 700
-data_high = read_high_freq_data(frequency)  # unshifted
+data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
 
 # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
@@ -53,7 +53,7 @@ Scale calibration characteristic traces to the shape of higher frequency data.
 More specifically, they are scaled to have the peak position of the higher frequency 1-photon 
 characteristic trace. 
 '''
-scaled_cal_chars = shift_trace(tar_chars[1], cal_chars)
+scaled_cal_chars = TraceUtils.shift_trace(tar_chars[1], cal_chars)
 
 plt.figure('Scaled calibration characteristic traces')
 for i in range(len(scaled_cal_chars)):
