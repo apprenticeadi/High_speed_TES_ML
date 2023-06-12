@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import itertools
-
+import copy
 from src.utils import TraceUtils
 
 
@@ -62,3 +62,24 @@ def subtract_tails(data, char_traces, guess_peak=0, plot=False, plot_range=np.ar
 
     return subtracted_data, tails
 
+
+def subtract_tails_batch(data, pns, char_traces, num_tails=1):
+    """
+    Performs tail subtraction on all traces after identifying the photon number of each trace.
+
+    :param data: Raw data
+    :param pns: The photon numbers identified for each trace
+    :param char_traces: The characteristic traces whose tails will be subtracted
+    :param num_tails: How many tails to trace backward
+    :return: Tail-subtracted data
+    """
+
+    period = data.shape[1]
+    subtracted_data = copy.deepcopy(data)
+    for i in range(num_tails):
+        tail_ids = np.concatenate([np.zeros(i + 1, dtype=int), pns[:-(i + 1)]])
+        tails = char_traces[tail_ids, i * period: (i + 1) * period]
+
+        subtracted_data = subtracted_data - tails
+
+    return subtracted_data

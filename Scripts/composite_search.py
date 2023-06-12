@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+
 
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from src.composite_funcs import identify_by_area_diff, search_smallest_diff, search_maj_voting
+from src.tail_funcs import subtract_tails_batch
 
 multiplier = 1.2
 num_bins = 1000
@@ -63,65 +66,84 @@ pn_combs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, t
 #     if np.max(pn_tuple) <= 3:
 #         plt.plot(comp_cal_chars[i], label=f'{pn_tuple}')
 
-# <<<<<<<<<<<<<<<<<<< Test the composite search method  >>>>>>>>>>>>>>>>>>
-target_data = targetTraces.get_data()
-
-'''For some traces, find and plot the closest composite characteristic traces'''
-test_num = 8
-initial_trace = 0
-closest_k = 4  # half the number of composite char traces that will be identified
-fig = plt.figure("Identify trace number by composite characteristic traces", figsize=(16, ((test_num+1) // 2)*3))
-axgrid = fig.add_gridspec( ((test_num+1) // 2) *2, 8)
-for i in range(test_num):
-    trace = target_data[initial_trace+i]
-
-    row_num = i // 2
-    col_num = i % 2
-    ax = fig.add_subplot(axgrid[row_num*2 : (row_num+1)*2, col_num*4 : (col_num+1)*4])
-
-    ax.plot(trace, '--', color='black', label='raw data')
-
-    idx_sort, diffs = identify_by_area_diff(trace, comp_cal_chars, abs=True, k=closest_k)
-
-    for idx in idx_sort:
-        plt.plot(comp_cal_chars[idx], label=f'{pn_combs[idx]}')
-
-    ax.legend(loc=1, fontsize='x-small')
-    ax.set_ylim([targetTraces.ymin, targetTraces.ymax])
-    ax.set_xlim([0, targetTraces.period])
-    # ax.set_xlabel('Time (in sample)')
-    # ax.set_ylabel('Voltage')
-    ax.set_title(f'{initial_trace+i}-th trace')
-
-    if row_num != (test_num-1) // 2:
-        ax.set_xticks([])
-    if col_num != 0:
-        ax.set_yticks([])
+# # <<<<<<<<<<<<<<<<<<< Test the composite search method  >>>>>>>>>>>>>>>>>>
+# target_data = targetTraces.get_data()
+#
+# '''For some traces, find and plot the closest composite characteristic traces'''
+# test_num = 8
+# initial_trace = 0
+# closest_k = 4  # half the number of composite char traces that will be identified
+# fig = plt.figure("Identify trace number by composite characteristic traces", figsize=(16, ((test_num+1) // 2)*3))
+# axgrid = fig.add_gridspec( ((test_num+1) // 2) *2, 8)
+# for i in range(test_num):
+#     trace = target_data[initial_trace+i]
+#
+#     row_num = i // 2
+#     col_num = i % 2
+#     ax = fig.add_subplot(axgrid[row_num*2 : (row_num+1)*2, col_num*4 : (col_num+1)*4])
+#
+#     ax.plot(trace, '--', color='black', label='raw data')
+#
+#     idx_sort, diffs = identify_by_area_diff(trace, comp_cal_chars, abs=True, k=closest_k)
+#
+#     for idx in idx_sort:
+#         plt.plot(comp_cal_chars[idx], label=f'{pn_combs[idx]}')
+#
+#     ax.legend(loc=1, fontsize='x-small')
+#     ax.set_ylim([targetTraces.ymin, targetTraces.ymax])
+#     ax.set_xlim([0, targetTraces.period])
+#     # ax.set_xlabel('Time (in sample)')
+#     # ax.set_ylabel('Voltage')
+#     ax.set_title(f'{initial_trace+i}-th trace')
+#
+#     if row_num != (test_num-1) // 2:
+#         ax.set_xticks([])
+#     if col_num != 0:
+#         ax.set_yticks([])
 
 
 # <<<<<<<<<<<<<<<<<<< Run the composite search method  >>>>>>>>>>>>>>>>>>
 target_data = targetTraces.get_data()
 
 '''Run a simple method: identify each trace with the closest comp char trace by smallest area diff'''
+t1 = time.time()
 pns, errors = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
+t2 = time.time()
 
-plt.figure('smallest area difference')
-plt.hist(pns, bins= np.array(range(max_photon_number + 2)) - 0.5, alpha=0.5)
+print(f'Time for smallest area difference method is {t2-t1}')
+
+
+plt.figure('minimum area difference bar')
+plt.bar(list(range(max_photon_number + 1)), np.bincount(pns))
+plt.ylim([0, 6000])
 
 '''Run a simple majority voting method, where ties are settled by smallest area difference'''
+t3 = time.time()
 pns2, errors2 = search_maj_voting(target_data, comp_cal_chars, pn_combs, k=4)
+t4 = time.time()
 
-plt.figure('majority voting')
-plt.hist(pns2, bins= np.array(range(max_photon_number + 2)) - 0.5, alpha=0.5)
+print(f'Time for majority voting method is {t4-t3}')
 
 plt.figure('majority voting bar')
 plt.bar(list(range(max_photon_number + 1)), np.bincount(pns2))
 plt.ylim([0, 6000])
 
+
+# <<<<<<<<<<<<<<<<<<< Try to run 'bunch' tail subtraction after identifying the photon numbers  >>>>>>>>>>>>>>>>>>
+# This doesn't work very well.
+subtract_data = subtract_tails_batch(target_data, pns, shifted_cal_chars, num_tails=composite_num-1)
+min_areaTraces = Traces(frequency, subtract_data, multiplier=multiplier, num_bins=num_bins)
+min_areaTraces.raw_histogram(plot=True, fig_name='raw hist minimum area difference method')
+
+subtract_data2 = subtract_tails_batch(target_data, pns2, shifted_cal_chars, num_tails=composite_num-1)
+maj_voteTraces = Traces(frequency, subtract_data2, multiplier=multiplier, num_bins=num_bins)
+maj_voteTraces.raw_histogram(plot=True, fig_name='raw hist majority voting method')
+
+
 # <<<<<<<<<<<<<<<<<<< Compare with simple inner product stegosaurus method  >>>>>>>>>>>>>>>>>>
-'''Raw stegosaurus'''
 calibrationTraces.fit_histogram(plot=True)
 calibrationTraces.pn_bar_plot()
 
 targetTraces.fit_histogram(plot=True)
 targetTraces.pn_bar_plot()
+
