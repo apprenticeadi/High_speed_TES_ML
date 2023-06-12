@@ -210,7 +210,7 @@ class Traces:
 
         return diff
 
-
+    #TODO: what is a good way of subtracting offset?
     def subtract_offset(self):
         '''
         Ruidi has three methods for subtracting offsets:
@@ -221,9 +221,8 @@ class Traces:
         trace.
         3. In his code for 600kHz, he subtracts the minimum value of the average 0-photon trace from every trace.
 
-        I think one should instead subtract the average value of the average 0-photon trace
-        from every trace. The reasoning is, the whole point of offset subtraction is such that 0 photon should on
-        average incur 0 voltage.
+        Deciding the offset according to 0-photon trace is probably not a good idea. Because for higher rep rates, there
+        is no good way of deciding what are 0-photon traces.
         '''
 
         # if self.frequency == 100:
@@ -234,6 +233,8 @@ class Traces:
 
         binning_index, binning_traces = self.bin_traces()
         offset = np.mean(np.mean(binning_traces[0], axis=0))  # voltage mean value of zero photon traces
+
+        # offset = np.min(self.average_trace())
 
         data_shifted = self.get_data() - offset
         self._data = data_shifted
