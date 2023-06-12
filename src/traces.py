@@ -197,6 +197,19 @@ class Traces:
 
         return characteristic_traces
 
+    def abs_voltage_diffs(self):
+        """
+        Bin the traces. And for each trace, calculate its sum(|voltage difference|) from the corresponding photon number
+        characteristic trace
+        """
+        binning_index, binning_traces = self.bin_traces()
+        char_traces = self.characteristic_traces_pn()
+        diff = {}
+        for pn in binning_traces.keys():
+            diff[pn] = np.sum(np.abs(binning_traces[pn] - char_traces[pn]), axis=1)
+
+        return diff
+
 
     def subtract_offset(self):
         '''
