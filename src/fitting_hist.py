@@ -26,7 +26,7 @@ class fitting_histogram:
     def finding_peaks(self, plot=True):
         '''
         use data smoothing method to find the peak positions of each bins of the histogram, 
-        will be useful for fitting the historgam
+        will be useful for fitting the histogram
         '''
         kernel_size = 10
         kernel = np.ones(kernel_size) / kernel_size
@@ -75,6 +75,7 @@ class fitting_histogram:
         popt, pcov = curve_fit(self.func, self.midBins, self.heights,
                                p0=guess)  # popt contains [position, amplitude, sigma] of each Gaussian peak
 
+
         sort = np.argsort(popt[::3])  # Every three element
 
         sorted_popt = []
@@ -117,7 +118,7 @@ class fitting_histogram:
         # self.upper_list = np.sort(upper_list)
         # return self.lower_list, self.upper_list
 
-        return np.sort(lower_list), np.sort(upper_list)
+        return np.sort(lower_list), np.sort(upper_list),
 
     def trace_bin(self, data):
         '''
@@ -128,7 +129,7 @@ class fitting_histogram:
         # photon_bins = np.array([i for j in zip(self.lower_list, self.upper_list) for i in j])
         # bin_indices = np.digitize(self.overlap, photon_bins)  # bin 0 for overlap left of lower[0], bin 1 for photon_num=0, bin 3 for photon_num=1, bin 5 for photon_num=2 etc.
 
-        lower_list, upper_list = self.fitting(plot=False)
+        lower_list, upper_list, = self.fitting(plot=False)
 
         binning_index = {}
         binning_traces = {}
@@ -142,7 +143,7 @@ class fitting_histogram:
             binning_traces[photon_number] = traces_to_bin
 
 
-        return binning_index, binning_traces
+        return binning_index, binning_traces,
 
     def trace_bin_old(self, data):
         binning_index = [[i for i in range(len(self.overlap)) if
