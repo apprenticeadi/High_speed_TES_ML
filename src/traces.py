@@ -11,7 +11,7 @@ class Traces:
         self.multiplier = multiplier
         self.num_bins = num_bins
 
-        self.data = data
+        self._data = data
 
         self.frequency = frequency
 
@@ -23,8 +23,8 @@ class Traces:
         self.idealSamples = 5e4 / frequency  # number of sampling data points per trace
         self.period = int(self.idealSamples)  # integer number of sampling data points per trace (i.e. period of trace)
 
-        self.min_voltage = np.amin(self.data)
-        self.max_voltage = np.amax(self.data)
+        self.min_voltage = np.amin(data)
+        self.max_voltage = np.amax(data)
 
         self.ymin = 5000 * (self.min_voltage // 5000)
         self.ymax = 5000 * (self.max_voltage // 5000 + 1)
@@ -36,7 +36,8 @@ class Traces:
         self.num_bins = num_bins
 
     def get_data(self):
-        return copy.deepcopy(self.data)
+        """numpy array is mutable"""
+        return copy.deepcopy(self._data)
 
     def guess_peak(self):
         return self.period // 3
@@ -50,7 +51,7 @@ class Traces:
 
         plt.figure(fig_name)
         for i in range(num_traces):
-            plt.plot(self.data[i])
+            plt.plot(self._data[i])
         plt.ylabel('voltage')
         plt.xlabel('time (in sample)')
         plt.xlim(0, x_max)
@@ -69,7 +70,7 @@ class Traces:
 
         plt.figure(fig_name)
         for i in range(num_trains):
-            train = self.data[i*num_traces: (i+1)*num_traces, :].flatten()
+            train = self._data[i*num_traces: (i+1)*num_traces, :].flatten()
             plt.plot(train)
         plt.ylabel('voltage')
         plt.xlabel('time (in sample)')
@@ -81,13 +82,13 @@ class Traces:
         plt.title(plt_title)
 
 
-
     def average_trace(self, plot=False, fig_name='', plt_title=''):
         """
         :return: Overall average trace of the data
         """
 
-        ave_trace = np.mean(self.data, axis=0)
+        ave_trace = np.mean(self._data, axis=0)
+        std_trace = np.std(self._data, axis = 0)
         if plot:
             if fig_name == '':
                 fig_name = f'{self.freq_str} average trace'
@@ -102,12 +103,12 @@ class Traces:
                 plt_title = f'Average trace of {self.freq_str}'
             plt.title(plt_title)
 
-        return ave_trace
+        return ave_trace, ave_trace+std_trace, ave_trace - std_trace
 
     def inner_products(self):
 
-        ave_trace = self.average_trace()
-        overlaps = ave_trace @ self.data.T
+        ave_trace,stdp,stdm = self.average_trace()
+        overlaps = ave_trace @ self._data.T
 
         return overlaps
 
@@ -147,7 +148,7 @@ class Traces:
     def bin_traces(self, plot=False, fig_name=''):
 
         hist_fit = self.fit_histogram(plot=plot, fig_name=fig_name)
-        binning_index, binning_traces = hist_fit.trace_bin(self.data)
+        binning_index, binning_traces = hist_fit.trace_bin(self.get_data())
 
         return binning_index, binning_traces
 
@@ -175,17 +176,24 @@ class Traces:
 
         _, binning_traces = self.bin_traces(plot=False)
 
-        characteristic_traces = np.zeros((len(binning_traces.keys()), self.data.shape[1]), dtype=np.float64)
+        characteristic_traces = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
+        char_traces_err = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
 
         for pn in binning_traces.keys():
             characteristic_traces[pn] = np.mean(binning_traces[pn], axis=0)
+            char_traces_err[pn] = np.std(binning_traces[pn], axis = 0)
+
+        #colours to ensure plot is clean
+        colours = ['r','b', 'g', 'c', 'm', 'y', 'k', 'r', 'b','g']
 
         if plot:
             if fig_name == '':
                 fig_name = f'{self.freq_str} characteristic traces per photon number'
             plt.figure(fig_name)
             for pn in range(characteristic_traces.shape[0]):
-                plt.plot(characteristic_traces[pn], label=f'{pn} photons')
+                plt.plot(characteristic_traces[pn], label=f'{pn} photons', color = colours[pn])
+                plt.plot(characteristic_traces[pn]+char_traces_err[pn],linestyle = 'dashed', label=f'{pn} photons +1std', color = colours[pn])
+                plt.plot(characteristic_traces[pn]-char_traces_err[pn],linestyle = 'dashed', label=f'{pn} photons -1 std', color = colours[pn])
                 plt.ylabel('voltage')
                 plt.xlabel('time (in sample)')
                 plt.legend()
@@ -196,8 +204,39 @@ class Traces:
                 plt.title(plt_title)
 
         return characteristic_traces
+    def total_traces(self):
+        '''
+        returns all possible traces, ie average trace with std error trace
+        '''
+        _, binning_traces = self.bin_traces(plot=False)
+
+        characteristic_traces = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
+        char_traces_err = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
+
+        for pn in binning_traces.keys():
+            characteristic_traces[pn] = np.mean(binning_traces[pn], axis=0)
+            char_traces_err[pn] = np.std(binning_traces[pn], axis = 0)
 
 
+        char_err_max = characteristic_traces + char_traces_err
+        char_err_min = characteristic_traces - char_traces_err
+        total_traces = np.concatenate((char_err_min, characteristic_traces, char_err_max))
+        return total_traces
+
+    def abs_voltage_diffs(self):
+        """
+        Bin the traces. And for each trace, calculate its sum(|voltage difference|) from the corresponding photon number
+        characteristic trace
+        """
+        binning_index, binning_traces = self.bin_traces()
+        char_traces = self.characteristic_traces_pn()
+        diff = {}
+        for pn in binning_traces.keys():
+            diff[pn] = np.sum(np.abs(binning_traces[pn] - char_traces[pn]), axis=1)
+
+        return diff
+
+    #TODO: what is a good way of subtracting offset?
     def subtract_offset(self):
         '''
         Ruidi has three methods for subtracting offsets:
@@ -208,9 +247,8 @@ class Traces:
         trace.
         3. In his code for 600kHz, he subtracts the minimum value of the average 0-photon trace from every trace.
 
-        I think one should instead subtract the average value of the average 0-photon trace
-        from every trace. The reasoning is, the whole point of offset subtraction is such that 0 photon should on
-        average incur 0 voltage.
+        Deciding the offset according to 0-photon trace is probably not a good idea. Because for higher rep rates, there
+        is no good way of deciding what are 0-photon traces.
         '''
 
         # if self.frequency == 100:
@@ -222,12 +260,14 @@ class Traces:
         binning_index, binning_traces = self.bin_traces()
         offset = np.mean(np.mean(binning_traces[0], axis=0))  # voltage mean value of zero photon traces
 
-        data_shifted = self.data - offset
-        self.data = data_shifted
+        # offset = np.min(self.average_trace())
+
+        data_shifted = self.get_data() - offset
+        self._data = data_shifted
         self.ymax = self.ymax - offset
         self.ymin = self.ymin - offset
 
-        return offset, data_shifted
+        return offset, self.get_data()
 
     def overlap_to_high_freq(self, high_frequency, num_traces=0):
 
