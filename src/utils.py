@@ -105,16 +105,16 @@ class TraceUtils:
         return comp_pns, comp_traces
 
     @staticmethod
-    def max_min_trace_utils(t_char_traces, period = 55):
+    def max_min_trace_utils(t_char_traces, period):
         '''
         function to generate all the combinations, apply composite_char_traces on
         each min, average and max trace to create range
         '''
         tr0, tr1, tr2 = t_char_traces[0:10], t_char_traces[10:20], t_char_traces[20:30]
 
-        min_pns, min_traces = TraceUtils.composite_char_traces(tr0, 55)
-        av_pns, av_traces = TraceUtils.composite_char_traces(tr1, 55)
-        max_pns, max_traces = TraceUtils.composite_char_traces(tr2, 55)
+        min_pns, min_traces = TraceUtils.composite_char_traces(tr0, period)
+        av_pns, av_traces = TraceUtils.composite_char_traces(tr1, period)
+        max_pns, max_traces = TraceUtils.composite_char_traces(tr2, period)
 
         return np.concatenate((min_pns, av_pns, max_pns)), np.concatenate((min_traces,av_traces,max_traces))
 
