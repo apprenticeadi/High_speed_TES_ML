@@ -20,7 +20,7 @@ load in data
 data_100 = DataUtils.read_raw_data(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
-#target data
+#target data - 'read_high_freq_data' = actual data, uncomment to use
 frequency = 900
 # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
 data_high = DataUtils.read_high_freq_data(frequency)
