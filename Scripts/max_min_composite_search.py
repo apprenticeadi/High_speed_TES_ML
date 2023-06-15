@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from src.composite_funcs import search_smallest_diff, search_maj_voting, sort_abs_volt_diff
 from src.fitting_hist import fitting_histogram
-
 
 multiplier = 1.0
 num_bins = 1000
@@ -21,7 +19,7 @@ data_100 = DataUtils.read_raw_data(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
 #target data - 'read_high_freq_data' = actual data, uncomment to use
-frequency = 900
+frequency = 600
 # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
 data_high = DataUtils.read_high_freq_data(frequency)
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
@@ -30,7 +28,8 @@ freq_str = targetTraces.freq_str
 process calibration data to find range on traces for each photon number using total_traces
 '''
 total_traces = calibrationTraces.total_traces()
-
+print(len(total_traces))
+max_photon_number = int((len(total_traces)/3) -1)
 '''
 apply shift
 '''
@@ -40,7 +39,8 @@ shifted_cal_chars = TraceUtils.shift_trace(tar_ave_trace, total_traces, pad_leng
 '''
 generate composite characteristic traces, using composite_char_traces method
 '''
-pn_combs, comp_traces = TraceUtils.max_min_trace_utils(shifted_cal_chars)
+per = len(targetTraces.get_data()[0])
+pn_combs, comp_traces = TraceUtils.max_min_trace_utils(shifted_cal_chars, per)
 
 '''
 use search methods
@@ -49,19 +49,19 @@ target_data = targetTraces.get_data()
 pns, errors = search_smallest_diff(target_data, comp_traces, pn_combs)
 
 plt.figure('minimum voltage difference bar')
-plt.bar(list(range(10)), np.bincount(pns))
-print(np.bincount(pns))
-plt.ylim([0, 6000])
+
+plt.bar(list(range(len(np.bincount(pns)))), np.bincount(pns))
+
 plt.show()
 
 
 # <<<<<<<<<<<<<<<<<<< Prepare canvas for plotting errors  >>>>>>>>>>>>>>>>>>
-num_rows = (9 + 1)//2
+num_rows = (max_photon_number + 1)//2
 num_cols = 2
 fig, axs = plt.subplots(num_rows, num_cols, figsize=(8, 2*num_rows))
 fig.canvas.manager.set_window_title('Average abs(voltage difference) from identified characteristic trace')
 
-unique_pns = np.arange(9+1)
+unique_pns = np.arange(max_photon_number+1)
 
 
 '''Plot errors'''
