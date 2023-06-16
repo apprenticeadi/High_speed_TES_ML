@@ -137,7 +137,7 @@ print('Running minimum voltage diff method')
 #TODO: how to speed this up? I tried parallelization with numba, but it didn't work very well.
 '''Run a simple method: identify each trace with the closest comp char trace by smallest voltage diff'''
 t1 = time.time()
-pns, errors = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
+pns, errors, tails = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
 t2 = time.time()
 
 print(f'Time for smallest voltage difference method is {t2-t1}')

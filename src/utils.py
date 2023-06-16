@@ -87,7 +87,7 @@ class TraceUtils:
             return padded_traces[:, diff_arg:]
 
     @staticmethod
-    def composite_char_traces(char_traces, period, comp_num=2):
+    def composite_char_traces(char_traces, period, comp_num=3):
         max_pn = len(char_traces) - 1
 
         total_comps = (max_pn + 1) ** comp_num

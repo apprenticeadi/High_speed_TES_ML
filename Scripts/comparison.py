@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
@@ -9,7 +10,7 @@ multiplier = 1.2
 num_bins = 1000
 guess_peak = 30
 pca_components = 1  # it's really doubtful if pca helps at all
-composite_num = 3
+composite_num = 4
 
 '''
 load in data
@@ -18,21 +19,13 @@ load in data
 data_100 = DataUtils.read_raw_data(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
-#target data - 'read_high_freq_data' = actual data, uncomment to use
-frequency = 900
-# data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
-data_high = DataUtils.read_high_freq_data(frequency)
-targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
-
-freq_str = targetTraces.freq_str
-
 num_rows = 3
 num_cols = 2
 fig, axs = plt.subplots(num_rows, num_cols, figsize=(8, 2*num_rows))
 fig.canvas.manager.set_window_title('photon number distribution for 5 frequencies')
 
 freq_vals = [500,600,700,800,900]
-for x in freq_vals:
+for x in tqdm(freq_vals):
     frequency = x
     # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
     data_high = DataUtils.read_high_freq_data(frequency)
