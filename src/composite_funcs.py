@@ -77,15 +77,16 @@ def search_smallest_diff(target_data, comp_char_traces, pn_combs):
 
     pns = np.zeros(num_traces, dtype=np.int64)
     errors = np.zeros(num_traces, dtype=np.float64)
-
+    tails = np.zeros(num_traces, dtype=np.int64)
     for i in range(num_traces):
         target_trace = target_data[i]
         idx, diff = sort_abs_volt_diff(target_trace, comp_char_traces, k=1)
 
         pns[i] = pn_combs[idx[0]][0]
+        tails[i] = pn_combs[idx[0]][1]
         errors[i] = diff[0]
 
-    return pns, errors
+    return pns, errors, tails
 
 
 # TODO: how to speed up this function? I
