@@ -1,11 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import xgboost as xgb
+
 from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
 
 
 multiplier = 1.2
@@ -56,6 +55,7 @@ for i in range(10):
     labelled_comp_traces.append(new_array)
     labelled_pn_combs.append((new_arry1))
 
+
 '''
 creating dataset
 '''
@@ -71,32 +71,18 @@ labels = np.array([0]*num + [1]*num + [2]*num + [3]*num + [4]*num + [5]*num +
 x_train ,  x_test, y_train, y_test = train_test_split(dataset, labels)
 
 
-'''
-apply both svm and random forest models
-'''
+dtrain = xgb.DMatrix(x_train, label = y_train)
+dtest = xgb.DMatrix(x_test, label = y_test)
 
-svm_classifier = SVC()
-rf_classifier = RandomForestClassifier()
+params = {
+    'max_depth':3,
+    'eta' : 0.1,
+    'num_class' : 10,
+    'objective': 'multi:softmax'
+}
 
-'''
-apply to data
-'''
-svm_classifier.fit(x_train,y_train)
-rf_classifier.fit(x_train,y_train)
-'''
-find accuracy
-'''
-svm_predictions = svm_classifier.predict(x_test)
-svm_accuracy = accuracy_score(y_test, svm_predictions)
-svm_classifcation_report = classification_report(y_test, svm_predictions)
+num_rounds = 10
+model = xgb.train(params, dtrain, num_rounds)
 
-rf_predictions = rf_classifier.predict(x_test)
-rf_accuracy = accuracy_score(y_test, rf_predictions)
-rf_classifcation_report = classification_report(y_test, rf_predictions)
-
-rf_test = rf_classifier.predict(data_high)
-
-print(rf_accuracy, 'random forest accuracy')
-print(rf_accuracy, 'support vector machines accuracy')
-plt.bar(list(range(len(np.bincount(rf_test)))), np.bincount(rf_test))
-plt.show()
+predictions = model.predict(dtest)
+print(type(predictions))
