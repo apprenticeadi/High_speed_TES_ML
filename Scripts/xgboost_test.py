@@ -85,4 +85,3 @@ num_rounds = 10
 model = xgb.train(params, dtrain, num_rounds)
 
 predictions = model.predict(dtest)
-print(type(predictions))

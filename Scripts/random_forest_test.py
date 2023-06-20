@@ -1,12 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from src.utils import DataUtils, TraceUtils
+from src.utils import DataUtils
 from src.traces import Traces
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
-
+from src.composite_funcs import return_comp_traces
+from src.ML_funcs import ML
 
 multiplier = 1.2
 num_bins = 1000
@@ -22,27 +19,13 @@ calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, 
 offset_cal, _ = calibrationTraces.subtract_offset()
 
 #target data - 'read_high_freq_data' = actual data, uncomment to use
-frequency = 600
-data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
-# data_high = DataUtils.read_high_freq_data(frequency)
+frequency = 900
+#data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
+data_high = DataUtils.read_high_freq_data(frequency)
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 freq_str = targetTraces.freq_str
 #
-'''
-process calibration data to find range on traces for each photon number using total_traces
-'''
-total_traces = calibrationTraces.total_traces()
-max_photon_number = int((len(total_traces)/3) -1)
-'''
-apply shift
-'''
-tar_ave_trace, tar_ave_trace_stdp, tar_ave_trace_stdm = targetTraces.average_trace(plot=False)
-shifted_cal_chars = TraceUtils.shift_trace(tar_ave_trace, total_traces, pad_length=guess_peak*2, id=1)
-'''
-generate composite characteristic traces, using composite_char_traces method
-'''
-per = len(targetTraces.get_data()[0])
-pn_combs, comp_traces = TraceUtils.max_min_trace_utils(shifted_cal_chars, per)
+pn_combs, comp_traces = return_comp_traces(calibrationTraces, targetTraces)
 '''
 create a labelled dataset for training/ testing, labelled_comp_traces is a list of all traces with photon number as index
 '''
@@ -55,11 +38,9 @@ for i in range(10):
     new_arry1 = pn_combs[indices]
     labelled_comp_traces.append(new_array)
     labelled_pn_combs.append((new_arry1))
-
 '''
 creating dataset
 '''
-
 dataset = np.concatenate((labelled_comp_traces[0], labelled_comp_traces[1], labelled_comp_traces[2],
                           labelled_comp_traces[3],labelled_comp_traces[4],labelled_comp_traces[5],labelled_comp_traces[6],
                           labelled_comp_traces[7],labelled_comp_traces[8],labelled_comp_traces[9]))
@@ -68,35 +49,9 @@ num = len(labelled_comp_traces[0])
 
 labels = np.array([0]*num + [1]*num + [2]*num + [3]*num + [4]*num + [5]*num +
                   [6]*num + [7]*num + [8]*num + [9]*num)
-x_train ,  x_test, y_train, y_test = train_test_split(dataset, labels)
 
-
-'''
-apply both svm and random forest models
-'''
-
-svm_classifier = SVC()
-rf_classifier = RandomForestClassifier()
-
-'''
-apply to data
-'''
-svm_classifier.fit(x_train,y_train)
-rf_classifier.fit(x_train,y_train)
-'''
-find accuracy
-'''
-svm_predictions = svm_classifier.predict(x_test)
-svm_accuracy = accuracy_score(y_test, svm_predictions)
-svm_classifcation_report = classification_report(y_test, svm_predictions)
-
-rf_predictions = rf_classifier.predict(x_test)
-rf_accuracy = accuracy_score(y_test, rf_predictions)
-rf_classifcation_report = classification_report(y_test, rf_predictions)
-
-rf_test = rf_classifier.predict(data_high)
-
-print(rf_accuracy, 'random forest accuracy')
-print(rf_accuracy, 'support vector machines accuracy')
-plt.bar(list(range(len(np.bincount(rf_test)))), np.bincount(rf_test))
+model = ML(dataset, labels)
+model.makemodel()
+test = model.predict(data_high)
+plt.bar(list(range(len(np.bincount(test)))), np.bincount(test))
 plt.show()
