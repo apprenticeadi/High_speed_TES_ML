@@ -23,9 +23,8 @@ num_rows = 3
 num_cols = 2
 fig, axs = plt.subplots(num_rows, num_cols, figsize=(8, 2*num_rows))
 fig.canvas.manager.set_window_title('photon number distribution for 5 frequencies')
-
-freq_vals = [500,600,700,800,900]
-for x in tqdm(freq_vals):
+freq_values =[ 500,600,700,800,900]
+for x in tqdm(freq_values):
     frequency = x
     # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
     data_high = DataUtils.read_high_freq_data(frequency)
