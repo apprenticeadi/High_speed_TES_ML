@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from src.utils import DataUtils
 from src.traces import Traces
 from src.composite_funcs import return_comp_traces
-from src.ML_funcs import ML
+from src.ML_funcs import ML, find_accuracies, visualise_trace
+from tqdm.auto import tqdm
 
 multiplier = 1.2
 num_bins = 1000
@@ -50,9 +51,22 @@ num = len(labelled_comp_traces[0])
 labels = np.array([0]*num + [1]*num + [2]*num + [3]*num + [4]*num + [5]*num +
                   [6]*num + [7]*num + [8]*num + [9]*num)
 
-model = ML(dataset, labels, modeltype= 'BDT')
+
+
+model = ML(dataset, labels, modeltype= 'RF')
 model.makemodel()
 test = model.predict(data_high)
-print(test)
-plt.bar(list(range(len(np.bincount(test)))), np.bincount(test))
+#visualise_trace(labelled_comp_traces, test,data_high, 100)
+
+freq_values, scores, modeltype = find_accuracies(calibrationTraces)
+
+for i in range(3):
+    plt.plot(freq_values, scores[i], label = modeltype[i])
+
+plt.legend()
+plt.title('model accuracy against frequency')
+plt.xlabel('Frequency (kHz)')
+plt.ylabel('model accuracy')
 plt.show()
+
+
