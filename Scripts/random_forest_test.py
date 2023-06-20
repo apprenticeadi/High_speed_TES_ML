@@ -50,8 +50,9 @@ num = len(labelled_comp_traces[0])
 labels = np.array([0]*num + [1]*num + [2]*num + [3]*num + [4]*num + [5]*num +
                   [6]*num + [7]*num + [8]*num + [9]*num)
 
-model = ML(dataset, labels)
+model = ML(dataset, labels, modeltype= 'BDT')
 model.makemodel()
 test = model.predict(data_high)
+print(test)
 plt.bar(list(range(len(np.bincount(test)))), np.bincount(test))
 plt.show()
