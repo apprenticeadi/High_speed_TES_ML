@@ -20,9 +20,9 @@ calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, 
 offset_cal, _ = calibrationTraces.subtract_offset()
 
 #target data - 'read_high_freq_data' = actual data, uncomment to use
-frequency = 900
-#data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
-data_high = DataUtils.read_high_freq_data(frequency)
+frequency = 500
+data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
+#data_high = DataUtils.read_high_freq_data(frequency)
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 freq_str = targetTraces.freq_str
 #
@@ -55,18 +55,19 @@ labels = np.array([0]*num + [1]*num + [2]*num + [3]*num + [4]*num + [5]*num +
 
 model = ML(dataset, labels, modeltype= 'RF')
 model.makemodel()
+model.accuracy_score()
 test = model.predict(data_high)
+plt.bar(list(range(len(np.bincount(test)))), np.bincount(test))
+plt.show()
 #visualise_trace(labelled_comp_traces, test,data_high, 100)
 
-freq_values, scores, modeltype = find_accuracies(calibrationTraces)
-
-for i in range(3):
-    plt.plot(freq_values, scores[i], label = modeltype[i])
-
-plt.legend()
-plt.title('model accuracy against frequency')
-plt.xlabel('Frequency (kHz)')
-plt.ylabel('model accuracy')
-plt.show()
-
-
+# freq_values, scores, modeltype = find_accuracies(calibrationTraces)
+#
+# for i in range(3):
+#     plt.plot(freq_values, scores[i], label = modeltype[i])
+#
+# plt.legend()
+# plt.title('model accuracy against frequency')
+# plt.xlabel('Frequency (kHz)')
+# plt.ylabel('model accuracy')
+# plt.show()
