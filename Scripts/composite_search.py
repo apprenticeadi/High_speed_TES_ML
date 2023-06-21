@@ -8,6 +8,16 @@ from src.traces import Traces
 from src.composite_funcs import sort_volt_diff, sort_abs_volt_diff, search_smallest_diff, search_maj_voting
 from src.tail_funcs import subtract_tails_batch
 
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+
+from src.utils import DataUtils, TraceUtils
+from src.traces import Traces
+from src.composite_funcs import sort_volt_diff, sort_abs_volt_diff, search_smallest_diff, search_maj_voting
+from src.tail_funcs import subtract_tails_batch
+
 multiplier = 1.2
 num_bins = 1000
 guess_peak = 30
