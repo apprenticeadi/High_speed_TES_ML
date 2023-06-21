@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-
+from tqdm.auto import tqdm
 from src.fitting_hist import fitting_histogram
 
 class Traces:
@@ -277,11 +277,14 @@ class Traces:
         current_data = self.get_data()
         if num_traces==0:
             num_traces = current_data.shape[0]
+            #num_traces = len(current_data)
 
         new_period = int(5e4 / high_frequency)
         data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
+
         for i in range(num_traces):
             data_overlapped[i*new_period: i*new_period + self.period] = current_data[i, :]
+
 
         return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
 
@@ -303,4 +306,14 @@ class Traces:
 
         return data_cleaned
 
+    def return_labelled_traces(self):
+        '''
+        returns the filtered data from stegosaurus into a labelled dataset
+        '''
+
+        binning_index, binning_traces = self.bin_traces(plot=False)
+        keys = [key for key in binning_traces]
+        values = [binning_traces[key] for key in binning_traces]
+
+        return values
 

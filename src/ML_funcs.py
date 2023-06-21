@@ -32,7 +32,7 @@ class ML:
         else:
             raise Exception('modeltype must be "RF", "SVM" or  "BDT" (Random forest, support vector machines or boosted decision tree)')
 
-    def makemodel(self, num_rounds = 10):
+    def makemodel(self, num_rounds = 10, num_class = 10):
 
         if self.modeltype == 'RF':
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
@@ -42,9 +42,9 @@ class ML:
             self.classifier.fit(x_train, y_train)
         if self.modeltype == 'BDT':
             params = {
-                'max_depth': 3,
+                'max_depth': 5,
                 'eta': 0.1,
-                'num_class': 10,
+                'num_class': num_class,
                 'objective': 'multi:softmax'
             }
             self.classifier = xgb.train(params, self.dtrain, num_rounds)
