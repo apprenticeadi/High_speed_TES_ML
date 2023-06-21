@@ -308,12 +308,17 @@ class Traces:
 
     def return_labelled_traces(self):
         '''
-        returns the filtered data from stegosaurus into a labelled dataset
+        returns the labels at the correct indices
         '''
-
         binning_index, binning_traces = self.bin_traces(plot=False)
-        keys = [key for key in binning_traces]
-        values = [binning_traces[key] for key in binning_traces]
+        keys = [key for key in binning_index]
+        values = [binning_index[key] for key in binning_index]
+        indices = np.zeros(len(self._data))
+        indices = np.full((len(self._data)), -1)
 
-        return values
+        for i in range(len(keys)):
+            for j in values[i]:
+                indices[j] = keys[i]
+
+        return indices
 
