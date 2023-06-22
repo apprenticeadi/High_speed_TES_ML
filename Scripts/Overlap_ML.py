@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from src.utils import DataUtils
+from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from src.ML_funcs import ML
 
@@ -13,6 +13,15 @@ pca_cleanup = True
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
 data_100 = DataUtils.read_raw_data(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
+# # need to put in shift here
+# frequency = 900
+# data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
+# targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
+#
+# tar_ave_trace, tar_ave_trace_stdp, tar_ave_trace_stdm = targetTraces.average_trace(plot=False)
+# cal_chars = calibrationTraces.characteristic_traces_pn(plot=False)
+# shifted_cal_traces = TraceUtils.shift_trace(tar_ave_trace, calibrationTraces, pad_length=guess_peak*2, id=1)
+
 
 '''Shift data such that 0-photon trace has mean 0'''
 _ = calibrationTraces.subtract_offset()
@@ -34,23 +43,49 @@ filtered_label = np.delete(labels, filtered_ind)
 
 filtered_data = Traces(100, filtered_traces)
 
-#frequency = 500
-freq_values =[ 500,600,700,800,900]
-fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(15, 12))
+frequency = 500
+# freq_values =[ 500,600,700,800,900]
+# fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(15, 12))
 
-for frequency, ax in zip(freq_values, axs.ravel()):
-    data_high = filtered_data.overlap_to_high_freq(frequency)
-    model = ML(data_high, filtered_label, modeltype='RF')
-    model.makemodel(num_rounds=25)
-    actual_data = DataUtils.read_high_freq_data(frequency)
+# for frequency, ax in zip(freq_values, axs.ravel()):
+#     data_high = filtered_data.overlap_to_high_freq(frequency)
+#     model = ML(data_high, filtered_label, modeltype='SVM')
+#     model.makemodel(num_rounds=25)
+#     actual_data = DataUtils.read_high_freq_data(frequency)
+#     targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
+#     offset_target, _ = targetTraces.subtract_offset()
+#     actual_data = actual_data - offset_target * 0.7
+#     if pca_cleanup:
+#         actualTraces = Traces(frequency=frequency, data=actual_data)
+#         actual_data = actualTraces.pca_cleanup(num_components=pca_components)
+#
+#     test = model.predict((actual_data))
+#     ax.bar(list(range(len(np.bincount(test)))), np.bincount(test))
+#     ax.set_title(str(frequency)+ 'kHz accuracy score = '+str(model.accuracy_score())[0:5])
+# plt.show()
 
-    if pca_cleanup:
-        actualTraces = Traces(frequency=frequency, data=actual_data)
-        actual_data = actualTraces.pca_cleanup(num_components=pca_components)
 
-    test = model.predict((actual_data))
-    ax.bar(list(range(len(np.bincount(test)))), np.bincount(test))
-    ax.set_title(str(frequency)+ 'kHz accuracy score = '+str(model.accuracy_score())[0:5])
+# actual_data = DataUtils.read_high_freq_data(frequency)
+# targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
+# freq_str = targetTraces.freq_str
+#
+# '''Shift data'''
+# # I'm actually not sure if I should do this or not... It might give the traces an incorrect height.
+# offset_target, _ = targetTraces.subtract_offset()
+# actual_data = actual_data - offset_target*0.7
+#
+# data_high = filtered_data.overlap_to_high_freq(frequency)
+# calibrationTraces.characteristic_traces_pn(plot=True)
+# num = 8
+# plt.plot(actual_data[num], label = 'signal', linewidth = 3)
+# model = ML(data_high, filtered_label, modeltype='SVM')
+# model.makemodel()
+# pred = model.predict(actual_data)
+# print(pred[num])
+# plt.legend()
+# plt.show()
+data_high = filtered_data.overlap_to_high_freq(frequency)
+for i in range(20):
+    plt.plot(data_high[i], label = filtered_label[i])
+plt.legend()
 plt.show()
-
-
