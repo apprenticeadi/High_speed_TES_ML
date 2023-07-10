@@ -9,6 +9,9 @@ from src.traces import Traces
 from tqdm.auto import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+from sktime.classification.kernel_based import RocketClassifier
+from sktime.transformations.panel.catch22 import Catch22
+from sktime.pipeline import make_pipeline
 
 class ML:
 
@@ -29,18 +32,31 @@ class ML:
         elif self.modeltype == 'BDT':
             self.dtrain = xgb.DMatrix(self.x_train, label=self.y_train)
             self.dtest = xgb.DMatrix(self.x_test, label=self.y_test)
+
+        elif self.modeltype == 'RKT':
+            self.classifier = RocketClassifier(num_kernels=2000)
+
+        elif self.modeltype == 'C22':
+            catch22 = Catch22()
+            randf = RandomForestClassifier()
+            pipe = make_pipeline(catch22,randf)
+            self.classifier = pipe
+
         else:
             raise Exception('modeltype must be "RF", "SVM" or  "BDT" (Random forest, support vector machines or boosted decision tree)')
 
     def makemodel(self, num_rounds = 10, num_class = 10):
 
         if self.modeltype == 'RF':
+            print('Building Random Forest')
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
             self.classifier.fit(x_train, y_train)
         if self.modeltype == 'SVM':
+            print('Building support vector machines')
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
             self.classifier.fit(x_train, y_train)
         if self.modeltype == 'BDT':
+            print('Building boosted decision tree')
             params = {
                 'max_depth': 5,
                 'eta': 0.1,
@@ -48,6 +64,14 @@ class ML:
                 'objective': 'multi:softmax'
             }
             self.classifier = xgb.train(params, self.dtrain, num_rounds)
+        if self.modeltype =='RKT':
+            print('Building Rocket')
+            x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
+            self.classifier.fit(x_train,y_train)
+        if self.modeltype == 'C22':
+            print('Building catch22')
+            x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
+            self.classifier.fit(x_train,y_train)
 
 
     def accuracy_score(self):
