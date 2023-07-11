@@ -4,7 +4,7 @@ from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from src.ML_funcs import ML
 
-multiplier = 0.1
+multiplier = 0.5
 num_bins = 1000
 guess_peak = 30
 pca_components = 2  # it's really doubtful if pca helps at all
@@ -73,7 +73,7 @@ freq_values =[ 500,600,700,800,900]
 #     ax.set_title(str(frequency)+ 'kHz accuracy score = '+str(model.accuracy_score())[0:5])
 #ax.set_title(str(frequency) + ' kHz, classifacation: ' + str(pn))
 data_high = filtered_data.overlap_to_high_freq(frequency)
-model = ML(data_high, filtered_label, modeltype='C22')
+model = ML(data_high, filtered_label, modeltype='HC2')
 model.makemodel(num_rounds=25)
 actual_data = DataUtils.read_high_freq_data(frequency)
 targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
