@@ -37,7 +37,7 @@ def sort_volt_diff(target_trace, comp_char_traces, k=4):
     idx_sort[len(idx_neg_sort):] = idx_pos_sort
 
     return idx_sort, area_diffs[idx_sort]
-
+from src.utils import DataUtils, TraceUtils
 
 def sort_abs_volt_diff(target_trace, comp_char_traces, k=4):
     """
@@ -129,6 +129,28 @@ def search_maj_voting(target_data, comp_char_traces, pn_combs, k=4):
             errors[i] = diff_tie_breaker[winner_idx]
 
     return pns, errors
+
+def get_total_comp_traces(num=100, multiplier = 1.2, num_bins = 1000):
+    data_100 = DataUtils.read_raw_data(num)
+    calibrationTraces = Traces(frequency=num, data=data_100, multiplier=multiplier, num_bins=num_bins)
+    offset_cal, _ = calibrationTraces.subtract_offset()
+    '''
+    process calibration data to find range on traces for each photon number using total_traces
+    '''
+    total_traces = calibrationTraces.total_traces()
+    max_photon_number = int((len(total_traces) / 3) - 1)
+    '''
+    apply shift
+    '''
+    tar_ave_trace, tar_ave_trace_stdp, tar_ave_trace_stdm = targetTraces.average_trace(plot=False)
+    shifted_cal_chars = TraceUtils.shift_trace(tar_ave_trace, total_traces, pad_length=guess_peak * 2, id=1)
+    '''
+    generate composite characteristic traces, using composite_char_traces method
+    '''
+    per = len(targetTraces.get_data()[0])
+    pn_combs, comp_traces = TraceUtils.max_min_trace_utils(shifted_cal_chars, per)
+
+    return pn_combs, comp_traces
 
 def return_comp_traces(calibrationTraces, targetTraces, guess_peak = 30):
     '''

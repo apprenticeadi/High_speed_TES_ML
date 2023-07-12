@@ -2,6 +2,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
+from sklearn.linear_model import RidgeClassifierCV
+from sklearn.pipeline import make_pipeline
 import xgboost as xgb
 from src.utils import DataUtils
 from src.composite_funcs import return_comp_traces
@@ -12,8 +14,6 @@ import matplotlib.pyplot as plt
 from sktime.classification.kernel_based import RocketClassifier
 from sktime.transformations.panel.catch22 import Catch22
 from sktime.pipeline import make_pipeline
-from sktime.classification.hybrid import HIVECOTEV2
-
 
 class ML:
 
@@ -36,15 +36,13 @@ class ML:
             self.dtest = xgb.DMatrix(self.x_test, label=self.y_test)
 
         elif self.modeltype == 'RKT':
-            self.classifier = RocketClassifier(num_kernels=2000)
+            self.classifier = RidgeClassifierCV()
 
         elif self.modeltype == 'C22':
             catch22 = Catch22()
             randf = RandomForestClassifier()
             pipe = make_pipeline(catch22,randf)
             self.classifier = pipe
-        elif self.modeltype == 'HC2':
-            self.classifier = HIVECOTEV2()
 
         else:
             raise Exception('modeltype must be "RF", "SVM" or  "BDT" (Random forest, support vector machines or boosted decision tree)')
@@ -68,22 +66,15 @@ class ML:
                 'objective': 'multi:softmax'
             }
             self.classifier = xgb.train(params, self.dtrain, num_rounds)
-
         if self.modeltype =='RKT':
             print('Building Rocket')
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
+            rocket = R
             self.classifier.fit(x_train,y_train)
-
         if self.modeltype == 'C22':
             print('Building catch22')
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
-            self.classifier.fit(x_train,y_train)
-
-        if self.modeltype == 'HC2':
-            print('Building HC2')
-            x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
-            self.classifier.fit(x_train, y_train)
-
+            tqdm(self.classifier.fit(x_train,y_train))
 
 
     def accuracy_score(self):
