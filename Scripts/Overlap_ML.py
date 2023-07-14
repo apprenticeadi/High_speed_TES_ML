@@ -4,7 +4,7 @@ from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from src.ML_funcs import ML
 
-multiplier = 1
+multiplier = 0.8
 num_bins = 1000
 guess_peak = 30
 pca_components = 2  # it's really doubtful if pca helps at all

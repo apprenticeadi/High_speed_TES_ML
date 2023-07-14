@@ -11,10 +11,12 @@ import matplotlib.pyplot as plt
 
 
 frequency = 500
-multiplier = 0.6
+multiplier = 0.8
 num_bins = 1000
 
-learn = load_learner('./models/500kHz.pkl')
+learn = load_learner('./models/100kHz_XR1P.pkl')
+
+
 actual_data = DataUtils.read_high_freq_data(frequency)
 targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
 offset_target, _ = targetTraces.subtract_offset()
@@ -36,3 +38,4 @@ print('plotting')
 plt.bar(list(range(len(np.bincount(preds)))), np.bincount(preds))
 plt.title('PN distribution for ' +str(frequency)+' kHz'+ ' and m=' +str(multiplier))
 plt.show()
+
