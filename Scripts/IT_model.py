@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+from bs4 import BeautifulSoup
 from sklearn.model_selection import train_test_split
 from src.utils import DataUtils
 from src.traces import Traces
@@ -9,7 +11,8 @@ import time
 import pickle
 
 
-multiplier = 0.6
+
+multiplier = 0.8
 num_bins = 1000
 guess_peak = 30
 pca_components = 2  # it's really doubtful if pca helps at all
@@ -50,6 +53,11 @@ f1 = time.time()
 print('model built, time to build : ' + str(f1-s))
 learn.lr_find()
 learn.fit_one_cycle(10, lr_max = 0.001)
-PATH = Path('./models/500kHz.pkl')
+PATH = Path('./models/500kHz_ResNet.pkl')
 PATH.parent.mkdir(parents = True, exist_ok = True)
 learn.export(PATH)
+
+learn.feature_importance()
+
+
+plt.show()
