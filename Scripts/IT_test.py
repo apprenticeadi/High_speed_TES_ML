@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 
 frequency = 500
-multiplier = 0.8
+multiplier = 3
 num_bins = 1000
 
-learn = load_learner('./models/100kHz_XR1P.pkl')
+learn = load_learner('./models/500kHz_ResCNN.pkl')
 
 
 actual_data = DataUtils.read_high_freq_data(frequency)
