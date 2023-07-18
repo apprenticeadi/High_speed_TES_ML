@@ -9,6 +9,7 @@ from src.utils import DataUtils
 from src.traces import Traces
 import seaborn as sns
 import pandas as pd
+from tsfresh import extract_features
 
 multiplier = 3
 num_bins = 1000
@@ -28,61 +29,41 @@ frequency = 500
 filtered_data = Traces(100, filtered_traces)
 data_high = filtered_data.overlap_to_high_freq(frequency)
 
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(filtered_traces, filtered_label, test_size=0.2, random_state=42)
 
-# Define a custom transformer to scale the 1D time series data
-class TimeSeriesScaler(StandardScaler):
-    def fit(self, X, y=None):
-        return self
+data_dict = {'time_series': [pd.Series(ts) for ts in data_high], 'label': filtered_label}
+data_df = pd.DataFrame.from_dict(data_dict)
 
-    def transform(self, X, y=None):
-        return np.array([self._scale_series(series) for series in X])
+print('beginning feature extraction')
+extracted_features = extract_features(data_df, column_id='label', column_sort=None)
+print('feature extraction complete')
 
-    def _scale_series(self, series):
-        return (series - np.mean(series)) / np.std(series)
+# Step 2: Split the data into training and testing sets
+X = extracted_features.drop('label', axis=1).values
+y = extracted_features['label'].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Perform feature selection using SelectKBest with ANOVA (f_classif) score as the criterion
-k_best = 10  # Select the top features
-feature_selector = SelectKBest(score_func=f_classif, k=k_best)
+# Step 3: Train a classifier (you can choose any other classifier if you prefer)
+clf = RandomForestClassifier(random_state=42)
+clf.fit(X_train, y_train)
 
-X_train_scaled = TimeSeriesScaler().fit_transform(X_train)
-X_train_selected = feature_selector.fit_transform(X_train_scaled, y_train)
+# Step 4: Make predictions on the test set
+y_pred = clf.predict(X_test)
 
-
-X_test_scaled = TimeSeriesScaler().fit_transform(X_test)
-X_test_selected = feature_selector.transform(X_test_scaled)
-
-# Get the selected feature indices
-selected_feature_indices = feature_selector.get_support(indices=True)
-
-
-# Train a Random Forest classifier using the selected features
-clf = RandomForestClassifier(n_estimators=100, random_state=42)
-clf.fit(X_train_selected, y_train)
-
-# Predict on the test set
-y_pred = clf.predict(X_test_selected)
-
-# Calculate accuracy and other metrics
+# Step 5: Evaluate the model's performance
 accuracy = accuracy_score(y_test, y_pred)
-classification_report_str = classification_report(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
+print(f"Accuracy: {accuracy}")
 
-print("Selected Feature Indices:", selected_feature_indices)
-print("Accuracy:", accuracy)
-print("Classification Report:\n", classification_report_str)
-print("Confusion Matrix:\n", conf_matrix)
+# Step 6: Get the feature importances from the trained classifier
+feature_importances = clf.feature_importances_
+
+# Step 7: Sort features based on importance
+sorted_indices = np.argsort(feature_importances)[::-1]
+sorted_features = extracted_features.drop('label', axis=1).columns[sorted_indices]
+
+# Print the sorted features and their corresponding importances
+print("Top features and their importances:")
+for feature, importance in zip(sorted_features, feature_importances[sorted_indices]):
+    print(f"{feature}: {importance}")
 
 
-X_train_selected_df = pd.DataFrame(X_train_selected)
-
-# Compute the correlation matrix
-corr_matrix = X_train_selected_df.corr()
-
-# Create a correlation heatmap
-plt.figure(figsize=(8, 6))
-sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-plt.title("Correlation Heatmap of Selected Features")
-plt.show()
 
