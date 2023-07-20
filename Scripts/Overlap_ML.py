@@ -4,15 +4,40 @@ from src.utils import DataUtils, TraceUtils
 from src.traces import Traces
 from src.ML_funcs import ML
 
-multiplier = 3
+multiplier = 1
 num_bins = 1000
 guess_peak = 30
 pca_components = 2  # it's really doubtful if pca helps at all
 pca_cleanup = True
 
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
-data_100 = DataUtils.read_raw_data(100)
-calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
+#frequency = 100
+power = 2
+freq_values = [10,50,100,200,300, 400]
+#freq_values = [500,600,700,800,900,1000]
+freq_values = [10,50,100,200,300, 400,500,600,700,800,900,1000]
+#fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(15, 12))
+# for frequency, ax in zip(freq_values, axs.ravel()):
+#     if frequency<101:
+#         data = DataUtils.read_raw_data_new(frequency, power=0)
+#     if frequency>101:
+#         data = DataUtils.read_high_freq_data(frequency, power = power)
+#     calibrationTraces = Traces(frequency=frequency, data=data, multiplier=multiplier, num_bins=num_bins)
+#     overlaps, heights, bin_edges = calibrationTraces.raw_histogram(plot = False)
+#     ax.hist(overlaps, bins=num_bins)
+#     ax.set_title(str(frequency) + 'kHz')
+# plt.show()
+for frequency in freq_values[::-1]:
+    if frequency<101:
+        data = DataUtils.read_raw_data_new(frequency, power=0)
+    if frequency>101:
+        data = DataUtils.read_high_freq_data(frequency, power = power)
+    calibrationTraces = Traces(frequency=frequency, data=data, multiplier=multiplier, num_bins=num_bins)
+    #overlaps, heights, bin_edges = calibrationTraces.raw_histogram(plot = False)
+    aver,_,_ = calibrationTraces.average_trace()
+    plt.plot(aver, label = frequency)
+plt.legend()
+plt.show()
 # # need to put in shift here
 # frequency = 900
 # data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
@@ -21,28 +46,28 @@ calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, 
 # shifted_cal_traces = TraceUtils.shift_trace(tar_ave_trace, calibrationTraces, pad_length=guess_peak*2, id=1)
 
 
-'''Shift data such that 0-photon trace has mean 0'''
-_ = calibrationTraces.subtract_offset()
-
-'''PCA cleanup calibration data'''
-if pca_cleanup:
-    data_cleaned = calibrationTraces.pca_cleanup(num_components=pca_components)
-    calibrationTraces = Traces(frequency=100, data=data_cleaned, multiplier=multiplier, num_bins=num_bins)
-    _ = calibrationTraces.subtract_offset()
-
-'''
-create labelled dataset
-'''
-labels = calibrationTraces.return_labelled_traces()
-filtered_ind = np.where(labels == -1)[0]
-filtered_traces = np.delete(data_100, filtered_ind, axis = 0)
-filtered_label = np.delete(labels, filtered_ind)
-print(len(filtered_label))
-
-filtered_data = Traces(100, filtered_traces)
-
-frequency = 500
-freq_values =[ 500,600,700,800,900]
+# '''Shift data such that 0-photon trace has mean 0'''
+# _ = calibrationTraces.subtract_offset()
+#
+# '''PCA cleanup calibration data'''
+# if pca_cleanup:
+#     data_cleaned = calibrationTraces.pca_cleanup(num_components=pca_components)
+#     calibrationTraces = Traces(frequency=100, data=data_cleaned, multiplier=multiplier, num_bins=num_bins)
+#     _ = calibrationTraces.subtract_offset()
+#
+# '''
+# create labelled dataset
+# '''
+# labels = calibrationTraces.return_labelled_traces()
+# filtered_ind = np.where(labels == -1)[0]
+# filtered_traces = np.delete(data_100, filtered_ind, axis = 0)
+# filtered_label = np.delete(labels, filtered_ind)
+# print(len(filtered_label))
+#
+# filtered_data = Traces(100, filtered_traces)
+#
+# frequency = 500
+# freq_values =[ 500,600,700,800,900]
 # fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(15, 12))
 # plt.suptitle("Multiplier = 1", fontsize=14)
 # for frequency, ax in zip(freq_values, axs.ravel()):
@@ -72,21 +97,21 @@ freq_values =[ 500,600,700,800,900]
 #     ax.bar(list(range(len(np.bincount(test)))), np.bincount(test))
 #     ax.set_title(str(frequency)+ 'kHz accuracy score = '+str(model.accuracy_score())[0:5])
 #ax.set_title(str(frequency) + ' kHz, classifacation: ' + str(pn))
-data_high = filtered_data.overlap_to_high_freq(frequency)
-model = ML(data_high, filtered_label, modeltype='C22 ')
-model.makemodel(num_rounds=25)
-actual_data = DataUtils.read_high_freq_data(frequency)
-targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
-offset_target, _ = targetTraces.subtract_offset()
-actual_data = actual_data - offset_target
-print('data constructed')
-if pca_cleanup:
-    actualTraces = Traces(frequency=frequency, data=actual_data)
-    actual_data = actualTraces.pca_cleanup(num_components=pca_components)
-
-test = model.predict((actual_data))
-
-print('plotting')
-plt.bar(list(range(len(np.bincount(test)))), np.bincount(test))
-plt.title(str(frequency)+ 'kHz accuracy score = '+str(model.accuracy_score())[0:5])
-plt.show()
+# data_high = filtered_data.overlap_to_high_freq(frequency)
+# model = ML(data_high, filtered_label, modeltype='C22 ')
+# model.makemodel(num_rounds=25)
+# actual_data = DataUtils.read_high_freq_data(frequency)
+# targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
+# offset_target, _ = targetTraces.subtract_offset()
+# actual_data = actual_data - offset_target
+# print('data constructed')
+# if pca_cleanup:
+#     actualTraces = Traces(frequency=frequency, data=actual_data)
+#     actual_data = actualTraces.pca_cleanup(num_components=pca_components)
+#
+# test = model.predict((actual_data))
+#
+# print('plotting')
+# plt.bar(list(range(len(np.bincount(test)))), np.bincount(test))
+# plt.title(str(frequency)+ 'kHz accuracy score = '+str(model.accuracy_score())[0:5])
+# plt.show()

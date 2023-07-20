@@ -35,7 +35,7 @@ if __name__ == '__main__':
     data_df['id'] = data_df.index
 
     time_series_list = data_df.apply(lambda row: row['time_series'], axis=1).tolist()
-    data_df = pd.DataFrame({'id:df['id})
+    data_df = pd.DataFrame({'id:df['id']')
 
 
 

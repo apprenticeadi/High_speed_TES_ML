@@ -13,10 +13,10 @@ import datashader.transfer_functions as tf
 import matplotlib as mpl
 
 
-frequency = 1000
-actual_data = DataUtils.read_high_freq_data(frequency)
+frequency = 600
+actual_data = DataUtils.read_high_freq_data(frequency, new=True)
 targetTraces = Traces(frequency=frequency, data=actual_data)
-targetTraces.plot_trace_trains(1,10)
+targetTraces.raw_histogram(plot=True)
 
 plt.show()
 # offset_target, _ = targetTraces.subtract_offset()
