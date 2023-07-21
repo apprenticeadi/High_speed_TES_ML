@@ -65,8 +65,8 @@ class DataUtils:
         else:
             data_high_ = DataUtils.read_raw_data(frequency)
             samples = data_high_.shape[1]
-        idealSamples = 5e4 / frequency
 
+        idealSamples = 5e4 / frequency
         traces_per_raw_row = int(samples / np.floor(idealSamples))# This should be 500
         assert traces_per_raw_row == 500
         period = int(idealSamples)
