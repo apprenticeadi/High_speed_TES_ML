@@ -25,7 +25,8 @@ class DataUtils:
     @staticmethod
     def read_raw_data_new(frequency, power):
         freq_name = f'{frequency}k'
-        data_files = os.listdir(r'..\Data\raw_'+str(power))
+        data_dir = r'..\Data\raw_'+str(power)
+        data_files = os.listdir(data_dir)
         file_name = [file for file in data_files if file.startswith(freq_name)][0]
         data_raw = np.loadtxt(r'..\Data\raw_'+str(power) +'\\'+  str(file_name), delimiter=',', unpack=True)
         data_raw = data_raw.T
@@ -33,7 +34,7 @@ class DataUtils:
 
 
     @staticmethod
-    def read_high_freq_data(frequency, power=0, new = False):
+    def read_high_freq_data(frequency, power=0, new = False, trigger = False):
         '''
         100 kHz data corresponds to 10us period, which is represented by 500 datapoints per trace. The time between two
         datapoints is thus 10ns.
@@ -45,11 +46,27 @@ class DataUtils:
         This function reads the raw data files and split them into correct lengths of traces
         '''
 
-        #data_high_ = DataUtils.read_raw_data(frequency)
-        #if new :
-        data_high_ = DataUtils.read_raw_data_new(frequency, 2)
+        if new:
+            data_high_ = DataUtils.read_raw_data_new(frequency, power)
+            num = len(data_high_[0])
+            if trigger == True:
+                fixed_data = np.zeros(50, dtype=object)
+                for i in range(0, 50):
+                    gradients = np.gradient(data_high_[i][2:200])
+                    ind = np.argmax(gradients)
+                    if ind ==0:
+                        fixed_data[i] = data_high_[i][ind:]
+                    if ind!=0:
+                        fixed_data[i] = np.append(data_high_[i][ind:], np.zeros(ind))
+
+
+                data_high_ = np.asarray(fixed_data)
+            samples = num
+        else:
+            data_high_ = DataUtils.read_raw_data(frequency)
+            samples = data_high_.shape[1]
         idealSamples = 5e4 / frequency
-        samples = data_high_.shape[1]
+
         traces_per_raw_row = int(samples / np.floor(idealSamples))# This should be 500
         assert traces_per_raw_row == 500
         period = int(idealSamples)

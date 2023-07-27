@@ -1,7 +1,8 @@
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve
 from sklearn.linear_model import RidgeClassifierCV
 from sklearn.pipeline import make_pipeline
 import xgboost as xgb
@@ -44,6 +45,9 @@ class ML:
             pipe = make_pipeline(catch22,randf)
             self.classifier = pipe
 
+        elif self.modeltype =='KNN':
+            self.classifier = KNeighborsClassifier()
+
         else:
             raise Exception('modeltype must be "RF", "SVM" or  "BDT" (Random forest, support vector machines or boosted decision tree)')
 
@@ -69,12 +73,16 @@ class ML:
         if self.modeltype =='RKT':
             print('Building Rocket')
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
-            rocket = R
+            rocket = RocketClassifier()
             self.classifier.fit(x_train,y_train)
         if self.modeltype == 'C22':
             print('Building catch22')
             x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
             tqdm(self.classifier.fit(x_train,y_train))
+        if self.modeltype =='KNN':
+            print('Building K-Nearest neighbors')
+            x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
+            self.classifier.fit(x_train, y_train)
 
 
     def accuracy_score(self):
@@ -97,6 +105,19 @@ class ML:
             predictions = self.classifier.predict(targets)
             return predictions
 
+    def classifacation_report(self):
+        predictions = self.classifier.predict(self.x_test)
+        report = classification_report(self.y_test, predictions)
+        return report
+
+    def confusion_matrix(self):
+        predictions = self.classifier.predict(self.x_test)
+        matrix = confusion_matrix(self.y_test, predictions)
+        return matrix
+
+    def ROC_curve(self):
+        predictions = self.classifier.predict(self.x_test)
+        return roc_curve(self.y_test, predictions)
 
 def find_accuracies(calibrationTraces):
     freq_values =[ 500,600,700,800,900]
@@ -142,7 +163,6 @@ def find_accuracies(calibrationTraces):
             scr = model.accuracy_score()
             scores[j].append(scr)
     return freq_values, scores, model_types
-
 
 def visualise_trace(labelled_comp_traces, predictions,data_high, num):
     num1 = predictions[num]

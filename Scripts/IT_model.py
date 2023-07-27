@@ -19,9 +19,10 @@ pca_components = 2  # it's really doubtful if pca helps at all
 pca_cleanup = True
 
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
-data_100 = DataUtils.read_raw_data(100)
+data_100 = DataUtils.read_raw_data_new(100,0)
 print(len(data_100))
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
+
 
 _ = calibrationTraces.subtract_offset()
 labels = calibrationTraces.return_labelled_traces()
@@ -29,7 +30,7 @@ filtered_ind = np.where(labels == -1)[0]
 filtered_traces = np.delete(data_100, filtered_ind, axis = 0)
 filtered_label = np.delete(labels, filtered_ind)
 print(len(filtered_traces))
-frequency = 500
+frequency = 400
 filtered_data = Traces(100, filtered_traces)
 data_high = filtered_data.overlap_to_high_freq(frequency)
 '''
@@ -62,8 +63,8 @@ f1 = time.time()
 print('model built, time to build : ' + str(f1-s))
 
 learn.lr_find()
-learn.fit_one_cycle(2, lr_max = 0.001)
-PATH = Path('./models/500kHz_IT.pkl')
+learn.fit_one_cycle(5, lr_max = 0.001)
+PATH = Path('./models/400kHz_IT.pkl')
 PATH.parent.mkdir(parents = True, exist_ok = True)
 learn.export(PATH)
 interp = ClassificationInterpretation.from_learner(learn)

@@ -25,9 +25,8 @@ pca_components = 1  # it's really doubtful if pca helps at all
 composite_num = 4
 
 
-
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
-data_100 = DataUtils.read_raw_data(100)
+data_100 = DataUtils.read_raw_data_new(100, 0)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
 '''Shift data such that 0-photon trace has mean 0'''
@@ -48,7 +47,7 @@ max_photon_number = len(cal_chars) - 1
 # <<<<<<<<<<<<<<<<<<< Target data  >>>>>>>>>>>>>>>>>>
 frequency = 900
 #data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
-data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
+data_high = DataUtils.read_high_freq_data(frequency, 2, new = True)  # unshifted
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 freq_str = targetTraces.freq_str
 
@@ -69,16 +68,16 @@ targetTraces.characteristic_traces_pn(plot=False)
 tar_ave_trace, tar_ave_trace_stdp, tar_ave_trace_stdm = targetTraces.average_trace(plot=False)
 shifted_cal_chars = TraceUtils.shift_trace(tar_ave_trace, cal_chars, pad_length=guess_peak*2, id=1)
 
-plt.figure('Shifted char traces')
-plt.plot(tar_ave_trace, color='red', label=f'{freq_str} overall average trace')
-for i in range(len(shifted_cal_chars)):
-    if i==0:
-        plt.plot(shifted_cal_chars[i], color='black', label='100kHz shifted char traces')
-    else:
-        plt.plot(shifted_cal_chars[i], color='black')
-plt.xlim([0, composite_num * targetTraces.period])
-plt.ylim([targetTraces.ymin, targetTraces.ymax])
-plt.legend()
+# plt.figure('Shifted char traces')
+# plt.plot(tar_ave_trace, color='red', label=f'{freq_str} overall average trace')
+# for i in range(len(shifted_cal_chars)):
+#     if i==0:
+#         plt.plot(shifted_cal_chars[i], color='black', label='100kHz shifted char traces')
+#     else:
+#         plt.plot(shifted_cal_chars[i], color='black')
+# plt.xlim([0, composite_num * targetTraces.period])
+# plt.ylim([targetTraces.ymin, targetTraces.ymax])
+# plt.legend()
 
 '''Find the composite characteristic traces'''
 pn_combs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)

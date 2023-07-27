@@ -13,10 +13,15 @@ import datashader.transfer_functions as tf
 import matplotlib as mpl
 
 
-frequency = 600
-actual_data = DataUtils.read_high_freq_data(frequency, new=True)
+frequency = 500
+power = 3
+if frequency <= 100:
+    actual_data = DataUtils.read_raw_data_new(frequency, power=power)
+else:
+    actual_data = DataUtils.read_high_freq_data(frequency, power=power, new=True)
 targetTraces = Traces(frequency=frequency, data=actual_data)
-targetTraces.raw_histogram(plot=True)
+targetTraces.raw_histogram(plot=True, fig_name=f'{frequency}kHz raw{power}')
+targetTraces.plot_trace_trains(1, 5)
 
 plt.show()
 # offset_target, _ = targetTraces.subtract_offset()

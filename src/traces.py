@@ -26,6 +26,10 @@ class Traces:
         self.min_voltage = np.amin(data)
         self.max_voltage = np.amax(data)
 
+
+        # self.min_voltage = min(data.any())
+        # self.max_voltage = max(data.any())
+
         self.ymin = 5000 * (self.min_voltage // 5000)
         self.ymax = 5000 * (self.max_voltage // 5000 + 1)
 
@@ -321,4 +325,13 @@ class Traces:
                 indices[j] = keys[i]
 
         return indices
+
+    def return_av_diff(self):
+        ave_trace = np.mean(self._data, axis=1)
+        return np.mean(ave_trace)
+
+
+
+
+
 

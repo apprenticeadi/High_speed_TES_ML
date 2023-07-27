@@ -10,14 +10,14 @@ from src.utils import DataUtils
 import matplotlib.pyplot as plt
 
 
-frequency = 500
+frequency = 400
 multiplier = 3
 num_bins = 1000
 
-learn = load_learner('./models/500kHz_IT.pkl')
+learn = load_learner('./models/400kHz_IT.pkl')
 
 
-actual_data = DataUtils.read_high_freq_data(frequency)
+actual_data = DataUtils.read_high_freq_data(frequency, power = 2)
 targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
 offset_target, _ = targetTraces.subtract_offset()
 actual_data = actual_data - offset_target
