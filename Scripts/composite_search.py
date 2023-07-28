@@ -24,7 +24,6 @@ guess_peak = 30
 pca_components = 1  # it's really doubtful if pca helps at all
 composite_num = 4
 
-
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
 data_100 = DataUtils.read_raw_data_new(100, 0)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)

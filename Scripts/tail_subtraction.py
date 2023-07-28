@@ -29,7 +29,6 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     '''
     data_high = DataUtils.read_high_freq_data(frequency, 2, new = True, trigger = True)  # unshifted
 
-<<<<<<< HEAD
     # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
     targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
     offset_target, _ = targetTraces.subtract_offset()  # shift the data such that the characteristic 0 photon trace has mean 0

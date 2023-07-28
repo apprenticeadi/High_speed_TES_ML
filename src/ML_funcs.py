@@ -2,11 +2,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-<<<<<<< HEAD
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve
-=======
-from sklearn.metrics import classification_report, accuracy_score
->>>>>>> 6ee3c97 (edited files for new data, current results produced in 'overlap_ML')
 from sklearn.linear_model import RidgeClassifierCV
 from sklearn.pipeline import make_pipeline
 import xgboost as xgb
