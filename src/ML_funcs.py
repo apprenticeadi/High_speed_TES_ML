@@ -193,5 +193,17 @@ def visualise_trace(labelled_comp_traces, predictions,data_high, num):
 
 
 
+def return_artifical_data(frequency, multiplier):
+    num_bins = 1000
+    data_100 = DataUtils.read_raw_data_new(100, 0)
+    calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
+    labels = calibrationTraces.return_labelled_traces()
+    filtered_ind = np.where(labels == -1)[0]
+    filtered_traces = np.delete(data_100, filtered_ind, axis=0)
+    filtered_label = np.delete(labels, filtered_ind)
+    filtered_data = Traces(100, filtered_traces)
+    data_high = filtered_data.overlap_to_high_freq(frequency)
+    return data_high, filtered_label
+
 
 
