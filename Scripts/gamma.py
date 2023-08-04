@@ -60,9 +60,9 @@ for i in tqdm(range(len(data_high))):
         y = data_high[8]
         x = np.arange(0, len(y))
         guess = [-181860.9071243739, 25448.516309015893, 14.33975016573416, -26402750.986471906, 6.164476977344654, -1.9193093173505553e-05, 216398.60784343176, 11574548.485413479]
-        fit, cov = curve_fit(exp_signal, x, y,p0 = guess,  maxfev = 2000000)
+        fit, cov = curve_fit(exp_signal, x, y,p0 = guess,  maxfev = 8000000)
 
-        extracted_params.append(fit)
+        extracted_params.append(np.array(list(fit)))
     except (RuntimeError, OverflowError):
         extracted_params.append([0,0,0,0,0,0,0,0])
 extracted_params = np.array(extracted_params)
