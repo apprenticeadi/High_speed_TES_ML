@@ -195,7 +195,7 @@ def visualise_trace(labelled_comp_traces, predictions,data_high, num):
 
 def return_artifical_data(frequency, multiplier):
     num_bins = 1000
-    data_100 = DataUtils.read_raw_data_new(100, 0)
+    data_100 = DataUtils.read_raw_data(100)
     calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
     labels = calibrationTraces.return_labelled_traces()
     filtered_ind = np.where(labels == -1)[0]

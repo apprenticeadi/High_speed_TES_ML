@@ -37,34 +37,16 @@ X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 length = len(X_train)
 # Define the CNN model
 model = Sequential()
-model.add(LSTM(64, input_shape=input_shape))
-model.add(Dense(num_classes, activation='softmax'))
-# model.add(Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=input_shape))
-# model.add(MaxPooling1D(pool_size=2))
-# model.add(Conv1D(filters=64, kernel_size=3, activation='relu'))
-# model.add(MaxPooling1D(pool_size=2))
-# model.add(Flatten())
-# model.add(Dense(128, activation='relu'))
-# model.add(Dropout(0.5))
-# model.add(Dense(10, activation='softmax'))
-
-'''
-model = Sequential()
-model.add(LSTM(64, input_shape=input_shape))
-model.add(Dense(num_classes, activation='softmax'))
-
-# Compile the model
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-# Train the model
-model.fit(X_train, y_train, batch_size=32, epochs=10, validation_data=(X_test, y_test))
-
-# Evaluate the model
-accuracy = model.evaluate(X_test, y_test)[1]
-print("Test Accuracy:", accuracy)
-'''
-
-
+# model.add(LSTM(64, input_shape=input_shape))
+# model.add(Dense(num_classes, activation='softmax'))
+model.add(Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=input_shape))
+model.add(MaxPooling1D(pool_size=2))
+model.add(Conv1D(filters=64, kernel_size=3, activation='relu'))
+model.add(MaxPooling1D(pool_size=2))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(10, activation='softmax'))
 
 
 
