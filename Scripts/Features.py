@@ -6,8 +6,8 @@ from scipy.signal import find_peaks
 
 
 
-TS_chi = np.loadtxt('chi_vals_TS.txt')[0:5]
-ML_chi = np.loadtxt('chi_vals_ML.txt')
+TS_chi = np.loadtxt('params/chi_vals_TS.txt')[0:5]
+ML_chi = np.loadtxt('params/chi_vals_ML.txt')
 x_TS = np.arange(300,701,100)
 x_ML = np.arange(200,1001,100)
 

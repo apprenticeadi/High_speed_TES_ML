@@ -12,9 +12,9 @@ from src.traces import Traces
 from tqdm.auto import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-from sktime.classification.kernel_based import RocketClassifier
-from sktime.transformations.panel.catch22 import Catch22
-from sktime.pipeline import make_pipeline
+#from sktime.classification.kernel_based import RocketClassifier
+#from sktime.transformations.panel.catch22 import Catch22
+#from sktime.pipeline import make_pipeline
 
 class ML:
 
@@ -36,14 +36,14 @@ class ML:
             self.dtrain = xgb.DMatrix(self.x_train, label=self.y_train)
             self.dtest = xgb.DMatrix(self.x_test, label=self.y_test)
 
-        elif self.modeltype == 'RKT':
-            self.classifier = RidgeClassifierCV()
-
-        elif self.modeltype == 'C22':
-            catch22 = Catch22()
-            randf = RandomForestClassifier()
-            pipe = make_pipeline(catch22,randf)
-            self.classifier = pipe
+        # elif self.modeltype == 'RKT':
+        #     self.classifier = RidgeClassifierCV()
+        #
+        # elif self.modeltype == 'C22':
+        #     catch22 = Catch22()
+        #     randf = RandomForestClassifier()
+        #     pipe = make_pipeline(catch22,randf)
+        #     self.classifier = pipe
 
         elif self.modeltype =='KNN':
             self.classifier = KNeighborsClassifier()
@@ -191,11 +191,9 @@ def visualise_trace(labelled_comp_traces, predictions,data_high, num):
     plt.title('composite curves for ' + a)
     plt.show()
 
-
-
-def return_artifical_data(frequency, multiplier):
+def return_artifical_data(frequency, multiplier, power):
     num_bins = 1000
-    data_100 = DataUtils.read_raw_data(100)
+    data_100 = DataUtils.read_raw_data_new(100, power)
     calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
     labels = calibrationTraces.return_labelled_traces()
     filtered_ind = np.where(labels == -1)[0]

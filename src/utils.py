@@ -30,6 +30,15 @@ class DataUtils:
         file_name = [file for file in data_files if file.startswith(freq_name)][0]
         data_raw = np.loadtxt(r'..\Data\raw_'+str(power) +'\\'+  str(file_name), delimiter=',', unpack=True)
         data_raw = data_raw.T
+        if power > 5 and frequency ==100:
+            new_data = []
+            for i in range(len(data_raw)):
+                trace_1 = data_raw[i][0:500]
+                trace_2 = data_raw[i][0:500]
+                new_data.append(trace_1)
+                new_data.append(trace_2)
+            data_raw = np.array(new_data)
+
         return data_raw
 
 
