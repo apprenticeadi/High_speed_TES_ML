@@ -27,7 +27,7 @@ class ML:
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.dataset, self.labels)
 
         if self.modeltype == 'RF':
-            self.classifier = RandomForestClassifier()
+            self.classifier = RandomForestClassifier(n_estimators=400)
 
         elif self.modeltype == 'SVM':
             self.classifier = SVC()
