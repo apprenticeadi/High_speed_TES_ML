@@ -12,13 +12,13 @@ from scipy.stats import chisquare
 multiplier = 0.6
 num_bins = 1000
 guess_peak = 30
-freq_values = np.arange(300,901,100)
+freq_values = np.arange(300,601,100)
 chi_vals = []
 fig, axs = plt.subplots(nrows=4, ncols=2, figsize=(15, 12))
 for frequency,ax in zip(freq_values, axs.ravel()):
     print(frequency)
     '''Calibration data'''
-    data_100 = DataUtils.read_raw_data_new(100,5)
+    data_100 = DataUtils.read_raw_data_new(100,8)
     calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
     offset_cal, _ = calibrationTraces.subtract_offset()
     # %%
@@ -27,7 +27,7 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     Here I also test tail subtraction method on artificially overlapped higher frequency data. It seems that the method 
     actually makes the stegosaurus worse. 
     '''
-    data_high = DataUtils.read_high_freq_data(frequency, 5, new = True)  # unshifted
+    data_high = DataUtils.read_high_freq_data(frequency, 8, new = True)  # unshifted
 
     # data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
     targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)

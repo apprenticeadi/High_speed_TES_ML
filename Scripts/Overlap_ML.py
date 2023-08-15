@@ -37,7 +37,7 @@ fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
 av_PN = []
 av_PN_error = []
 chi_vals = []
-shift = [1000,1000,1000,1000,700,700,1500,1600,1750]
+shift = [1000,1000,1000,1000,700,800,1500,1600,1750]
 j = -1
 for frequency,ax in zip(freq_values, axs.ravel()):
     j = j+1
@@ -50,13 +50,12 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
 
 
-    #offset_target = 0.5*targetTraces.return_av_diff()
-    #actual_data = actual_data - offset_target
+    offset_target = 0.5*targetTraces.return_av_diff()
     if frequency <550:
         offset_target, _ = targetTraces.subtract_offset()
-    if frequency > 751:
+    if frequency > 551:
+        offset_target = 0.5 * targetTraces.return_av_diff()
         offset_target = shift[j]
-    print(offset_target)
     actual_data = actual_data - offset_target
     if pca_cleanup:
         actualTraces = Traces(frequency=frequency, data=actual_data)
