@@ -25,7 +25,7 @@ class DataUtils:
     @staticmethod
     def read_raw_data_new(frequency, power):
         freq_name = f'{frequency}k'
-        data_dir = r'..\Data\raw_'+str(power)
+        data_dir = r'../Data/raw_'+str(power)
         data_files = os.listdir(data_dir)
         file_name = [file for file in data_files if file.startswith(freq_name)][0]
         data_raw = np.loadtxt(r'..\Data\raw_'+str(power) +'\\'+  str(file_name), delimiter=',', unpack=True)
