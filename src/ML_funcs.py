@@ -3,6 +3,7 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve
+from scipy.signal import find_peaks
 from sklearn.linear_model import RidgeClassifierCV
 from sklearn.pipeline import make_pipeline
 import xgboost as xgb
@@ -12,6 +13,7 @@ from src.traces import Traces
 from tqdm.auto import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import welch
 #from sktime.classification.kernel_based import RocketClassifier
 #from sktime.transformations.panel.catch22 import Catch22
 #from sktime.pipeline import make_pipeline
@@ -203,5 +205,27 @@ def return_artifical_data(frequency, multiplier, power):
     data_high = filtered_data.overlap_to_high_freq(frequency)
     return data_high, filtered_label
 
-
-
+def extract_features(x):
+    peaks, props = find_peaks(x)
+    peak_heights = x[peaks]
+    if len(peaks)==0:
+        peak_loc, max_peak = np.argmax(x), max(x)
+    if len(peaks)>0:
+        peak_loc, max_peak = peaks[np.argmax(peak_heights)], max(peak_heights)
+    average = np.mean(x)
+    std = np.std(x)
+    y = np.argwhere(x ==max_peak/2)
+    if len(y) ==0:
+        rise_time = peak_loc/2
+    if len(y)>0:
+        rise_time = np.abs(y[0][0]-peak_loc)
+    energy = np.sum(x**2)
+    frequencies, psd = welch(x)
+    if len(frequencies)==0:
+        freq = 0
+    if len(frequencies) >0:
+        freq = frequencies[np.argmax(psd)]
+    crest = max_peak/np.sqrt(np.mean(x**2))
+    var = np.var(x)
+    kurt = (np.sum((x - average)**4)/(var ** 2)) - 3
+    return [peak_loc, average,std, energy, freq, max_peak, rise_time,crest, kurt]

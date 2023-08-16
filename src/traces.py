@@ -328,7 +328,7 @@ class Traces:
 
     def return_av_diff(self):
         ave_trace = np.mean(self._data, axis=1)
-        return np.mean(ave_trace)
+        return np.min(ave_trace)
 
 
 

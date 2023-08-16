@@ -3,66 +3,39 @@ import matplotlib.pyplot as plt
 from src.ML_funcs import return_artifical_data
 from src.utils import DataUtils
 from src.traces import Traces
-import pandas as pd
-from tsfresh import extract_features
 
-# data, labels = return_artifical_data(500,1.7,5)
+
+'''
+comparison of offset subtraction methods
+'''
+fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
+freq_values = np.arange(200,1001,100)
+differences = []
+for freq,ax in zip(freq_values, axs.ravel()):
+    actual_data = DataUtils.read_high_freq_data(freq,5,new = True)
+    art_data,label = return_artifical_data(freq,1.8,5)
+    trace1 = Traces(freq,actual_data,1.8)
+    art_trace = Traces(freq, art_data, 1.8)
+    av1 ,a,b = trace1.average_trace(plot = False)
+    av2,c,d = art_trace.average_trace(plot = False)
+    diff = np.max(av1) - np.max(av2)
+    differences.append(diff)
+    ax.plot(av1, label = 'data')
+    ax.plot(av2, label = 'artificial')
+    # plt.plot(freq,off,'+')
+    # plt.plot(freq,diff,'o')
+    ax.set_title(freq)
+    ax.legend()
+print(list(differences))
+plt.show()
 #
-#
-# y = data[0]
-# x = np.arange(len(y))
-#
-# df = pd.DataFrame({'value':y})
-# df['time'] = x
-# df['id'] = 0
-#
-# if __name__ =='__main__':
-#     features = extract_features(df,column_id='id', column_sort='time')
-#     var = features.values
+#[1215.3951373568752, 1101.6401777195333, 909.7344144653093, 966.391281935189, 1088.2631153452876, 1205.8939480836534, 1360.1713700452046, 1852.4754714202963, 2261.182167195711]
+# data = DataUtils.read_high_freq_data(600,5,new=True)
+# trace = Traces(600,data,1.5)
+# trace.fit_histogram(plot = True)
+# plt.show()
 
-import numpy as np
-import pandas as pd
-from tsfresh import extract_features
-
-def extract_features_for_time_series(y, idx):
-    x = np.arange(len(y))
-
-    # Create a DataFrame for the time series data
-    df = pd.DataFrame({'value': y})
-    df['time'] = x
-    df['id'] = idx  # Use the index as the identifier
-
-    # Extract features using tsfresh
-    features_df = extract_features(df, column_id='id', column_sort='time')
-
-    # Convert the features DataFrame to a numpy array and return it
-    features_array = features_df.values
-    return features_array
-
-def main():
-    # Your data and labels, replace with actual values
-    data, labels = return_artifical_data(500, 1.7, 5)
-
-    # Initialize an empty list to store feature arrays
-    all_features = []
-
-    # Iterate through each time series
-    for idx, y in enumerate(data):
-        print(idx, idx/len(data)*100 )
-        features_array = extract_features_for_time_series(y, idx)
-        all_features.append(features_array)
-
-    # Convert the list of feature arrays to a list of numpy arrays
-    all_features_arrays = all_features
-
-    print("Features for all time series as a list of numpy arrays:")
-    print(all_features_arrays)
-
-    # Save the list of numpy arrays
-    np.save('all_features_arrays.npy', all_features_arrays)
-
-if __name__ == '__main__':
-    main()
-
-
-
+# data100 = DataUtils.read_raw_data_new(100,5)
+# trace = Traces(100,data100,1.5)
+# off,_ = trace.subtract_offset()
+# print(off)
