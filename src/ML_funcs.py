@@ -202,8 +202,9 @@ def return_artifical_data(frequency, multiplier, power):
     filtered_traces = np.delete(data_100, filtered_ind, axis=0)
     filtered_label = np.delete(labels, filtered_ind)
     filtered_data = Traces(100, filtered_traces)
-    data_high = filtered_data.overlap_to_high_freq(frequency)
-    return data_high, filtered_label
+    #data_high = filtered_data.overlap_to_high_freq(frequency)
+    data_high = filtered_data.generate_high_freq_data(frequency)
+    return data_high, filtered_label[1:]
 
 def extract_features(x):
     peaks, props = find_peaks(x)

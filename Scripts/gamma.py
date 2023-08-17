@@ -63,5 +63,5 @@ c, a, x0, t_rise, t_fall,d, e, k = fit
 print(list(fit))
 plt.plot(y, '+')
 x = np.linspace(-20,100,1500)
-plt.plot(x, exp_signal(x,c, a, x0, t_rise, t_fall,d, e, k))
+#plt.plot(x, exp_signal(x,c, a, x0, t_rise, 30,d, -10, k))
 plt.show()

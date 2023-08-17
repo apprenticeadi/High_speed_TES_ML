@@ -6,7 +6,7 @@ from src.ML_funcs import ML, return_artifical_data, extract_features
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 
-power = 8
+power = 7
 
 def poisson_curve(x, mu, A):
     return A * (mu ** x) * np.exp(-mu) / factorial(np.abs(x))

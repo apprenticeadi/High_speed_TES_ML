@@ -195,9 +195,9 @@ class Traces:
                 fig_name = f'{self.freq_str} characteristic traces per photon number'
             plt.figure(fig_name)
             for pn in range(characteristic_traces.shape[0]):
-                plt.plot(characteristic_traces[pn], label=f'{pn} photons', color = colours[pn])
-                plt.plot(characteristic_traces[pn]+char_traces_err[pn],linestyle = 'dashed', label=f'{pn} photons +1std', color = colours[pn])
-                plt.plot(characteristic_traces[pn]-char_traces_err[pn],linestyle = 'dashed', label=f'{pn} photons -1 std', color = colours[pn])
+                plt.plot(characteristic_traces[pn], label=f'{pn} photons')
+                plt.plot(characteristic_traces[pn]+char_traces_err[pn],linestyle = 'dashed')
+                plt.plot(characteristic_traces[pn]-char_traces_err[pn],linestyle = 'dashed')
                 plt.ylabel('voltage')
                 plt.xlabel('time (in sample)')
                 plt.legend()
@@ -284,6 +284,7 @@ class Traces:
             #num_traces = len(current_data)
 
         new_period = int(5e4 / high_frequency)
+        old_period = 500
         data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
 
         for i in range(num_traces):
@@ -291,6 +292,22 @@ class Traces:
 
 
         return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
+
+
+
+    def generate_high_freq_data(self,frequency):
+        data_100 = self.get_data()
+        num_traces = data_100.shape[0]
+        new_period = int(5e4/frequency)
+        overlapped = np.zeros(num_traces-1)
+        overlapped = []
+        for i in range(1,num_traces):
+            new_peak = data_100[i][:new_period]
+            old_tail = data_100[i-1][new_period:2*new_period]
+            overlapped.append(new_peak + old_tail)
+
+        return np.array(overlapped)
+
 
     def pca_cleanup(self, num_components=1):
         data = self.get_data()
