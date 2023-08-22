@@ -1,74 +1,66 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropout, LSTM
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from src.utils import DataUtils
-from src.traces import Traces
 import tensorflow as tf
-import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv1D, BatchNormalization, ReLU, GlobalAveragePooling1D, Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.utils import to_categorical
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from src.ML_funcs import return_artifical_data
-from sklearn.model_selection import StratifiedKFold
-from keras.utils import to_categorical
+time_series, labels = return_artifical_data(600,1.6,8)
 
+signal_length = len(time_series[0])  # Length of each signal
+num_classes = 11  # Number of classes
 
-time_series, labels = return_artifical_data(600,1.5,8)
-# Initialize k-fold cross-validation
-skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+# Preprocessing: Split data and one-hot encode labels
+train_data, test_data, train_labels, test_labels = train_test_split(time_series, labels, test_size=0.2, random_state=42)
+train_labels_onehot = to_categorical(train_labels, num_classes=num_classes)
+test_labels_onehot = to_categorical(test_labels, num_classes=num_classes)
 
-# Initialize list to store Test Accuracies
-test_accs = []
-
-# Initialize list to store Test Losses
-test_losses = []
-
-X_train, X_test, y_train, y_test = train_test_split(time_series, labels, test_size=0.2, random_state=42)
-
-# Convert labels to categorical format
-num_classes = 11
-y_train = to_categorical(y_train, num_classes)
-y_test = to_categorical(y_test, num_classes)
-print(time_series.shape)
-
-input_shape = (time_series.shape[1], 1)  # assuming the shape is (length, features)
-X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-
-length = len(X_train)
-# Define the CNN model
+# Build the CNN architecture
 model = Sequential()
-# model.add(LSTM(64, input_shape=input_shape))
-# model.add(Dense(num_classes, activation='softmax'))
-model.add(Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=input_shape))
-model.add(MaxPooling1D(pool_size=2))
-model.add(Conv1D(filters=64, kernel_size=3, activation='relu'))
-model.add(MaxPooling1D(pool_size=2))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(10, activation='softmax'))
 
+model.add(Conv1D(filters=16, kernel_size=11, padding='same', strides=1, input_shape=(signal_length, 1)))
+model.add(BatchNormalization())
+model.add(ReLU())
 
+model.add(Conv1D(filters=16, kernel_size=11, padding='same', strides=1))
+model.add(BatchNormalization())
+model.add(ReLU())
+
+model.add(GlobalAveragePooling1D())
+
+model.add(Dense(units=num_classes, activation='softmax'))
 
 # Compile the model
-opt = tf.keras.optimizers.Adam(learning_rate=0.001)
-model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+model.compile(optimizer=Adam(learning_rate=0.01), loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Define callbacks
+reduce_lr = ReduceLROnPlateau(factor=0.5, patience=20, min_lr=1e-4)
+early_stop = EarlyStopping(patience=40)
+model_checkpoint = ModelCheckpoint(filepath='models/best_model.h5', save_best_only=True, save_weights_only=False)
 
 # Train the model
-model.fit(X_train, y_train, batch_size=8, epochs=13, validation_data=(X_test, y_test))
+history = model.fit(train_data[..., np.newaxis], train_labels_onehot, batch_size=50, epochs=250,
+                    validation_data=(test_data[..., np.newaxis], test_labels_onehot),
+                    callbacks=[reduce_lr, early_stop, model_checkpoint])
 
-# Evaluate the model
-y_pred_prob = model.predict(X_test)
-y_pred = np.argmax(y_pred_prob, axis=1)
+# Load the best model
+best_model = tf.keras.models.load_model('models/best_model.h5')
 
-accuracy = accuracy_score(np.argmax(y_test, axis=1), y_pred)
-precision = precision_score(np.argmax(y_test, axis=1), y_pred, average='weighted')
-recall = recall_score(np.argmax(y_test, axis=1), y_pred, average='weighted')
-f1 = f1_score(np.argmax(y_test, axis=1), y_pred, average='weighted')
+# Predict using the best model
+predictions = best_model.predict(test_data[..., np.newaxis])
 
-print("Metrics for RNN Model:")
-print(f"Accuracy: {accuracy:.4f}")
-print(f"Precision: {precision:.4f}")
-print(f"Recall: {recall:.4f}")
-print(f"F1-Score: {f1:.4f}")
+# Convert predictions to class labels
+predicted_labels = np.argmax(predictions, axis=1)
+# Calculate precision, recall, F1-score, and accuracy
+precision, recall, f1, _ = precision_recall_fscore_support(test_labels, predicted_labels, average='weighted')
+accuracy = accuracy_score(test_labels, predicted_labels)
+
+# Print evaluation metrics
+print("Precision:", precision)
+print("Recall:", recall)
+print("F1-score:", f1)
+print("Accuracy:", accuracy)

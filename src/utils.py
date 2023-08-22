@@ -1,6 +1,5 @@
 import numpy as np
 import os
-
 class DataUtils:
     @staticmethod
     def read_raw_data(frequency):
@@ -154,6 +153,7 @@ class TraceUtils:
         max_pns, max_traces = TraceUtils.composite_char_traces(tr2, period)
 
         return np.concatenate((min_pns, av_pns, max_pns)), np.concatenate((min_traces,av_traces,max_traces))
+
 
 
 

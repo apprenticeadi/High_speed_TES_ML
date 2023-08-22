@@ -230,3 +230,13 @@ def extract_features(x):
     var = np.var(x)
     kurt = (np.sum((x - average)**4)/(var ** 2)) - 3
     return [peak_loc, average,std, energy, freq, max_peak, rise_time,crest, kurt]
+
+
+def find_offset(frequency, power):
+    actual_data = DataUtils.read_high_freq_data(frequency, power=power, new=True)
+    data_high, labels = return_artifical_data(frequency, 1.6,power)
+    art_trace, actual_trace = Traces(frequency, data_high, 2), Traces(frequency, actual_data, 2)
+    av1, a, b = actual_trace.average_trace()
+    av2, c, d = art_trace.average_trace()
+    shift = np.max(av1) - np.max(av2)
+    return shift

@@ -6,21 +6,21 @@ import numpy as np
 import sklearn.metrics as skm
 import torch
 from tsai.all import *
-from src.utils import DataUtils
+from src.utils import DataUtils, TraceUtils
 import matplotlib.pyplot as plt
+from src.ML_funcs import find_offset
 
 
-frequency = 400
-multiplier = 3
-num_bins = 1000
+frequency = 600
+multiplier = 1.5
+power = 8
 
-learn = load_learner('./models/400kHz_IT.pkl')
+learn = load_learner('./models/600kHz_RNN.pkl')
 
+actual_data = DataUtils.read_high_freq_data(frequency,power = power,new = True)
+shift = find_offset(frequency, power)
+actual_data = actual_data - shift
 
-actual_data = DataUtils.read_high_freq_data(frequency, power = 2)
-targetTraces = Traces(frequency=frequency, data=actual_data, multiplier=multiplier, num_bins=num_bins)
-offset_target, _ = targetTraces.subtract_offset()
-actual_data = actual_data - offset_target
 
 dls = learn.dls
 valid_dl = dls.valid
