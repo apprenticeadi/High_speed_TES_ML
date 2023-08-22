@@ -3,16 +3,16 @@ from src.utils import DataUtils, TraceUtils
 import matplotlib.pyplot as plt
 from src.ML_funcs import find_offset
 import numpy as np
-frequency = 600
+frequency = 700
 multiplier = 1.5
-power = 8
+power = 6
 
 actual_data = DataUtils.read_high_freq_data(frequency,power = power,new = True)
 shift = find_offset(frequency, power)
 actual_data = actual_data - shift
 
 
-best_model = tf.keras.models.load_model('models/best_model.h5')
+best_model = tf.keras.models.load_model('models/700kHz_raw5.h5')
 
 # Predict using the best model
 predictions = best_model.predict(actual_data[..., np.newaxis])

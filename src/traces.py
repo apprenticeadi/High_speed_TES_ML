@@ -156,22 +156,24 @@ class Traces:
 
         return binning_index, binning_traces
 
-    def pn_bar_plot(self, fig_name='', plt_title=''):
+    def pn_bar_plot(self,plot = True, fig_name='', plt_title=''):
 
         binning_index, _ = self.bin_traces(plot=False)
         max_pn_steg = max(binning_index.keys())
         num_trace_per_pn = [len(binning_index[pn]) for pn in range(max_pn_steg + 1)]
+        if plot==True:
+            if fig_name == '':
+                fig_name = f'{self.freq_str} photon number bar plot'
+            if plt_title == '':
+                plt_title = f'{self.freq_str} photon number bar plot for multiplier={self.multiplier}'
 
-        if fig_name == '':
-            fig_name = f'{self.freq_str} photon number bar plot'
-        if plt_title == '':
-            plt_title = f'{self.freq_str} photon number bar plot for multiplier={self.multiplier}'
-
-        plt.figure(fig_name)
-        plt.bar(list(range(max_pn_steg + 1)), num_trace_per_pn)
-        plt.xlabel('Photon number')
-        plt.ylabel('Counts')
-        plt.title(plt_title)
+            plt.figure(fig_name)
+            plt.bar(list(range(max_pn_steg + 1)), num_trace_per_pn)
+            plt.xlabel('Photon number')
+            plt.ylabel('Counts')
+            plt.title(plt_title)
+        if plot ==False:
+            return list(range(max_pn_steg + 1)), num_trace_per_pn
 
     def characteristic_traces_pn(self, plot=False, fig_name='', plt_title=''):
         """
