@@ -87,7 +87,8 @@ for frequency in freq_values:
     actual_data = actual_data - shift
 
     actual_predictions = best_model.predict(actual_data[...,np.newaxis])
-    y = np.bincount(actual_predictions)/np.sum(np.bincount(actual_predictions))
+    actual_p = np.argmax(actual_predictions, axis=1)
+    y = np.bincount(actual_p)/np.sum(np.bincount(actual_p))
     x = range(len(y))
     expected = poisson_norm(x, lam)
 
@@ -97,6 +98,6 @@ for frequency in freq_values:
         chisq.append((chi))
     chi_square.append(np.sum(chisq))
 
-np.savetxt('Chi_square_CNN', chi_square)
+np.savetxt('Chi_square_CNN.txt', chi_square)
 plt.plot(freq_values, chi_square)
 
