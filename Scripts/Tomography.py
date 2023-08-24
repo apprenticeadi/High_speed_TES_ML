@@ -40,30 +40,42 @@ def create_color_plot(data, title, figsize=(8, 6)):
     # Show the plot
     plt.show()
 '''
-Algorithm :
-1.load probability distributions and power data
-2.define key functions
-3.perform least squares algorithm to find theta
+load in data files, data is from log file
+
 '''
+log = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
 
-data = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
-probabilities_raw5 = np.loadtxt('Scripts/raw_probabilities.txt', unpack = True)
-probabilities = probabilities_raw5.T
-prob100 = np.loadtxt('Scripts/prob100.txt', unpack = True)
 
-reprate, power, attenuation = data[0]*10**3, data[1], data[5]
+probabilities_raw5 = np.loadtxt('Scripts/raw_probabilities.txt', unpack = True).T
+prob100_raw5 = np.loadtxt('Scripts/prob100.txt', unpack = True)
+probabilities_raw5 = np.insert(probabilities_raw5,0,prob100_raw5,axis = 0)
+probabilities_raw6 = np.loadtxt('Scripts/probabilities_raw6.txt', unpack = True).T
+probabilities_raw7 = np.loadtxt('Scripts/probabilities_raw7.txt', unpack = True).T
+probabilities_raw8 = np.loadtxt('Scripts/probabilities_raw8.txt', unpack = True).T
+
+rep_rates = np.array_split(log[0]*10**3, 4)
+av_pn =  np.array_split(log[1], 4)
+attenuations = np.array_split(log[5], 4)
+
+probs = [probabilities_raw5, probabilities_raw6, probabilities_raw7, probabilities_raw8]
+means = [1.34, 8.14, 6.03, 3.30]
 
 def calculate_final_power(power_i, attenuation):
 
     power_f = power_i/(10**(attenuation/10))
     return power_f
-rep = 0
-def qmk(m, power = power[rep], attenuation = attenuation[rep], reprate = reprate[rep]*10**3):
+
+
+rep = 0 #0 = 100kHz, 1 = 200kHz, ...
+int = 0 # 0 = 1.34, 1 = 8.14, ...
+
+def qmk(m, power = av_pn[int][rep], attenuation = attenuations[int][rep], reprate = rep_rates[int][rep]):
     f = 3e8/(1550e-9)
     h = 6.6261e-34
     f_power = calculate_final_power(power*10**-6, attenuation)
-    #alpha_k = np.sqrt((f_power/reprate)/(h*f))
-    alpha_k = np.sqrt(1.7)
+    #f_power = f_power*0.9 # other loss
+    alpha_k = np.sqrt((f_power/reprate)/(h*f))
+    #alpha_k = np.sqrt(1.34)
     q_mk = np.exp(-(alpha_k**2))* ((alpha_k**(2*m))/math.factorial(m))
     return q_mk
 
@@ -98,9 +110,10 @@ def theta(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, 
 
 
 m_vals = []
-for i in range(len(probabilities[rep])):
+
+for i in range(len(probs[int][rep])):
     def function(t):
-        p =  probabilities[rep+1][i]
+        p =  probs[int][rep][i]
         return abs(p - theta(*t))**2
 
     # Initial guess for t0...t20
@@ -110,11 +123,11 @@ for i in range(len(probabilities[rep])):
     #result = minimize(function, initial_guess, method='BFGS')
     result = least_squares(function, initial_guess)
     optimized_values = result.x
-    m_vals.append(optimized_values[0:7])
+    m_vals.append(optimized_values[0:len(probs[int][0])])
 m_vals = np.array(m_vals)
 
 
-create_color_plot(m_vals, str(reprate[rep]/1000) + 'kHz, mean = 1.34')
+create_color_plot(m_vals, str(rep_rates[int][rep]/1000) + r'kHz, mean =' +str(means[int]))
 
 
 
