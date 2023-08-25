@@ -6,7 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
-
+import cvxpy as cp
+import time
 
 def create_color_plot(data, title, figsize=(8, 6)):
     # Define a custom colormap with more gradual transitions
@@ -57,7 +58,16 @@ rep_rates = np.array_split(log[0]*10**3, 4)
 av_pn =  np.array_split(log[1], 4)
 attenuations = np.array_split(log[5], 4)
 
-probs = [probabilities_raw5, probabilities_raw6, probabilities_raw7, probabilities_raw8]
+
+rep_rate = 0
+probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
+
+for i in range(4):
+    while len(probs[i])<len(probs[1]):
+
+        probs[i] = np.append(probs[i],[0])
+probs = np.array(probs)
+
 means = [1.34, 8.14, 6.03, 3.30]
 
 def calculate_final_power(power_i, attenuation):
@@ -65,71 +75,52 @@ def calculate_final_power(power_i, attenuation):
     power_f = power_i/(10**(attenuation/10))
     return power_f
 
+pow = 3 # 0 = 1.34, 1 = 8.14, ...
 
-rep = 0 #0 = 100kHz, 1 = 200kHz, ...
-int = 0 # 0 = 1.34, 1 = 8.14, ...
 
-def qmk(m, power = av_pn[int][rep], attenuation = attenuations[int][rep], reprate = rep_rates[int][rep]):
-    f = 3e8/(1550e-9)
+def qmk(m_values, power=av_pn[pow][rep_rate], attenuation=attenuations[pow][rep_rate], reprate=rep_rates[pow][rep_rate]):
+    f = 3e8 / (1550e-9)
     h = 6.6261e-34
-    f_power = calculate_final_power(power*10**-6, attenuation)
-    #f_power = f_power*0.9 # other loss
-    alpha_k = np.sqrt((f_power/reprate)/(h*f))
-    #alpha_k = np.sqrt(1.34)
-    q_mk = np.exp(-(alpha_k**2))* ((alpha_k**(2*m))/math.factorial(m))
-    return q_mk
+    f_power = calculate_final_power(power * 10**-6, attenuation)
+    alpha_k = np.sqrt((f_power / reprate) / (h * f))
+    alpha_k = means[i]
+    q_mk_values = np.exp(-(alpha_k**2)) * ((alpha_k**(2 * m_values)) / np.array([math.factorial(np.abs(m)) for m in m_values]))
+    return np.array(q_mk_values)
+
+qmk_vals = np.zeros((4,19))
+
+for i in range(4):
+    values = qmk(np.arange(0,19,1),power=av_pn[i][rep_rate], attenuation=attenuations[i][rep_rate], reprate=rep_rates[i][rep_rate])
+    qmk_vals[i] = values
+
+
+def cost(theta):
+    theta = theta.reshape((17,19))
+    c = 0
+    for k in range(probs.shape[0]):
+        for n, p in enumerate(probs[k]):
+            if p!=0:
+                c+= np.abs(p - np.sum(theta[n,:]*qmk_vals[k,:]))**2
+    return c
 
 
 
-def theta(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20):
-    result = (
-            t0 * qmk(0) +
-            t1 * qmk(1) +
-            t2 * qmk(2) +
-            t3 * qmk(3) +
-            t4 * qmk(4) +
-            t5 * qmk(5) +
-            t6 * qmk(6) +
-            t7 * qmk(7) +
-            t8 * qmk(8) +
-            t9 * qmk(9) +
-            t10 * qmk(10) +
-            t11 * qmk(11) +
-            t12 * qmk(12) +
-            t13 * qmk(13) +
-            t14 * qmk(14) +
-            t15 * qmk(15) +
-            t16 * qmk(16) +
-            t17 * qmk(17) +
-            t18 * qmk(18) +
-            t19 * qmk(19) +
-            t20 * qmk(20)
-    )
 
-    return result
+bounds = [(0,1) for _ in range(17*19)]
 
 
-m_vals = []
-
-for i in range(len(probs[int][rep])):
-    def function(t):
-        p =  probs[int][rep][i]
-        return abs(p - theta(*t))**2
-
-    # Initial guess for t0...t20
-    initial_guess = (0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-
-    # Perform the optimization
-    #result = minimize(function, initial_guess, method='BFGS')
-    result = least_squares(function, initial_guess)
-    optimized_values = result.x
-    m_vals.append(optimized_values[0:len(probs[int][0])])
-m_vals = np.array(m_vals)
-
-
-create_color_plot(m_vals, str(rep_rates[int][rep]/1000) + r'kHz, mean =' +str(means[int]))
-
-
+guess = np.zeros((17,19))
+np.fill_diagonal(guess, 1)
+guess = guess.reshape(17*19)
+t1 = time.time()
+#results = minimize(cost, guess, bounds = bounds, method='SLSQP')
+results = least_squares(cost, guess, bounds=(0,1))
+t2 = time.time()
+print('runtime = ' + str(t2-t1))
+data = results.x
+np.savetxt('Scripts/theta_vals.txt', data)
+data = data.reshape((17,19))
+create_color_plot(data, '100 kHz')
 
 
 
