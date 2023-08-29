@@ -15,7 +15,7 @@ script to produce PN distributions using a tabular classifier
 '''
 
 power = 8
-feature_extraction = False
+feature_extraction = True
 
 def poisson_curve(x, mu, A):
     return A * (mu ** x) * np.exp(-mu) / factorial(np.abs(x))
@@ -33,7 +33,7 @@ prob100 = y/np.sum(y)
 print(list(prob100))
 lam = fit[0]
 
-freq_values = np.arange(200, 1001, 100)
+freq_values = np.arange(200, 301, 100)
 
 chi_vals = []
 probabilities = [prob100]
@@ -73,7 +73,7 @@ for frequency in freq_values:
     y_vals = np.bincount(test) / np.sum(np.bincount(test))
     # x_vals = list(range(len(y_vals)))
     print(list(y_vals))
-    probabilities.append(y_vals)
+    #probabilities.append(y_vals)
     # expected = poisson_norm(x_vals, lam)
     #
     # chisq = []
@@ -83,8 +83,8 @@ for frequency in freq_values:
     # chi_vals.append(sum(chisq))
 
 
-probabilities = np.array(probabilities)
-np.savetxt('probabilities_raw8.txt', probabilities)
+#probabilities = np.array(probabilities)
+#np.savetxt('probabilities_raw8.txt', probabilities)
 # # print(chi_vals)
 # # np.savetxt('chi_vals_ML.txt', chi_vals)
 # # chi_vals = np.array(chi_vals)

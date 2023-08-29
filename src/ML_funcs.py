@@ -4,6 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve
 from scipy.signal import find_peaks
+from scipy.integrate import trapezoid
 from sklearn.linear_model import RidgeClassifierCV
 from sklearn.pipeline import make_pipeline
 import xgboost as xgb
@@ -229,7 +230,9 @@ def extract_features(x):
     crest = max_peak/np.sqrt(np.mean(x**2))
     var = np.var(x)
     kurt = (np.sum((x - average)**4)/(var ** 2)) - 3
-    return [peak_loc, average,std, energy, freq, max_peak, rise_time,crest, kurt]
+    area = trapezoid(x)
+    return [peak_loc, average,std, energy, freq, max_peak, rise_time,crest, kurt, area]
+
 
 
 def find_offset(frequency, power):

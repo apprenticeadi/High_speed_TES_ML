@@ -305,7 +305,7 @@ class Traces:
         overlapped = []
         for i in range(1,num_traces):
             new_peak = data_100[i][:new_period]
-            old_tail = data_100[i-1][new_period:2*new_period]
+            old_tail = data_100[i-1][-new_period:]
             overlapped.append(new_peak + old_tail)
 
         return np.array(overlapped)
