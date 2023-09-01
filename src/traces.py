@@ -305,8 +305,12 @@ class Traces:
         overlapped = []
         for i in range(1,num_traces):
             new_peak = data_100[i][:new_period]
-            old_tail = data_100[i-1][-new_period:]
-            overlapped.append(new_peak + old_tail)
+            old_tail = data_100[i-1][new_period:2*new_period]
+            if frequency>300:
+                prev_two = data_100[i-2][2*new_period:3*new_period]
+                overlapped.append(new_peak+old_tail+prev_two)
+            else:
+                overlapped.append(new_peak + old_tail)
 
         return np.array(overlapped)
 
