@@ -303,7 +303,7 @@ class Traces:
         new_period = int(5e4/frequency)
         overlapped = np.zeros(num_traces-1)
         overlapped = []
-        for i in range(1,num_traces):
+        for i in range(2,num_traces):
             new_peak = data_100[i][:new_period]
             old_tail = data_100[i-1][new_period:2*new_period]
             if frequency>300:

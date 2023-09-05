@@ -205,7 +205,7 @@ def return_artifical_data(frequency, multiplier, power):
     filtered_data = Traces(100, filtered_traces)
     #data_high = filtered_data.overlap_to_high_freq(frequency)
     data_high = filtered_data.generate_high_freq_data(frequency)
-    return data_high, filtered_label[1:]
+    return data_high, filtered_label[2:]
 
 def extract_features(x):
     peaks, props = find_peaks(x)

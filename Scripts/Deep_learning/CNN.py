@@ -14,18 +14,26 @@ from src.ML_funcs import return_artifical_data, find_offset
 from src.utils import DataUtils
 from src.traces import Traces
 
-freq_values = np.arange(300, 301, 100)
-power = 8
+freq_values = np.arange(200, 1001, 100)
+#freq_values = [600]
+power = 7
 def poisson_norm(x, mu):
     return (mu ** x) * np.exp(-mu) / factorial(np.abs(x))
 data100 = DataUtils.read_raw_data_new(100, power)
 trace100 = Traces(100, data100, 1.8)
 x, y = trace100.pn_bar_plot(plot=False)
-fit, cov = curve_fit(poisson_norm, x, y / np.sum(y), p0=[3], maxfev=2000)
+fit, cov = curve_fit(poisson_norm, x, y / np.sum(y), p0=[6], maxfev=2000)
 lam = fit[0]
 chi_square = []
 
+prob100 = poisson_norm(x,lam)
+print(prob100)
+
+probabilities = [prob100]
+
+
 for frequency in freq_values:
+    print(frequency)
     time_series, labels = return_artifical_data(frequency,1.6,power)
 
     signal_length = len(time_series[0])  # Length of each signal
@@ -57,7 +65,7 @@ for frequency in freq_values:
     # Define callbacks
     reduce_lr = ReduceLROnPlateau(factor=0.5, patience=20, min_lr=1e-4)
     early_stop = EarlyStopping(patience=40)
-    model_checkpoint = ModelCheckpoint(filepath='models/300kHz_raw8.h5', save_best_only=True, save_weights_only=False)
+    model_checkpoint = ModelCheckpoint(filepath='models/1000kHz_raw6.h5', save_best_only=True, save_weights_only=False)
 
     # Train the model
     history = model.fit(train_data[..., np.newaxis], train_labels_onehot, batch_size=50, epochs=250,
@@ -65,7 +73,7 @@ for frequency in freq_values:
                         callbacks=[reduce_lr, early_stop, model_checkpoint])
 
     # Load the best model
-    best_model = tf.keras.models.load_model('models/300kHz_raw8.h5')
+    best_model = tf.keras.models.load_model('models/1000kHz_raw6.h5')
 
     # Predict using the best model
     predictions = best_model.predict(test_data[..., np.newaxis])
@@ -89,15 +97,20 @@ for frequency in freq_values:
     actual_predictions = best_model.predict(actual_data[...,np.newaxis])
     actual_p = np.argmax(actual_predictions, axis=1)
     y = np.bincount(actual_p)/np.sum(np.bincount(actual_p))
-    x = range(len(y))
-    expected = poisson_norm(x, lam)
-
-    chisq = []
-    for i in range(len(expected)):
-        chi = ((expected[i] - y[i]) ** 2) / expected[i]
-        chisq.append((chi))
-    chi_square.append(np.sum(chisq))
-
+    probabilities.append(y)
+    # x = range(len(y))
+    # expected = poisson_norm(x, lam)
+    #
+    # chisq = []
+    # for i in range(len(expected)):
+    #     chi = ((expected[i] - y[i]) ** 2) / expected[i]
+    #     chisq.append((chi))
+    # chi_square.append(np.sum(chisq))
+print(probabilities)
+for arr in probabilities:
+    while len(arr)<len(probabilities[0]):
+        arr = np.append(arr,0)
+np.savetxt('CNN_probs_raw7.txt', probabilities)
 # np.savetxt('Chi_square_CNN.txt', chi_square)
 # plt.plot(freq_values, chi_square)
 

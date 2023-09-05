@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 script to produce PN distributions using a tabular classifier
 '''
 power = 5
-feature_extraction = False
+feature_extraction = True
 
 
 def poisson_curve(x, mu, A):
@@ -38,7 +38,7 @@ probabilities = []
 
 for frequency,ax in zip(freq_values, axs.ravel()):
     print(frequency)
-    data_high, filtered_label = return_artifical_data(frequency,2,power)
+    data_high, labels = return_artifical_data(frequency,2,power)
     features = data_high
     if feature_extraction==True:
         peak_data = []
@@ -47,19 +47,8 @@ for frequency,ax in zip(freq_values, axs.ravel()):
             peak_data.append(feature)
 
         features = np.array(peak_data)
-    X_train, X_test, y_train, y_test = train_test_split(features, filtered_label, test_size=0.2, random_state=42)
-
-    svm_model = SVC()
-    svm_model.fit(X_train, y_train)
-
-    rf_model = RandomForestClassifier(n_estimators=300)
-    rf_model.fit(X_train, y_train)
-
-    boosted_model = GradientBoostingClassifier()
-    boosted_model.fit(X_train, y_train)
-
-    knn_model = KNeighborsClassifier()
-    knn_model.fit(X_train, y_train)
+    model = ML(features, labels, modeltype='RF')
+    model.makemodel()
 
     actual_data = DataUtils.read_high_freq_data(frequency, power= power, new= True)
     shift = find_offset(frequency, power)
@@ -83,13 +72,13 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     ax.bar(x_vals, y_vals)
     ax.plot(x_vals, y_vals, 'x')
 
-    # x_vals = np.array(x_vals)
-    # fit, cov = curve_fit(poisson_curve, x_vals, y_vals, p0=[1.5, np.sum(y_vals)], maxfev = 2000)
-    # av_PN.append(fit[0])
-    # av_PN_error.append(np.sqrt(cov[0,0]))
-    #
-    # x = np.linspace(0,max(x_vals),100)
-    # ax.plot(x, poisson_curve(x, fit[0], fit[1]) , label = 'poisson fit', color = 'r')
+    x_vals = np.array(x_vals)
+    fit, cov = curve_fit(poisson_curve, x_vals, y_vals, p0=[1.5, np.sum(y_vals)], maxfev = 2000)
+    av_PN.append(fit[0])
+    av_PN_error.append(np.sqrt(cov[0,0]))
+
+    x = np.linspace(0,max(x_vals),100)
+    ax.plot(x, poisson_curve(x, fit[0], fit[1]) , label = 'poisson fit', color = 'r')
 
     expected = poisson_norm(x_vals, lam)
 
@@ -103,10 +92,10 @@ for frequency,ax in zip(freq_values, axs.ravel()):
 
 plt.show()
 
-# plt.errorbar(freq_values, av_PN, yerr = av_PN_error,fmt = 'o', capsize=3)
-# plt.xlabel('frequency (kHz)')
-# plt.ylabel(r'lambda from fit')
-# plt.show()
+plt.errorbar(freq_values, av_PN, yerr = av_PN_error,fmt = 'o', capsize=3)
+plt.xlabel('frequency (kHz)')
+plt.ylabel(r'lambda from fit')
+plt.show()
 
 np.savetxt('chi_vals_ML.txt', chi_vals)
 probabilities = np.array(probabilities)

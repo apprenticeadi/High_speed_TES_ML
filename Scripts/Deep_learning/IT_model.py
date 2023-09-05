@@ -12,10 +12,11 @@ from tsai.all import *
 import time
 import pickle
 from src.ML_funcs import return_artifical_data
+
 '''
 process training data
 '''
-time_series, labels = return_artifical_data(600,1.5,8)
+time_series, labels = return_artifical_data(1000,1.5,6)
 X_train, X_test, y_train, y_test = train_test_split(time_series, labels, test_size=0.2, random_state=42)
 X, y, splits = combine_split_data([X_train, X_test], [y_train, y_test])
 
@@ -42,8 +43,8 @@ print('model built, time to build : ' + str(f1-s))
 fit and save the model
 '''
 learn.lr_find()
-learn.fit_one_cycle(50, lr_max = 0.001)
-PATH = Path('./models/600kHz_RNN.pkl')
+learn.fit_one_cycle(200, lr_max = 0.001)
+PATH = Path('./models/1000kHz_RNN.pkl')
 PATH.parent.mkdir(parents = True, exist_ok = True)
 learn.export(PATH)
 '''

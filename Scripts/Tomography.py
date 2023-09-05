@@ -54,10 +54,10 @@ attenuations = np.array_split(log[5], 4)
 '''
 remove poor distributions by k index for testing, uncomment if want to loop over all k
 '''
-delete = [1]
-rep_rates = np.delete(rep_rates, delete, axis = 0)
-av_pn = np.delete(av_pn, delete, axis = 0)
-attenuations = np.delete(attenuations, delete, axis = 0)
+# delete = [1,]
+# rep_rates = np.delete(rep_rates, delete, axis = 0)
+# av_pn = np.delete(av_pn, delete, axis = 0)
+# attenuations = np.delete(attenuations, delete, axis = 0)
 
 
 rep_vals = np.arange(0,9.1,1)
@@ -68,13 +68,13 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     rep_rate = int(rep) # 0=100kHz, 1 = 200kHz ...
 
 
-    #probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
+    probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
 
 
     '''removing poor distributions'''
 
 
-    probs = [probabilities_raw5[rep_rate],probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
+    #probs = [probabilities_raw5[rep_rate]]
     '''
     ensure all probabilities are the same length, fill lower powers wil 0 values for higher PN
     '''
