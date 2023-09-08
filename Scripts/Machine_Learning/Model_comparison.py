@@ -1,11 +1,8 @@
 import time
-
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from src.ML_funcs import ML, return_artifical_data, extract_features
 from sklearn.model_selection import train_test_split

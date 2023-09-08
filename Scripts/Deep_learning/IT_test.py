@@ -12,15 +12,14 @@ from src.ML_funcs import find_offset
 import time
 
 frequency = 600
-multiplier = 1.5
 power = 8
-t1 = time.time()
-learn = load_learner('./models/600kHz_RNN.pkl')
+modeltype = RNN
+
+learn = load_learner(f'./models/{frequency}kHz_{modeltype}.pkl')
 
 actual_data = DataUtils.read_high_freq_data(frequency,power = power,new = True)
 shift = find_offset(frequency, power)
 actual_data = actual_data - shift
-
 
 dls = learn.dls
 valid_dl = dls.valid
@@ -30,14 +29,14 @@ X, y, splits = combine_split_data([actual_data], [y_fake])
 
 test_ds = dls.dataset.add_test(X,y)
 test_dl = valid_dl.new(test_ds)
-print('data and model loaded')
+
 
 probas, targets, preds = learn.get_preds(dl = test_dl, with_decoded = True, save_preds = None, save_targs = None)
-print('predictions made')
-t2 = time.time()
-print(t2 - t1)
-print('plotting')
+
+
 plt.bar(list(range(len(np.bincount(preds)))), np.bincount(preds))
-plt.title('PN distribution for ' +str(frequency)+' kHz'+ ' and m=' +str(multiplier))
+
+plt.title(f'PN distribution for {frequency} kHz, modeltype = {modeltype}')
 plt.show()
+
 

@@ -2,26 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
-
+'''
+script to create color plots for model comparison
+'''
 def create_color_plot(data, title, figsize=(8, 6)):
-    # Define a custom colormap with more gradual transitions
+
     colors = [(0.0, 'green'), (0.5, 'yellow'), (0.8, 'red'), (1.0, 'black')]
     cmap = LinearSegmentedColormap.from_list('custom_cmap', colors)
 
-    min_value = 1e-4  # Adjust this value to control the colormap range for small values
+    min_value = 1e-4
     norm = mcolors.LogNorm(vmin=min_value, vmax=data.max())
 
-    # Create a figure and axis
     fig, ax = plt.subplots(figsize=figsize)
 
-    # Create the grid of squares with the custom colormap and normalization
     cax = ax.matshow(data, cmap=cmap, norm=norm)
 
-    # Add a colorbar
     cbar = plt.colorbar(cax, ax=ax)
     cbar.set_label('Ln(chi-square value)')
 
-    # Set axis labels and ticks
     ax.set_xlabel('Reprate')
     ax.set_ylabel('Average Photon number')
 
@@ -30,10 +28,10 @@ def create_color_plot(data, title, figsize=(8, 6)):
     ax.set_yticks(np.arange(data.shape[0]))
     ax.set_yticklabels(['1.34', '3.3', '6.03', '8.14'])
 
-    # Set the title
+
     plt.title(title)
 
-    # Show the plot
+
     plt.show()
 
 '''
