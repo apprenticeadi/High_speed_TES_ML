@@ -17,7 +17,7 @@ from src.traces import Traces
 freq_values = np.arange(200, 1001, 100)
 
 power = 5
-
+max_epoch = 250
 def poisson_norm(x, mu):
     return (mu ** x) * np.exp(-mu) / factorial(np.abs(x))
 
@@ -71,7 +71,7 @@ for frequency in freq_values:
     early_stop = EarlyStopping(patience=40)
     model_checkpoint = ModelCheckpoint(filepath=f'models/{frequency}kHz_raw{power}.h5', save_best_only=True, save_weights_only=False)
 
-    history = model.fit(train_data[..., np.newaxis], train_labels_onehot, batch_size=20, epochs=250,
+    history = model.fit(train_data[..., np.newaxis], train_labels_onehot, batch_size=20, epochs=max_epoch,
                         validation_data=(test_data[..., np.newaxis], test_labels_onehot),
                         callbacks=[reduce_lr, early_stop, model_checkpoint])
     '''

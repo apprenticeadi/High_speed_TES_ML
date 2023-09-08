@@ -7,7 +7,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from src.ML_funcs import ML, return_artifical_data, extract_features
 from sklearn.model_selection import train_test_split
 from tqdm.auto import tqdm
-
+'''
+script which compares the performances of different tabular classifiers
+'''
 power = 8
 frequency = 600
 feature_extraction = True

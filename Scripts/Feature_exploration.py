@@ -6,7 +6,7 @@ from sklearn.feature_selection import SelectKBest, chi2, f_classif
 from src.utils import DataUtils
 
 '''
-script to find the most important features using ANOVA feature selection
+script to find the most important features using ANOVA feature selection, and make 3d plots of those features
 '''
 frequency = 500
 power = 5
@@ -78,6 +78,7 @@ if feature_plot == True:
     plt.show()
 
 if PCA_test == True:
+
     data, labels = return_artifical_data(frequency, 1.8, power)
 
     actual_data = DataUtils.read_high_freq_data(frequency, power=power, new=True)

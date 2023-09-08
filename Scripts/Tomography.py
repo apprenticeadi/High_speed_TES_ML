@@ -4,9 +4,13 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
 import cvxpy as cp
+'''
+script to perform a tomography routine on the probabilities, using the cvxpy package
+'''
+
 
 '''
-load in data files, data is from log file
+load in data files, data is from log file, probabilities are calculated in different script and saved in params file
 '''
 log = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
 
@@ -18,10 +22,10 @@ log = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
 # probabilities_raw7 = np.loadtxt('Scripts/params/probabilities_raw7.txt', unpack = True).T
 # probabilities_raw8 = np.loadtxt('Scripts/params/probabilities_raw8.txt', unpack = True).T
 
-probabilities_raw5 = np.loadtxt('Scripts/params/BDT_probs_raw5', unpack = True).T
-probabilities_raw6 = np.loadtxt('Scripts/params/BDT_probs_raw6', unpack = True).T
-probabilities_raw7 = np.loadtxt('Scripts/params/BDT_probs_raw7', unpack = True).T
-probabilities_raw8 = np.loadtxt('Scripts/params/BDT_probs_raw8', unpack = True).T
+probabilities_raw5 = np.loadtxt('Scripts/params/BDT_probs_raw5.txt', unpack = True).T
+probabilities_raw6 = np.loadtxt('Scripts/params/BDT_probs_raw6.txt', unpack = True).T
+probabilities_raw7 = np.loadtxt('Scripts/params/BDT_probs_raw7.txt', unpack = True).T
+probabilities_raw8 = np.loadtxt('Scripts/params/BDT_probs_raw8.txt', unpack = True).T
 
 
 rep_rates = np.array_split(log[0]*10**3, 4)
@@ -44,7 +48,7 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     rep_rate = int(rep) # 0=100kHz, 1 = 200kHz ...
     probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
 
-    '''removing poor distributions'''
+    '''removing poor distributions '''
 
     #probs = [probabilities_raw5[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
     '''
@@ -88,10 +92,7 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     '''
     find max photon number in sample
     '''
-    lengths = []
-    for l in probs:
-        lengths.append(len(l))
-    max_pn = max(lengths)
+    max_pn = len(max(probs, key = lambda x:len(x)))
     '''
     define nmax and m
     '''
@@ -105,7 +106,6 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     for i in range(len(probs)):
         values = qmk(np.arange(0,m,1),power=av_pn[0][rep_rate], attenuation=attenuations[i][rep_rate], reprate=rep_rates[i][rep_rate])
         qmk_vals[i] = values
-    print('qmk vals generated')
     '''
     define guess values and bounds
     '''
@@ -114,7 +114,10 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     np.fill_diagonal(guess, 1)
 
     '''
-    cvxpy least squares minimization
+    cvxpy least squares minimization, theta as a nxm matrix
+    cost function as a sum of squares
+    constraints that sum over rows and columns equal 1
+    fidelity calculated as trace/sum
     '''
     theta = cp.Variable((nmax, m), nonneg=True, value=guess)
     cost = cp.sum_squares(cp.abs(probs - cp.matmul(qmk_vals, theta)))
@@ -126,14 +129,11 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     estimated_theta = theta.value
     fidelity = np.trace(estimated_theta)/ np.sum(estimated_theta)
     '''
-    create colour plot, using same colours as white paper
+    create colour plot, using same blue to yellow colours as white paper
     '''
     cmap_colors = [ (0.0, 0.0, 1.0),(1.0, 1.0, 0.0)]
     cmap = LinearSegmentedColormap.from_list('blue_to_yellow', cmap_colors)
-
     norm = mcolors.Normalize(vmin=np.min(estimated_theta), vmax=np.max(estimated_theta))
-
-
     cax = ax.matshow(estimated_theta, cmap=cmap, norm=norm)
 
     cbar = plt.colorbar(cax, ax=ax)

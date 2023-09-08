@@ -10,7 +10,7 @@ from scipy.special import factorial
 script to produce PN distributions using tabular classifiers
 '''
 
-power = 8
+power = 5
 feature_extraction = True
 modeltype = 'BDT'
 
@@ -63,7 +63,7 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     build model
     '''
 
-    model = ML(features, labels, modeltype=modeltype, max_depth=10)
+    model = ML(features, labels, modeltype=modeltype, max_depth=15, n_estimators=600)
     model.makemodel()
 
     '''

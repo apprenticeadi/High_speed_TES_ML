@@ -3,8 +3,6 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve
-from sklearn.decomposition import PCA
-
 from scipy.signal import find_peaks
 from scipy.integrate import trapezoid
 import xgboost
@@ -91,7 +89,8 @@ def return_artifical_data(frequency, multiplier, power):
 
 def extract_features(x):
     '''
-    function which extracts features from a trace x and returns a feature vector,
+    function which extracts features from a trace x and returns a feature vector
+    (INCOMPLETE) add more relevant features
     '''
     peaks, props = find_peaks(x)
     peak_heights = x[peaks]
@@ -119,7 +118,7 @@ def extract_features(x):
     var = np.var(x)
     kurt = (np.sum((x - average)**4)/(var ** 2)) - 3
     area = trapezoid(x)
-    return [peak_loc,average,std, energy, freq, max_peak, rise_time,crest, kurt, area]
+    return [peak_loc,average,  std, energy, freq, max_peak, rise_time,crest, kurt, area]
 
 
 def find_offset(frequency, power):
