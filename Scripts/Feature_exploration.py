@@ -4,21 +4,25 @@ from src.ML_funcs import ML, return_artifical_data, extract_features, find_offse
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest, chi2, f_classif
 from src.utils import DataUtils
+from src.traces import Traces
 
 '''
-script to find the most important features using ANOVA feature selection, and make 3d plots of those features
+script containing various functions that are useful for ML:
+1. feature_bar_plots returns the scores of each feature in the feature extraction
+2. all_feature_plot returns a subplot of the 3d feature-space plot of the 'top 3 features'
+3. PCA_test performs a pca decomposition on the testing data, the performs it on the actual data and looks for variance
+4. one_feature_plot is the same as 2 but for one rep rate
+5. art_trace_comp plots the average trace for both the artificial and real data for a given power and reprate
 '''
-frequency = 500
-power = 5
+frequency = 800
+power = 7
 feature_names =  ["peak_loc", "average", "std", "energy", "freq", "max_peak", "rise_time", "crest", "kurt", "area"]
-feature_select = False
-feature_plot = False
-PCA_test = False
+
 
 freq_values = np.arange(200,1001,100)
 
 
-if feature_select == True:
+def feature_bar_plots(freq_values, power):
     fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
     for frequency,ax in zip(freq_values, axs.ravel()):
 
@@ -50,7 +54,7 @@ if feature_select == True:
     plt.tight_layout()
     plt.show()
 
-if feature_plot == True:
+def all_feature_plots(freq_values, power):
     fig_3d, axs_3d = plt.subplots(nrows=3, ncols=3, figsize=(15, 12), subplot_kw={'projection': '3d'})
 
     for i, frequency, ax_3d in zip(range(9), freq_values, axs_3d.ravel()):
@@ -77,8 +81,9 @@ if feature_plot == True:
     plt.tight_layout()
     plt.show()
 
-if PCA_test == True:
-
+def PCA_test(frequency, power):
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
     data, labels = return_artifical_data(frequency, 1.8, power)
 
     actual_data = DataUtils.read_high_freq_data(frequency, power=power, new=True)
@@ -91,7 +96,41 @@ if PCA_test == True:
 
     embedded = pca.transform(actual_data)
 
-    plt.scatter(embedded[:, 0], embedded[:, 1], embedded[:, 2])
+    ax.scatter3D(embedded[:, 0], embedded[:, 1], embedded[:, 2])
+    plt.show()
+
+def one_feature_plot(frequency, power):
+    ax = plt.axes(projection = '3d')
+    data, labels = return_artifical_data(frequency=frequency, multiplier=1.8, power=power)
+
+    features = []
+
+    for series in data:
+        extracted_features = extract_features(series)
+        features.append(extracted_features)
+
+    features = np.array(features)
+    max_peak, area, energy = features[:, 5], features[:, 9], features[:, 3]
+    sc = ax.scatter(max_peak, area, energy, c=labels)
+    ax.set_xlabel('Max Peak')
+    ax.set_ylabel('Area')
+    ax.set_zlabel('Energy')
+    ax.set_title(f'{frequency} kHz, Power: {power}')
     plt.show()
 
 
+def art_trace_comp(frequency, power):
+    data, labels = return_artifical_data(frequency=frequency, multiplier=1.8, power=power)
+    actual_data = DataUtils.read_high_freq_data(frequency, power=power, new=True)
+    shift = find_offset(frequency, power)
+    actual_data = actual_data - shift
+
+    art_traces = Traces(frequency=frequency,data = data,  multiplier=1.8)
+    actual_traces = Traces(frequency=frequency,data = actual_data,  multiplier=1.8)
+
+    average,p1,p2 = art_traces.average_trace(plot = False)
+    real_average, f1,f2 = actual_traces.average_trace(plot=False)
+    plt.plot(average, label = 'artificial data')
+    plt.plot(real_average, label = 'real data')
+    plt.legend()
+    plt.show()

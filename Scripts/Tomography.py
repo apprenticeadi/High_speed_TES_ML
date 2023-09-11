@@ -48,7 +48,7 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     rep_rate = int(rep) # 0=100kHz, 1 = 200kHz ...
     probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
 
-    '''removing poor distributions '''
+    '''removing poor distributions   '''
 
     #probs = [probabilities_raw5[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
     '''
