@@ -1,5 +1,5 @@
 # Machine learning for TES signal classification
-### make sure to have to following packages installed:
+### package requirements:
 1. tensorflow
 2. keras
 3. sklearn
