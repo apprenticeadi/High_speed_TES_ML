@@ -6,7 +6,7 @@
 4. tsai
 5. xgboost
 
-###using the code:
+### using the code:
 
 6. if more data is taken try so save in the filename format ie 'raw_x/ykHz_yyyy-m-d_hh-mm-ss.txt', this is in the matlab script anyway.
 
