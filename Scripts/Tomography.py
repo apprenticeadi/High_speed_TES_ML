@@ -8,24 +8,17 @@ import cvxpy as cp
 script to perform a tomography routine on the probabilities, using the cvxpy package
 '''
 extra_attenuation = 2.9
-
+modeltype = 'CNN'
 '''
 load in data files, data is from log file, probabilities are calculated in different script and saved in params file
 '''
 log = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
 
-#for RF
-probabilities_raw5 = np.loadtxt('Scripts/params/raw_probabilities.txt', unpack = True).T
-prob100_raw5 = np.loadtxt('Scripts/params/prob100.txt', unpack = True)
-probabilities_raw5 = np.insert(probabilities_raw5,0,prob100_raw5,axis = 0)
-probabilities_raw6 = np.loadtxt('Scripts/params/probabilities_raw6.txt', unpack = True).T
-probabilities_raw7 = np.loadtxt('Scripts/params/probabilities_raw7.txt', unpack = True).T
-probabilities_raw8 = np.loadtxt('Scripts/params/probabilities_raw8.txt', unpack = True).T
 
-# probabilities_raw5 = np.loadtxt('Scripts/params/CNN_probs_raw5.txt', unpack = True).T
-# probabilities_raw6 = np.loadtxt('Scripts/params/CNN_probs_raw6.txt', unpack = True).T
-# probabilities_raw7 = np.loadtxt('Scripts/params/CNN_probs_raw7.txt', unpack = True).T
-# probabilities_raw8 = np.loadtxt('Scripts/params/CNN_probs_raw8.txt', unpack = True).T
+probabilities_raw5 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
+probabilities_raw6 = np.loadtxt(rf'Scripts/params/C{modeltype}_probs_raw5.txtt', unpack = True).T
+probabilities_raw7 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
+probabilities_raw8 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
 
 
 rep_rates = np.array_split(log[0]*10**3, 4)
@@ -35,10 +28,10 @@ av_pn[1], av_pn[2], av_pn[3] = av_pn[1]*10, av_pn[2]*10, av_pn[3]*10
 '''
 remove poor distributions by k index for testing, uncomment if want to loop over all k
 '''
-delete = [1]
-rep_rates = np.delete(rep_rates, delete, axis = 0)
-av_pn = np.delete(av_pn, delete, axis = 0)
-attenuations = np.delete(attenuations, delete, axis = 0)
+# delete = [1]
+# rep_rates = np.delete(rep_rates, delete, axis = 0)
+# av_pn = np.delete(av_pn, delete, axis = 0)
+# attenuations = np.delete(attenuations, delete, axis = 0)
 
 
 rep_vals = np.arange(0,9.1,1)
@@ -49,9 +42,9 @@ for rep,ax in zip(rep_vals, axs.ravel()):
     rep_rate = int(rep) # 0=100kHz, 1 = 200kHz ...
     probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
 
-    '''removing poor distributions   '''
+    '''removing poor distributions if want to  '''
 
-    probs = [probabilities_raw5[rep_rate], probabilities_raw7[rep_rate],probabilities_raw8[rep_rate]]
+    #probs = [probabilities_raw5[rep_rate], probabilities_raw7[rep_rate],probabilities_raw8[rep_rate]]
     '''
     ensure all probabilities are the same length, fill lower powers wil 0 values for higher PN
     '''
@@ -82,12 +75,10 @@ for rep,ax in zip(rep_vals, axs.ravel()):
         f = 3e8 / (1550e-9)
         h = 6.6261e-34
         f_power = calculate_final_power(power * 10**-6, attenuation+extra_attenuation)
-
         '''
-        first alpha_k is the analytical calculation, second alpha_k uses the arbitrary values defined above, comment out for testing
+        calculate alpha_k
         '''
         alpha_k = np.sqrt((f_power / reprate) / (h * f))
-        print(alpha_k**2)
         q_mk_values = np.exp(-(alpha_k**2)) * ((alpha_k**(2 * m_values)) / np.array([math.factorial(np.abs(m)) for m in m_values]))
         return np.array(q_mk_values)
 

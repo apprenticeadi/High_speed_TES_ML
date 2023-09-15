@@ -10,7 +10,7 @@ from scipy.special import factorial
 script to produce PN distributions using tabular classifiers, specify power, whether FE and modeltype.
 '''
 #specify parameters
-power = 5
+power = 7
 feature_extraction = False
 modeltype = 'RF'
 
@@ -32,7 +32,7 @@ data100 = DataUtils.read_raw_data_new(100,power)
 trace100 = Traces(100 , data100, 1.8)
 
 x,y = trace100.pn_bar_plot(plot = False)
-fit, cov = curve_fit(poisson_norm,x,y/np.sum(y), p0 = [6], maxfev=2000)
+fit, cov = curve_fit(poisson_norm,x,y/np.sum(y), p0 = [8], maxfev=2000)
 lam = fit[0]
 
 freq_values = np.arange(200,1001,100)

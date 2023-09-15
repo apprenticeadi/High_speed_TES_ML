@@ -47,7 +47,7 @@ using the ML class takes fairly standard commands:
 to perform a feature extraction on an individual trace call the extract_features function in the ML file. adding or removing features is straightforward, just add to the end
 of the feature vector the function returns and the rest of the code does not need altering.
 
-- a good way of visualising the feature space and the feature importances is using the feature_exploration file.
+- a good way of visualising the feature space and the feature importance's is using the feature_exploration file.
 
 4. Deep Learning
 - to use the deep learning or state of the art hybrid approaches, run the CNN or IT_model file where you set the parameters at the top.
@@ -62,6 +62,8 @@ from the log file. the tomography routine is then run. to change the probability
 performed with the cvxpy package so details can be found in their documentation
 
 6. important scripts from the main branch remain however they are made significantly leaner, such as the tail subtraction method.
+
+7. a detailed overview of the methods and different model performances can be found in the attached pdf
 
 
 
