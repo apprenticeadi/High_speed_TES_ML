@@ -16,10 +16,10 @@ run the 'Overlap_ML' file, setting the relevant parameters at the top such as mo
 assuming you have data for 200-1000. it will then produce a bar plot for each rep rate and save the probabilities in a parameters file.
 
 using the ML class takes fairly standard commands:
-a. initialise the model with the dataset and the labels, it is also possible to specify the modeltype here.
-b. train the model using the makemodel() function.
-c. the predict(X) function takes a set of traces X, usually the actual data and returns a numpy array of each corresponding predicted label
-d. there are also some commands that return some metrics about the model such as a confusion matrix and classification report which can be very useful
+-. initialise the model with the dataset and the labels, it is also possible to specify the modeltype here.
+-. train the model using the makemodel() function.
+-. the predict(X) function takes a set of traces X, usually the actual data and returns a numpy array of each corresponding predicted label
+-. there are also some commands that return some metrics about the model such as a confusion matrix and classification report which can be very useful
 to perform a feature extraction on an individual trace call the extract_features function in the ML file. adding or removing features is straightforward, just add to the end
 of the feature vector the function returns and the rest of the code does not need altering.
 
