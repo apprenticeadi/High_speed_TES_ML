@@ -15,9 +15,9 @@ script containing various functions that are useful for ML:
 5. art_trace_comp plots the average trace for both the artificial and real data for a given power and reprate
 '''
 frequency = 800
-power = 7
+power = 6
 feature_names =  ["peak_loc", "average", "std", "energy", "freq", "max_peak", "rise_time", "crest", "kurt", "area"]
-
+feature_extraction = True
 
 freq_values = np.arange(200,1001,100)
 
@@ -27,28 +27,30 @@ def feature_bar_plots(freq_values, power):
     for frequency,ax in zip(freq_values, axs.ravel()):
 
         data, labels = return_artifical_data(frequency=frequency, multiplier=1.8, power = power)
+        if feature_extraction ==True:
+            features = []
 
-        features = []
+            for series in data:
+                extracted_features = extract_features(series)
+                features.append(extracted_features)
 
-        for series in data:
-            extracted_features = extract_features(series)
-            features.append(extracted_features)
-
-        features = np.array(features)
-
+            features = np.array(features)
+        else:
+            features = data
         select = SelectKBest(score_func=f_classif, k=3)
         best = select.fit(features, labels)
         f_scores = select.scores_
         feature_index = select.get_support(indices=True)
 
-        print(feature_index)
-        print(f'most important features : {feature_names[feature_index[0]]}, {feature_names[feature_index[1]]}, {feature_names[feature_index[2]]}')
-        x = range(len(f_scores))
+        if feature_extraction ==True:
+            x = range(len(f_scores))
+        else:
+            x = feature_names
 
         ax.bar(x, f_scores)
         ax.set_ylabel('score')
         ax.set_xticks(x)
-        ax.set_xticklabels(labels = feature_names, rotation = 35)
+        ax.set_xticklabels(labels = x, rotation = 35)
         ax.set_title(f'scores for {frequency}kHz, at power: {power}')
 
     plt.tight_layout()
@@ -99,22 +101,29 @@ def PCA_test(frequency, power):
     ax.scatter3D(embedded[:, 0], embedded[:, 1], embedded[:, 2])
     plt.show()
 
-def one_feature_plot(frequency, power):
+def one_feature_plot(frequency, power, indices):
     ax = plt.axes(projection = '3d')
     data, labels = return_artifical_data(frequency=frequency, multiplier=1.8, power=power)
+    if feature_extraction ==True:
 
-    features = []
+        features = []
 
-    for series in data:
-        extracted_features = extract_features(series)
-        features.append(extracted_features)
-
-    features = np.array(features)
-    max_peak, area, energy = features[:, 5], features[:, 9], features[:, 3]
+        for series in data:
+            extracted_features = extract_features(series)
+            features.append(extracted_features)
+        features = np.array(features)
+    else:
+        features = data
+    max_peak, area, energy = features[:, indices[0]], features[:, indices[1]], features[:, indices[2]]
     sc = ax.scatter(max_peak, area, energy, c=labels)
-    ax.set_xlabel('Max Peak')
-    ax.set_ylabel('Area')
-    ax.set_zlabel('Energy')
+    if feature_extraction ==True:
+        ax.set_xlabel(feature_names[indices[0]])
+        ax.set_ylabel(feature_names[indices[1]])
+        ax.set_zlabel(feature_names[indices[2]])
+    else:
+        ax.set_xlabel(fr'{indices[0]}')
+        ax.set_ylabel(fr'{indices[1]}')
+        ax.set_zlabel(fr'{indices[2]}')
     ax.set_title(f'{frequency} kHz, Power: {power}')
     plt.show()
 
@@ -134,3 +143,5 @@ def art_trace_comp(frequency, power):
     plt.plot(real_average, label = 'real data')
     plt.legend()
     plt.show()
+
+one_feature_plot(900,5,[3,5,9])

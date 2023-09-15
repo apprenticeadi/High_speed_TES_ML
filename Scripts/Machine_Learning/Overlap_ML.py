@@ -7,12 +7,12 @@ from scipy.optimize import curve_fit
 from scipy.special import factorial
 
 '''
-script to produce PN distributions using tabular classifiers
+script to produce PN distributions using tabular classifiers, specify power, whether FE and modeltype.
 '''
-
+#specify parameters
 power = 5
-feature_extraction = True
-modeltype = 'BDT'
+feature_extraction = False
+modeltype = 'RF'
 
 '''
 define poisson distributions
