@@ -1,10 +1,11 @@
 # Machine learning for TES signal classification
-## make sure to have to following packages installed:
+### make sure to have to following packages installed:
 1. tensorflow
 2. keras
 3. sklearn
 4. tsai
 5. xgboost
+###using the code
 if more data is taken try so save in the filename format ie 'raw_x/ykHz_yyyy-m-d_hh-mm-ss.txt', this is in the matlab script anyway.
 
 6. Data files are processed similarly in the utils file, however with a slightly new method. two traces per row were taken so this was split for powers above 5
