@@ -9,6 +9,7 @@
 - pickle
 - other standard packages ie numpy, matplotlib ... 
 - versions currently used:
+
 | Library         | Version   |
 |-----------------|-----------|
 | cvxpy           | 1.3.2     |
