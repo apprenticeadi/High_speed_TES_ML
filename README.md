@@ -1,4 +1,5 @@
 # Machine learning for TES signal classification
+author: Matthew Kendall, email: matthew.kendall20@imperial.ac.uk
 ### package requirements:
 - tensorflow 
 - keras 
@@ -60,7 +61,7 @@ the probability values are stored in the parameters file after running either Ov
 from the log file. the tomography routine is then run. to change the probability values to that of another model, uncomment or change the filepath. the minimization was 
 performed with the cvxpy package so details can be found in their documentation
 
-6. email: matthew.kendall20@imperial.ac.uk
+6. important scripts from the main branch remain however they are made significantly leaner, such as the tail subtraction method.
 
 
 
