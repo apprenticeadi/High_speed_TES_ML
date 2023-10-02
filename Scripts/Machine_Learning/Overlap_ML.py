@@ -10,7 +10,7 @@ from scipy.special import factorial
 script to produce PN distributions using tabular classifiers, specify power, whether FE and modeltype.
 '''
 #specify parameters
-power = 7
+power = 8
 feature_extraction = False
 modeltype = 'RF'
 

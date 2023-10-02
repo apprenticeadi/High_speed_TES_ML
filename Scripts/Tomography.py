@@ -8,7 +8,7 @@ import cvxpy as cp
 script to perform a tomography routine on the probabilities, using the cvxpy package
 '''
 extra_attenuation = 2.9
-modeltype = 'CNN'
+modeltype = 'RF'
 '''
 load in data files, data is from log file, probabilities are calculated in different script and saved in params file
 '''
@@ -16,9 +16,9 @@ log = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
 
 
 probabilities_raw5 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
-probabilities_raw6 = np.loadtxt(rf'Scripts/params/C{modeltype}_probs_raw5.txtt', unpack = True).T
-probabilities_raw7 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
-probabilities_raw8 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
+probabilities_raw6 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw6.txt', unpack = True).T
+probabilities_raw7 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw7.txt', unpack = True).T
+probabilities_raw8 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw8.txt', unpack = True).T
 
 
 rep_rates = np.array_split(log[0]*10**3, 4)
