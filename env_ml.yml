@@ -1,0 +1,16 @@
+name: tes_ml
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - cvxpy=1.3.2
+  - keras=2.13.1
+  - matplotlib=3.7.2
+  - numba=0.57.1
+  - numpy=1.24.3
+  - scikit-learn=1.2.2
+  - scipy=1.11.1
+  - sklearn=0.0.post5
+  - sktime=0.20.0
+  - tensorflow=2.13.0
+  - tsai=0.3.7
