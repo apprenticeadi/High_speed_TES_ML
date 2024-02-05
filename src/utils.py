@@ -1,6 +1,5 @@
 import numpy as np
 import os
-
 class DataUtils:
     @staticmethod
     def read_raw_data(frequency):
@@ -23,7 +22,27 @@ class DataUtils:
         return data_raw
 
     @staticmethod
-    def read_high_freq_data(frequency):
+    def read_raw_data_new(frequency, power):
+        freq_name = f'{frequency}k'
+        data_dir = r'../Data/raw_'+str(power)
+        data_files = os.listdir(data_dir)
+        file_name = [file for file in data_files if file.startswith(freq_name)][0]
+        data_raw = np.loadtxt(r'..\Data\raw_'+str(power) +'\\'+  str(file_name), delimiter=',', unpack=True)
+        data_raw = data_raw.T
+        if power > 5 and frequency ==100:
+            new_data = []
+            for i in range(len(data_raw)):
+                trace_1 = data_raw[i][0:500]
+                trace_2 = data_raw[i][0:500]
+                new_data.append(trace_1)
+                new_data.append(trace_2)
+            data_raw = np.array(new_data)
+
+        return data_raw
+
+
+    @staticmethod
+    def read_high_freq_data(frequency, power=0, new = False, trigger = False):
         '''
         100 kHz data corresponds to 10us period, which is represented by 500 datapoints per trace. The time between two
         datapoints is thus 10ns.
@@ -35,11 +54,28 @@ class DataUtils:
         This function reads the raw data files and split them into correct lengths of traces
         '''
 
-        data_high_ = DataUtils.read_raw_data(frequency)
+        if new:
+            data_high_ = DataUtils.read_raw_data_new(frequency, power)
+            num = len(data_high_[0])
+            if trigger == True:
+                fixed_data = np.zeros(50, dtype=object)
+                for i in range(0, 50):
+                    gradients = np.gradient(data_high_[i][2:200])
+                    ind = np.argmax(gradients)
+                    if ind ==0:
+                        fixed_data[i] = data_high_[i][ind:]
+                    if ind!=0:
+                        fixed_data[i] = np.append(data_high_[i][ind:], np.zeros(ind))
+
+
+                data_high_ = np.asarray(fixed_data)
+            samples = num
+        else:
+            data_high_ = DataUtils.read_raw_data(frequency)
+            samples = data_high_.shape[1]
 
         idealSamples = 5e4 / frequency
-        samples = data_high_.shape[1]
-        traces_per_raw_row = int(samples / np.floor(idealSamples))  # This should be 500
+        traces_per_raw_row = int(samples / np.floor(idealSamples))# This should be 500
         assert traces_per_raw_row == 500
         period = int(idealSamples)
 
@@ -87,7 +123,7 @@ class TraceUtils:
             return padded_traces[:, diff_arg:]
 
     @staticmethod
-    def composite_char_traces(char_traces, period, comp_num=2):
+    def composite_char_traces(char_traces, period, comp_num=3):
         max_pn = len(char_traces) - 1
 
         total_comps = (max_pn + 1) ** comp_num
@@ -103,3 +139,24 @@ class TraceUtils:
                 comp_pns[id, digit] = n_i
 
         return comp_pns, comp_traces
+
+    @staticmethod
+    def max_min_trace_utils(t_char_traces, period):
+        '''
+        function to generate all the combinations, apply composite_char_traces on
+        each min, average and max trace to create range
+        '''
+        tr0, tr1, tr2 = t_char_traces[0:10], t_char_traces[10:20], t_char_traces[20:30]
+
+        min_pns, min_traces = TraceUtils.composite_char_traces(tr0, period)
+        av_pns, av_traces = TraceUtils.composite_char_traces(tr1, period)
+        max_pns, max_traces = TraceUtils.composite_char_traces(tr2, period)
+
+        return np.concatenate((min_pns, av_pns, max_pns)), np.concatenate((min_traces,av_traces,max_traces))
+
+
+
+
+
+
+

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-
+from tqdm.auto import tqdm
 from src.fitting_hist import fitting_histogram
 
 class Traces:
@@ -25,6 +25,10 @@ class Traces:
 
         self.min_voltage = np.amin(data)
         self.max_voltage = np.amax(data)
+
+
+        # self.min_voltage = min(data.any())
+        # self.max_voltage = max(data.any())
 
         self.ymin = 5000 * (self.min_voltage // 5000)
         self.ymax = 5000 * (self.max_voltage // 5000 + 1)
@@ -88,6 +92,7 @@ class Traces:
         """
 
         ave_trace = np.mean(self._data, axis=0)
+        std_trace = np.std(self._data, axis = 0)
         if plot:
             if fig_name == '':
                 fig_name = f'{self.freq_str} average trace'
@@ -102,11 +107,11 @@ class Traces:
                 plt_title = f'Average trace of {self.freq_str}'
             plt.title(plt_title)
 
-        return ave_trace
+        return ave_trace, ave_trace+std_trace, ave_trace - std_trace
 
     def inner_products(self):
 
-        ave_trace = self.average_trace()
+        ave_trace,stdp,stdm = self.average_trace()
         overlaps = ave_trace @ self._data.T
 
         return overlaps
@@ -151,22 +156,24 @@ class Traces:
 
         return binning_index, binning_traces
 
-    def pn_bar_plot(self, fig_name='', plt_title=''):
+    def pn_bar_plot(self,plot = True, fig_name='', plt_title=''):
 
         binning_index, _ = self.bin_traces(plot=False)
         max_pn_steg = max(binning_index.keys())
         num_trace_per_pn = [len(binning_index[pn]) for pn in range(max_pn_steg + 1)]
+        if plot==True:
+            if fig_name == '':
+                fig_name = f'{self.freq_str} photon number bar plot'
+            if plt_title == '':
+                plt_title = f'{self.freq_str} photon number bar plot for multiplier={self.multiplier}'
 
-        if fig_name == '':
-            fig_name = f'{self.freq_str} photon number bar plot'
-        if plt_title == '':
-            plt_title = f'{self.freq_str} photon number bar plot for multiplier={self.multiplier}'
-
-        plt.figure(fig_name)
-        plt.bar(list(range(max_pn_steg + 1)), num_trace_per_pn)
-        plt.xlabel('Photon number')
-        plt.ylabel('Counts')
-        plt.title(plt_title)
+            plt.figure(fig_name)
+            plt.bar(list(range(max_pn_steg + 1)), num_trace_per_pn)
+            plt.xlabel('Photon number')
+            plt.ylabel('Counts')
+            plt.title(plt_title)
+        if plot ==False:
+            return list(range(max_pn_steg + 1)), num_trace_per_pn
 
     def characteristic_traces_pn(self, plot=False, fig_name='', plt_title=''):
         """
@@ -176,9 +183,14 @@ class Traces:
         _, binning_traces = self.bin_traces(plot=False)
 
         characteristic_traces = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
+        char_traces_err = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
 
         for pn in binning_traces.keys():
             characteristic_traces[pn] = np.mean(binning_traces[pn], axis=0)
+            char_traces_err[pn] = np.std(binning_traces[pn], axis = 0)
+
+        #colours to ensure plot is clean
+        colours = ['r','b', 'g', 'c', 'm', 'y', 'k', 'r', 'b','g']
 
         if plot:
             if fig_name == '':
@@ -186,6 +198,8 @@ class Traces:
             plt.figure(fig_name)
             for pn in range(characteristic_traces.shape[0]):
                 plt.plot(characteristic_traces[pn], label=f'{pn} photons')
+                plt.plot(characteristic_traces[pn]+char_traces_err[pn],linestyle = 'dashed')
+                plt.plot(characteristic_traces[pn]-char_traces_err[pn],linestyle = 'dashed')
                 plt.ylabel('voltage')
                 plt.xlabel('time (in sample)')
                 plt.legend()
@@ -196,6 +210,24 @@ class Traces:
                 plt.title(plt_title)
 
         return characteristic_traces
+    def total_traces(self):
+        '''
+        returns all possible traces, ie average trace with std error trace
+        '''
+        _, binning_traces = self.bin_traces(plot=False)
+
+        characteristic_traces = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
+        char_traces_err = np.zeros((len(binning_traces.keys()), self._data.shape[1]), dtype=np.float64)
+
+        for pn in binning_traces.keys():
+            characteristic_traces[pn] = np.mean(binning_traces[pn], axis=0)
+            char_traces_err[pn] = np.std(binning_traces[pn], axis = 0)
+
+
+        char_err_max = characteristic_traces + char_traces_err
+        char_err_min = characteristic_traces - char_traces_err
+        total_traces = np.concatenate((char_err_min, characteristic_traces, char_err_max))
+        return total_traces
 
     def abs_voltage_diffs(self):
         """
@@ -251,13 +283,37 @@ class Traces:
         current_data = self.get_data()
         if num_traces==0:
             num_traces = current_data.shape[0]
+            #num_traces = len(current_data)
 
         new_period = int(5e4 / high_frequency)
+        old_period = 500
         data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
+
         for i in range(num_traces):
             data_overlapped[i*new_period: i*new_period + self.period] = current_data[i, :]
 
+
         return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
+
+
+
+    def generate_high_freq_data(self,frequency):
+        data_100 = self.get_data()
+        num_traces = data_100.shape[0]
+        new_period = int(5e4/frequency)
+        overlapped = np.zeros(num_traces-1)
+        overlapped = []
+        for i in range(2,num_traces):
+            new_peak = data_100[i][:new_period]
+            old_tail = data_100[i-1][new_period:2*new_period]
+            if frequency>300:
+                prev_two = data_100[i-2][2*new_period:3*new_period]
+                overlapped.append(new_peak+old_tail+prev_two)
+            else:
+                overlapped.append(new_peak + old_tail)
+
+        return np.array(overlapped)
+
 
     def pca_cleanup(self, num_components=1):
         data = self.get_data()
@@ -276,5 +332,30 @@ class Traces:
         data_cleaned = F_truncated @ QT[:num_components, :] + col_means
 
         return data_cleaned
+
+    def return_labelled_traces(self):
+        '''
+        returns the labels at the correct indices
+        '''
+        binning_index, binning_traces = self.bin_traces(plot=False)
+        keys = [key for key in binning_index]
+        values = [binning_index[key] for key in binning_index]
+        indices = np.zeros(len(self._data))
+        indices = np.full((len(self._data)), -1)
+
+        for i in range(len(keys)):
+            for j in values[i]:
+                indices[j] = keys[i]
+
+        return indices
+
+    def return_av_diff(self):
+        ave_trace = np.mean(self._data, axis=1)
+        return np.min(ave_trace)
+
+
+
+
+
 
 

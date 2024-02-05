@@ -1,0 +1,18 @@
+date : 20/07/2023
+TES number: 3.
+attenuation: 40 + 45 dB
+amplitude: 10Vpp
+mode used:3 for above 100 kHz, 1 for 10,50,100
+In time order:
+rep rate=10kHz; pulse width=100ns; power=8.55uW. 
+rep rate=50kHz; pulse width=100ns; power=43.09uW.
+rep rate=100kHz; pulse width=100ns; power=86.6uW.
+rep rate=200kHz; pulse width=100ns; power=173.1uW.
+rep rate=300kHz; pulse width=100ns; power=261.5uW.
+rep rate=400kHz; pulse width=100ns; power=349.0uW.
+rep rate=500kHz; pulse width=100ns; power=431.9uW.
+rep rate=600kHz; pulse width=100ns; power=528.0uW.
+rep rate=700kHz; pulse width=97.2ns; power=603.3uW.
+rep rate=800kHz; pulse width=99.2ns; power=688uW.
+rep rate=900kHz; pulse width=102.2ns; power=776uW.
+rep rate=1000kHz; pulse width=104.4ns; power=862uW.

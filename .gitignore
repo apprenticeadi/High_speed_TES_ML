@@ -54,4 +54,11 @@ docs/_build/
 # my stuff
 /.idea/
 .DS_Store
+<<<<<<< HEAD
 /Plots/
+=======
+/Data/raw_0/
+/Data/raw_2/
+/Data/raw_3/
+/Data/raw_4/
+>>>>>>> 22c3e21cf4ab46deb6e5d16180bb0629884232a4
