@@ -21,7 +21,7 @@ class ML:
         self.dataset = dataset
         self.labels = labels
         self.modeltype = modeltype
-
+        # default test size is 25%
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.dataset, self.labels)
 
         if self.modeltype == 'RF':
@@ -40,8 +40,8 @@ class ML:
             raise Exception('modeltype must be "RF", "SVM", "BDT" or "KNN" (Random forest, support vector machines, boosted decision tree and K-nearest neighbors)')
 
     def makemodel(self):
-        x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
-        self.classifier.fit(x_train, y_train)
+        # x_train, x_test, y_train, y_test = train_test_split(self.dataset, self.labels)
+        self.classifier.fit(self.x_train, self.y_train)
 
     def accuracy_score(self):
         predictions = self.classifier.predict(self.x_test)
@@ -77,6 +77,7 @@ def return_artifical_data(frequency, multiplier, power):
 
     labels = calibrationTraces.return_labelled_traces()
 
+    # Filter out traces that were not labelled due to choice of multiplier
     filtered_ind = np.where(labels == -1)[0]
     filtered_traces = np.delete(data_100, filtered_ind, axis=0)
     filtered_label = np.delete(labels, filtered_ind)

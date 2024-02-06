@@ -161,7 +161,7 @@ class Traces:
         binning_index, _ = self.bin_traces(plot=False)
         max_pn_steg = max(binning_index.keys())
         num_trace_per_pn = [len(binning_index[pn]) for pn in range(max_pn_steg + 1)]
-        if plot==True:
+        if plot:
             if fig_name == '':
                 fig_name = f'{self.freq_str} photon number bar plot'
             if plt_title == '':
@@ -172,8 +172,8 @@ class Traces:
             plt.xlabel('Photon number')
             plt.ylabel('Counts')
             plt.title(plt_title)
-        if plot ==False:
-            return list(range(max_pn_steg + 1)), num_trace_per_pn
+
+        return list(range(max_pn_steg + 1)), num_trace_per_pn
 
     def characteristic_traces_pn(self, plot=False, fig_name='', plt_title=''):
         """
@@ -337,10 +337,10 @@ class Traces:
         '''
         returns the labels at the correct indices
         '''
-        binning_index, binning_traces = self.bin_traces(plot=False)
+        binning_index, _ = self.bin_traces(plot=False)
         keys = [key for key in binning_index]
-        values = [binning_index[key] for key in binning_index]
-        indices = np.zeros(len(self._data))
+        values = list(binning_index.values()) # [binning_index[key] for key in binning_index]
+        # indices = np.zeros(len(self._data))
         indices = np.full((len(self._data)), -1)
 
         for i in range(len(keys)):
