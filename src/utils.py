@@ -1,5 +1,8 @@
 import numpy as np
 import os
+import logging
+import sys
+
 class DataUtils:
     @staticmethod
     def read_raw_data(frequency):
@@ -168,7 +171,23 @@ class TraceUtils:
         return np.concatenate((min_pns, av_pns, max_pns)), np.concatenate((min_traces,av_traces,max_traces))
 
 
+class LogUtils:
 
+    @staticmethod
+    def log_config(time_stamp, dir=None, filehead='', module_name='', level=logging.INFO):
+        # time_stamp = datetime.datetime.now().strftime("%d-%b-%Y-(%H.%M.%S.%f)")
+        if dir is None:
+            dir = r'..\Results\logs'
+        logging_filename = dir + r'\{}_{}.txt'.format(filehead, time_stamp)
+        os.makedirs(os.path.dirname(logging_filename), exist_ok=True)
+
+        stdout_handler = logging.StreamHandler(sys.stdout)
+
+        logging.basicConfig(filename=logging_filename, level=level,
+                            format='%(levelname)s %(asctime)s %(message)s')
+
+        # make logger print to console (it will not if multithreaded)
+        logging.getLogger(module_name).addHandler(stdout_handler)
 
 
 
