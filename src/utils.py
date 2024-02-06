@@ -21,13 +21,26 @@ class DataUtils:
 
         return data_raw
 
+    #TODO: Make this cleaner.
     @staticmethod
     def read_raw_data_new(frequency, power):
         freq_name = f'{frequency}k'
-        data_dir = r'../Data/raw_'+str(power)
-        data_files = os.listdir(data_dir)
+        try:
+            data_dir = rf'\RawData\raw_{power}'
+            data_files = os.listdir(data_dir)
+        except FileNotFoundError:
+            try:
+                data_dir = rf'..\RawData\raw_{power}'
+                data_files = os.listdir(data_dir)
+            except FileNotFoundError:
+                try:
+                    data_dir = rf'..\..\RawData\raw_{power}'
+                    data_files = os.listdir(data_dir)
+                except FileNotFoundError:
+                    raise
+
         file_name = [file for file in data_files if file.startswith(freq_name)][0]
-        data_raw = np.loadtxt(r'..\Data\raw_'+str(power) +'\\'+  str(file_name), delimiter=',', unpack=True)
+        data_raw = np.loadtxt(data_dir + rf'\{str(file_name)}', delimiter=',', unpack=True)
         data_raw = data_raw.T
         if power > 5 and frequency ==100:
             new_data = []
