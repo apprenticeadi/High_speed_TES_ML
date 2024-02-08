@@ -190,5 +190,13 @@ class LogUtils:
         logging.getLogger(module_name).addHandler(stdout_handler)
 
 
+class DFUtils:
+
+    @staticmethod
+    def create_filename(filename: str):
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        return filename
 
 

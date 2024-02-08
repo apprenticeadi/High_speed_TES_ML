@@ -7,18 +7,19 @@ import time
 import logging
 import pandas as pd
 
-from src.utils import DataUtils, LogUtils
+from src.utils import DataUtils, LogUtils, DFUtils
 from src.traces import Traces
 from src.ML_funcs import ML, return_artifical_data, extract_features, find_offset
 
 '''
-script to produce PN distributions using tabular classifiers, specify power, whether FE and modeltype.
+script to produce  PN distributions using tabular classifiers, specify power, whether FE and modeltype.
 '''
 #specify parameters
-power = 8
+power = 5
 feature_extraction = False
 modeltype = 'RF'
 multiplier = 2
+guess_mean_pn = 1.5
 
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 results_dir = rf'..\..\Results\{modeltype}_ML_raw_{power}_{time_stamp}'
@@ -48,33 +49,30 @@ generate PN dist for 100kHz using overlap
 data100 = DataUtils.read_raw_data_new(100,power)
 trace100 = Traces(100 , data100, multiplier)
 
-x,y = trace100.pn_bar_plot(plot = True, plt_title='100kHz bar plot')
-plt.savefig(results_dir + r'\100kHz_inner_prod_pn.pdf')
+x100,y = trace100.pn_bar_plot(plot = True, plt_title='100kHz bar plot')
+plt.savefig(DFUtils.create_filename(results_dir + r'\100kHz_inner_prod_pn.pdf'))
 
 dist100 = y/np.sum(y)
 
-fit, cov = curve_fit(poisson_norm, x, dist100, p0 = [8], maxfev=2000)
+fit, cov = curve_fit(poisson_norm, x100, dist100, p0 = [guess_mean_pn]) #, maxfev=2000)
 lam = fit[0]
 lam_var = cov[0,0]
 
 plt.figure('100kHz norm bar plot')
-plt.bar(x, dist100)
-plt.plot(x, poisson_norm(x, lam), color='red', label=rf'Poisson fit with $\mu={{{lam:.2f}}}$')
+plt.bar(x100, dist100)
+
+dense_x = np.linspace(min(x100), max(x100), 100)
+plt.plot(dense_x, poisson_norm(dense_x, lam), color='red', label=rf'Poisson fit with $\mu={{{lam:.2f}}}$')
+
 plt.xlabel('Photon number')
 plt.ylabel('Probability')
+plt.xticks(x100[::2])
 plt.legend()
 plt.title('100kHz normalised bar plot')
 plt.savefig(results_dir + r'\100kHz_inner_prod_pn_norm.pdf')
 
 logging.info(rf'Fit normalised Poisson distribution to 100kHz data: mu={lam}, cov={lam_var}.')
 
-'''
-Results files
-'''
-probabilities = [list(dist100)]
-
-results_df = pd.DataFrame(columns=['rep_rate', 'fit_mu', 'fit_var'] + list(x))
-results_df.loc[0] = [100, fit[0], cov[0,0]] + list(dist100)
 
 '''
 ML for higher frequencies
@@ -82,6 +80,15 @@ ML for higher frequencies
 
 freq_values = np.arange(200,1001,100)
 fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
+
+# # results file by matthew, stored in scripts/params
+# probabilities = np.zeros((len(freq_values)+1, len(dist100)))
+# probabilities[0, :] = dist100
+
+# results file by me, stored in results
+results_df = pd.DataFrame(np.zeros((len(freq_values)+1, 4 + len(dist100))),
+                          columns=['rep_rate', 'acc_score', 'fit_mu', 'fit_var'] + list(x100))
+results_df.loc[0] = [100, np.nan, fit[0], cov[0,0]] + list(dist100)
 
 i_freq = 0
 for frequency,ax in zip(freq_values, axs.ravel()):
@@ -135,43 +142,45 @@ for frequency,ax in zip(freq_values, axs.ravel()):
 
     predictions = model.predict((actual_features))
 
-    y_vals = np.bincount(predictions) / np.sum(np.bincount(predictions))
-    x_vals = list(range(len(y_vals)))
+    #
+    y_vals = np.bincount(predictions, minlength=len(x100))
+    y_vals = y_vals / np.sum(y_vals)
+    x_vals = np.arange(len(y_vals))
 
     ax.bar(x_vals, y_vals)
     ax.plot(x_vals, y_vals, 'kx')
 
-    x_vals = np.array(x_vals)
     '''
     fit data
     '''
-    fit, cov = curve_fit(poisson_norm, x_vals, y_vals, p0=[3], maxfev = 2000)
-    # x = np.linspace(0, max(x_vals), 100)
-    # ax.plot(x_vals, poisson_norm(x, fit[0]) , label = rf'Poisson fit with $\mu={{{fit[0]:.2f}}}$', color = 'r')
+    fit, cov = curve_fit(poisson_norm, x_vals, y_vals, p0=[guess_mean_pn], maxfev = 2000)
+    dense_x_vals = np.linspace(0, max(x_vals), 100)
+    ax.plot(dense_x_vals, poisson_norm(dense_x_vals, fit[0]), label=rf'Poisson fit with $\mu={{{fit[0]:.2f}}}$', color='r')
 
     ax.set_title(f'{frequency}kHz accuracy score = {accuracy:.4f}')
     ax.legend()
+    ax.set_xticks(x_vals[::2])
 
     '''
-    Save results
+    Save results  
     '''
-    probabilities.append(list(y_vals))
-    results_df.loc[i_freq] = [frequency, fit[0], cov[0,0]] + list(y_vals)
-    results_df.to_csv(results_dir + rf'\ml_pn_norm.csv', index=False)
+    # probabilities[i_freq] = y_vals
+    results_df.loc[i_freq] = [frequency, accuracy, fit[0], cov[0,0]] + list(y_vals)
+    results_df.to_csv(results_dir + rf'\{modeltype}_probs_raw{power}.csv', index=False)
 
-plt.savefig(results_dir + rf'\ml_pn_norm.pdf')
+    plt.savefig(results_dir + rf'\{modeltype}_probs_raw{power}.pdf')
 # plt.show()
 
-'''
-ensure all PN dist are the same length for np.savetxt
-'''
-
-for l in probabilities:
-    while len(l)< len(probabilities[0]):
-        l.append(0)
+# '''
+# ensure all PN dist are the same length for np.savetxt
+# '''
+#
+# for l in probabilities:
+#     while len(l)< len(probabilities[0]):
+#         l.append(0)
 
 '''
 save probabilities for tomography
 '''
-np.savetxt(fr'..\params\{modeltype}_probs_raw{power}.txt', probabilities)
+results_df.to_csv(DFUtils.create_filename(rf'..\..\Params\{modeltype}_probs_raw{power}.csv'), index=False)
 
