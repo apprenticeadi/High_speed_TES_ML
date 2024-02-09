@@ -26,7 +26,7 @@ class DataUtils:
 
     #TODO: Make this cleaner.
     @staticmethod
-    def read_raw_data_new(frequency, power):
+    def read_raw_data_new(frequency, power, file_num=0):
         freq_name = f'{frequency}k'
         try:
             data_dir = rf'\RawData\raw_{power}'
@@ -42,7 +42,7 @@ class DataUtils:
                 except FileNotFoundError:
                     raise
 
-        file_name = [file for file in data_files if file.startswith(freq_name)][0]
+        file_name = [file for file in data_files if file.startswith(freq_name)][file_num]
         data_raw = np.loadtxt(data_dir + rf'\{str(file_name)}', delimiter=',', unpack=True)
         data_raw = data_raw.T
         #TODO: clean this up.
