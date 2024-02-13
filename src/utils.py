@@ -2,19 +2,26 @@ import numpy as np
 import os
 import logging
 import sys
+import warnings
 
 class DataUtils:
+
+    # Class attribute. It might be better to write it as a class property, but keep as attribute for now.
+    data_parent_dir = r'\RawData'
+
     @staticmethod
-    def read_raw_data(frequency):
+    def read_raw_data_old(frequency):
+        warnings.warn('This method is outdated and should be deprecated soon. Use DataUtils.read_raw_data() instead.')
+
         if frequency == 1000:
             freq_name = '1M'
         else:
             freq_name = f'{frequency}k'
         try:
-            data_dir = r'Data'
+            data_dir = DataUtils.data_parent_dir
             data_files = os.listdir(data_dir)
         except FileNotFoundError:
-            data_dir = r'..\Data'
+            data_dir = r'..' + DataUtils.data_parent_dir
             data_files = os.listdir(data_dir)
 
         file_name = [file for file in data_files if file.startswith(fr'all_traces_{freq_name}Hz')][0]
@@ -27,17 +34,19 @@ class DataUtils:
     #TODO: Make this cleaner.
     @staticmethod
     def read_raw_data_new(frequency, power, file_num=0):
+        warnings.warn('This method is outdated and should be deprecated soon. Use DataUtils.read_raw_data() instead.')
+
         freq_name = f'{frequency}k'
         try:
-            data_dir = rf'\RawData\raw_{power}'
+            data_dir = DataUtils.data_parent_dir + rf'\raw_{power}'
             data_files = os.listdir(data_dir)
         except FileNotFoundError:
             try:
-                data_dir = rf'..\RawData\raw_{power}'
+                data_dir = r'..' + DataUtils.data_parent_dir + rf'\raw_{power}'
                 data_files = os.listdir(data_dir)
             except FileNotFoundError:
                 try:
-                    data_dir = rf'..\..\RawData\raw_{power}'
+                    data_dir = r'..\..' + DataUtils.data_parent_dir + rf'\raw_{power}'
                     data_files = os.listdir(data_dir)
                 except FileNotFoundError:
                     raise
@@ -45,7 +54,7 @@ class DataUtils:
         file_name = [file for file in data_files if file.startswith(freq_name)][file_num]
         data_raw = np.loadtxt(data_dir + rf'\{str(file_name)}', delimiter=',', unpack=True)
         data_raw = data_raw.T
-        #TODO: clean this up.
+        # raw data file should not contain any reshaping.
         if power > 5 and frequency ==100:
             new_data = []
             for i in range(len(data_raw)):
@@ -54,6 +63,41 @@ class DataUtils:
                 new_data.append(trace_1)
                 new_data.append(trace_2)
             data_raw = np.array(new_data)
+
+        return data_raw
+
+    @staticmethod
+    def read_raw_data(frequency, dir_name: str, file_num=0):
+
+        if dir_name.startswith('\\'):
+            data_dir = DataUtils.data_parent_dir + dir_name
+        else:
+            data_dir = DataUtils.data_parent_dir + rf'\{dir_name}'
+
+        try:
+            data_files = os.listdir(data_dir)
+        except FileNotFoundError:
+            try:
+                data_dir = r'..' + data_dir
+                data_files = os.listdir(data_dir)
+            except FileNotFoundError:
+                try:
+                    data_dir = r'..\..' + data_dir
+                    data_files = os.listdir(data_dir)
+                except FileNotFoundError:
+                    raise
+
+        freq_name = rf'{frequency}kHz'
+        correct_files = []
+        for file in data_files:
+            if freq_name in file:
+                correct_files.append(file)
+        if len(correct_files) == 0:
+            raise FileNotFoundError(f'No data file for {freq_name} found in {data_dir}')
+
+        file_name = correct_files[file_num]
+        data_raw = np.loadtxt(data_dir + rf'\{file_name}', delimiter=',', unpack=True)
+        data_raw = data_raw.T
 
         return data_raw
 
@@ -70,6 +114,7 @@ class DataUtils:
 
         This function reads the raw data files and split them into correct lengths of traces
         '''
+        warnings.warn('This method is outdated and should be deprecated soon. Use DataUtils.read_raw_data() instead.')
 
         if new:
             data_high_ = DataUtils.read_raw_data_new(frequency, power)
@@ -88,7 +133,7 @@ class DataUtils:
                 data_high_ = np.asarray(fixed_data)
             samples = num
         else:
-            data_high_ = DataUtils.read_raw_data(frequency)
+            data_high_ = DataUtils.read_raw_data_old(frequency)
             samples = data_high_.shape[1]
 
         idealSamples = 5e4 / frequency
