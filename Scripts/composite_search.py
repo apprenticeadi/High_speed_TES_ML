@@ -8,15 +8,24 @@ from src.traces import Traces
 from src.composite_funcs import sort_volt_diff, sort_abs_volt_diff, search_smallest_diff, search_maj_voting
 from src.tail_funcs import subtract_tails_batch
 
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+
+from src.utils import DataUtils, TraceUtils
+from src.traces import Traces
+from src.composite_funcs import sort_volt_diff, sort_abs_volt_diff, search_smallest_diff, search_maj_voting
+from src.tail_funcs import subtract_tails_batch
+
 multiplier = 1.2
 num_bins = 1000
 guess_peak = 30
 pca_components = 1  # it's really doubtful if pca helps at all
 composite_num = 4
 
-
 # <<<<<<<<<<<<<<<<<<< Calibation data  >>>>>>>>>>>>>>>>>>
-data_100 = DataUtils.read_raw_data(100)
+data_100 = DataUtils.read_raw_data_new(100, 0)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
 '''Shift data such that 0-photon trace has mean 0'''
@@ -26,17 +35,18 @@ offset_cal, _ = calibrationTraces.subtract_offset()
 # calibrationTraces.pca_cleanup(num_components=pca_components)
 
 '''Histogram'''
-calibrationTraces.fit_histogram(plot=True)
+calibrationTraces.fit_histogram(plot=False)
 calibrationTraces.pn_bar_plot()
 
 '''Find characteristic trace for each photon number'''
-cal_chars = calibrationTraces.characteristic_traces_pn(plot=True)  # find characteristic trace for each photon number
+cal_chars = calibrationTraces.characteristic_traces_pn(plot=False)
+# find characteristic trace for each photon number
 max_photon_number = len(cal_chars) - 1
 
 # <<<<<<<<<<<<<<<<<<< Target data  >>>>>>>>>>>>>>>>>>
 frequency = 900
-# data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
-data_high = DataUtils.read_high_freq_data(frequency)  # unshifted
+#data_high = calibrationTraces.overlap_to_high_freq(high_frequency=frequency)
+data_high = DataUtils.read_high_freq_data(frequency, 2, new = True)  # unshifted
 targetTraces = Traces(frequency=frequency, data=data_high, multiplier=multiplier, num_bins=num_bins)
 freq_str = targetTraces.freq_str
 
@@ -48,25 +58,25 @@ offset_target, _ = targetTraces.subtract_offset()
 # _ = targetTraces.pca_cleanup(num_components=pca_components)
 
 '''Raw histogram by inner product'''
-targetTraces.raw_histogram(plot=True)
-targetTraces.characteristic_traces_pn(plot=True)
+targetTraces.fit_histogram(plot=False)
+targetTraces.characteristic_traces_pn(plot=False)
 
 
 # <<<<<<<<<<<<<<<<<<< Calibration characteristic traces  >>>>>>>>>>>>>>>>>>
 '''Shift calibration characteristic traces'''
-tar_ave_trace = targetTraces.average_trace(plot=False)
+tar_ave_trace, tar_ave_trace_stdp, tar_ave_trace_stdm = targetTraces.average_trace(plot=False)
 shifted_cal_chars = TraceUtils.shift_trace(tar_ave_trace, cal_chars, pad_length=guess_peak*2, id=1)
 
-plt.figure('Shifted char traces')
-plt.plot(tar_ave_trace, color='red', label=f'{freq_str} overall average trace')
-for i in range(len(shifted_cal_chars)):
-    if i==0:
-        plt.plot(shifted_cal_chars[i], color='black', label='100kHz shifted char traces')
-    else:
-        plt.plot(shifted_cal_chars[i], color='black')
-plt.xlim([0, composite_num * targetTraces.period])
-plt.ylim([targetTraces.ymin, targetTraces.ymax])
-plt.legend()
+# plt.figure('Shifted char traces')
+# plt.plot(tar_ave_trace, color='red', label=f'{freq_str} overall average trace')
+# for i in range(len(shifted_cal_chars)):
+#     if i==0:
+#         plt.plot(shifted_cal_chars[i], color='black', label='100kHz shifted char traces')
+#     else:
+#         plt.plot(shifted_cal_chars[i], color='black')
+# plt.xlim([0, composite_num * targetTraces.period])
+# plt.ylim([targetTraces.ymin, targetTraces.ymax])
+# plt.legend()
 
 '''Find the composite characteristic traces'''
 pn_combs, comp_cal_chars = TraceUtils.composite_char_traces(shifted_cal_chars, targetTraces.period, comp_num=composite_num)
@@ -128,7 +138,7 @@ fig.canvas.manager.set_window_title('Average abs(voltage difference) from identi
 
 unique_pns = np.arange(max_photon_number+1)
 
-# <<<<<<<<<<<<<<<<<<< Run minimum area voltage method  >>>>>>>>>>>>>>>>>>
+# <<<<<<<<<<<<<<<<<<< Run minimum voltage difference method  >>>>>>>>>>>>>>>>>>
 target_data = targetTraces.get_data()
 
 print('Running minimum voltage diff method')
@@ -136,13 +146,14 @@ print('Running minimum voltage diff method')
 #TODO: how to speed this up? I tried parallelization with numba, but it didn't work very well.
 '''Run a simple method: identify each trace with the closest comp char trace by smallest voltage diff'''
 t1 = time.time()
-pns, errors = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
+pns, errors, tails = search_smallest_diff(target_data, comp_cal_chars, pn_combs)
 t2 = time.time()
 
 print(f'Time for smallest voltage difference method is {t2-t1}')
 
 plt.figure('minimum voltage difference bar')
 plt.bar(list(range(max_photon_number + 1)), np.bincount(pns))
+print(np.bincount(pns))
 plt.ylim([0, 6000])
 
 '''Plot errors'''

@@ -1,24 +1,69 @@
-# TES_python
-Method outline
-Author: Ruidi Zhu
+# Machine learning for TES signal classification
+author: Matthew Kendall, email: matthew.kendall20@imperial.ac.uk
+### package requirements:
+- tensorflow 
+- keras 
+- sklearn 
+- tsai 
+- xgboost
+- cvxpy
+- pickle
+- other standard packages ie numpy, matplotlib ... 
+- versions currently used:
 
-Here, I present an outline of the method used.
+| Library         | Version   |
+|-----------------|-----------|
+| cvxpy           | 1.3.2     |
+| keras           | 2.13.1    |
+| matplotlib      | 3.7.2     |
+| numba           | 0.57.1    |
+| numpy           | 1.24.3    |
+| scikit-learn    | 1.2.2     |
+| scipy           | 1.11.1    |
+| sklearn         | 0.0.post5 |
+| sktime          | 0.20.0    |
+| tensorflow      | 2.13.0    |
+| tsai            | 0.3.7     |
 
-## Calibration
-1.	Take 100kHz data (500 data points). 
-2.	Calculate the mean trace and overlap historgam
-3.	Fitting the histogram, identify all the traces that correspond to zero-photon 
-4.	Calculate the mean voltage of all zero-photon traces (this is the offset value). Then subtract all the traces from this value, such that the average voltage of zeros-photon traces is 0 (i.e. the average of zero-photon overlap is 0). This is important for later analysis since we want a dynamic zero.
-5.	Classifying traces into different photon numbers. We select those traces that have overlap values lie in the range of (mean +/- multiplier*std)  for each photon number. Where mean and std are the means and standard deviations of overlap values for each photon number data. Multiplier can be chosen by ourself (setting multiplier to be a small value can make the analysis more accurate, but at a cost of wasting lots of data).
-6.	calculate the mean traces for each photon number (they will be used for subtraction in later stage)
 
-## Analysis of Higher Frequency Data with Tail Subtraction
-1.	Split the data into individual traces
-2.	Calculate mean trace, shift the data such that the mean trace starts with minimum value
-3.	Calculate overlaps, plot histogram, fit the histogram (only the 0-photon fit is important here)
-4.	Calculate the mean voltage of all zero-photon traces (this is the offset value). Then subtract all the traces from this value, such that the average voltage of zeros-photon traces is 0 (i.e. the average of zero-photon overlap is 0). 
-5.	Using the shifted data, plot and fit the histogram (only the 1-photon data are important here)
-6.	Identify those 1-photon data from the fit, calculate the mean trace for 1-photon data
-7.	Compare the 1-photon mean traces for 100kHz data and the higher-frequency data, we need to normalize the 100kHz data based on the height and peaking position of the higher-frequency data, such that they peak at the same position and have the same height
-8.	Perform the tail subtraction
-9.	Use the subtracted traces to plot the overlap histogram, this is the final stegosaurus 
+
+### using the code:
+
+1. if more data is taken try so save in the filename format ie 'raw_x/ykHz_yyyy-m-d_hh-mm-ss.txt', this is in the matlab script anyway.
+
+2. Data files are processed similarly in the utils file, however with a slightly new method. two traces per row were taken so this was split for powers above 5
+the method to read high frequency data was also edited to take the new format of data. to generate the artificial data a new method was put into the traces class
+called generate high frequency data. this is then paired with the return artificial data method in the ML file which returns both the data and the labels. a function
+to remove the offset is also included in the ML file which just returns the difference in peak height for the average artificial and actual trace.
+3. Machine learning:
+run the 'Overlap_ML' file, setting the relevant parameters at the top such as modeltype, and power. this will loop through all repetition rates
+assuming you have data for 200-1000. it will then produce a bar plot for each rep rate and save the probabilities in a parameters file.
+
+using the ML class takes fairly standard commands:
+- initialise the model with the dataset and the labels, it is also possible to specify the modeltype here.
+- train the model using the makemodel() function.
+- the predict(X) function takes a set of traces X, usually the actual data and returns a numpy array of each corresponding predicted label
+- there are also some commands that return some metrics about the model such as a confusion matrix and classification report which can be very useful
+to perform a feature extraction on an individual trace call the extract_features function in the ML file. adding or removing features is straightforward, just add to the end
+of the feature vector the function returns and the rest of the code does not need altering.
+
+- a good way of visualising the feature space and the feature importance's is using the feature_exploration file.
+
+4. Deep Learning
+- to use the deep learning or state of the art hybrid approaches, run the CNN or IT_model file where you set the parameters at the top.
+the cnn structure is created by adding layers ie model.add(...) more details of this can be found in the tensorflow or keras documentation.
+the state of the art models were all implemented using the tsai package so specific detail about models can be found on there. Its not an easy
+package and has quite old requirements of other packages so may need to downgrade numpy.
+- models are saved in the model file, with CNN as .h5 files and others saved as .pkl files
+
+5. Tomography routine
+the probability values are stored in the parameters file after running either Overlap_ML, CNN or IT_test, so this is first loaded in. other parameters are loaded
+from the log file. the tomography routine is then run. to change the probability values to that of another model, uncomment or change the filepath. the minimization was 
+performed with the cvxpy package so details can be found in their documentation
+
+6. important scripts from the main branch remain however they are made significantly leaner, such as the tail subtraction method.
+
+7. a detailed overview of the methods and different model performances can be found in the attached pdf
+
+
+
