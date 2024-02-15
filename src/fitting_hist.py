@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
+import warnings
 
 # %%
 
@@ -23,7 +24,9 @@ class fitting_histogram:
         # define how many sigma of data away from the mean we want to process
 
         if multiplier <= 0:
-            raise ValueError('multiplier must be positive')
+            raise ValueError(f'Multiplier={multiplier} must be positive')
+        if multiplier > 1.:
+            warnings.warn(f'Multiplier={multiplier} larger than 1 will cause photon number peaks to overlap')
         self.multiplier = multiplier
 
 
