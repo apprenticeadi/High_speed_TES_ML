@@ -56,6 +56,10 @@ class Traces:
     def frequency(self):
         return self._frequency
 
+    @property
+    def num_traces(self):
+        return self._data.shape[0]
+
     def get_data(self):
         """numpy array is mutable"""
         return copy.deepcopy(self._data)
@@ -305,16 +309,17 @@ class Traces:
 
         return offset, self.get_data()
 
-    def overlap_to_high_freq(self, high_frequency, num_traces=0):
+    def overlap_to_high_freq(self, high_frequency, selected_traces=None):
         if high_frequency <= self.frequency:
             raise ValueError(f'New frequency {high_frequency}kHz is lower than current frequency {self.frequency}')
 
         current_data = self.get_data()
-        if num_traces==0:
-            num_traces = current_data.shape[0]
-            #num_traces = len(current_data)
+        if selected_traces is not None:
+            current_data = current_data[selected_traces]
 
-        new_period = int(5e4 / high_frequency)  # truncated.
+        num_traces = current_data.shape[0]
+
+        new_period = int(5e4 / high_frequency)  # truncated. so there is no shift.
         # old_period = 500
         data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
 
@@ -323,7 +328,10 @@ class Traces:
 
         return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
 
+    # Deprecated
     def generate_high_freq_data(self,frequency):
+        # this gives different number of traces as reference data, for some reason...
+        warnings.warn('This method is deprecated. Use overlap_to_high_freq() instead. ')
         data_100 = self.get_data()
         num_traces = data_100.shape[0]
         new_period = int(5e4/frequency)  # truncated, note the truncation error.
@@ -359,15 +367,15 @@ class Traces:
 
         return data_cleaned
 
-    def return_labelled_traces(self):
+    def return_pn_labels(self):
         '''
-        returns the labels at the correct indices
+        returns the photon number labels at the correct indices
         '''
         binning_index, _ = self.bin_traces(plot=False)
         keys = [key for key in binning_index]
-        values = list(binning_index.values()) # [binning_index[key] for key in binning_index]
+        values = list(binning_index.values()) # list of lists
         # indices = np.zeros(len(self._data))
-        indices = np.full((len(self._data)), -1)
+        indices = np.full(self.num_traces, -1)
 
         for i in range(len(keys)):
             for j in values[i]:
@@ -380,6 +388,17 @@ class Traces:
         warnings.warn('Function suspicious, double check. ')
         ave_trace = np.mean(self._data, axis=1)
         return np.min(ave_trace)
+
+    def generate_training_data(self, high_frequency):
+        pn_labels = self.return_pn_labels()
+
+        filtered_indices = np.where(pn_labels >= 0)
+        training_labels = pn_labels[filtered_indices]
+
+        training_data = self.overlap_to_high_freq(high_frequency, filtered_indices)
+
+        return training_data, training_labels
+
 
 
 class IntpTraces(Traces):

@@ -1,3 +1,5 @@
+import warnings
+
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
@@ -71,11 +73,13 @@ def return_artifical_data(frequency, multiplier, power):
     '''
     function which returns an artificial dataset with its corresponding PN label
     '''
+    warnings.warn('This method should be deprecated. Use Traces.generate_training_data() instead')
+
     num_bins = 1000
     data_100 = DataUtils.read_raw_data_new(100, power)
     calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
-    labels = calibrationTraces.return_labelled_traces()
+    labels = calibrationTraces.return_pn_labels()
 
     # Filter out traces that were not labelled due to choice of multiplier
     filtered_ind = np.where(labels == -1)[0]
@@ -83,9 +87,9 @@ def return_artifical_data(frequency, multiplier, power):
     filtered_label = np.delete(labels, filtered_ind)
     filtered_data = Traces(100, filtered_traces)
 
-    data_high = filtered_data.generate_high_freq_data(frequency)
+    data_high = filtered_data.overlap_to_high_freq(frequency)
 
-    return data_high, filtered_label[2:]
+    return data_high[2:], filtered_label[2:]
 
 
 def extract_features(x):
