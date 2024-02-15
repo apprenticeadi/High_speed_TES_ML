@@ -18,13 +18,13 @@ class ML:
     '''
     class which contains the tabular models
     '''
-    def __init__(self, dataset, labels, modeltype = 'RF', n_estimators = 400, max_depth = 5):
+    def __init__(self, dataset, labels, modeltype = 'RF', n_estimators = 400, max_depth = 5, test_size=0.25):
 
         self.dataset = dataset
         self.labels = labels
         self.modeltype = modeltype
         # default test size is 25%
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.dataset, self.labels)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.dataset, self.labels, test_size=test_size)
 
         if self.modeltype == 'RF':
             self.classifier = RandomForestClassifier(n_estimators=n_estimators)
