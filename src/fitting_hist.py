@@ -29,7 +29,6 @@ class fitting_histogram:
             warnings.warn(f'Multiplier={multiplier} larger than 1 will cause photon number peaks to overlap')
         self.multiplier = multiplier
 
-
     def finding_peaks(self, plot=False):
         '''
         use data smoothing method to find the peak positions of each bins of the histogram, 
@@ -101,7 +100,12 @@ class fitting_histogram:
 
         if plot:
             plt.figure(fig_name, figsize=(8, 5))
-            plt.hist(self.overlap, bins=1000, color='aquamarine')
+
+            half_bin_widths = 0.5 * np.diff(self.midBins)
+            half_bin_widths = np.append(half_bin_widths, half_bin_widths[-1])
+            bins = self.midBins - half_bin_widths
+            bins = np.append(bins, bins[-1] + half_bin_widths[-1])
+            plt.hist(self.overlap, bins=bins, color='aquamarine')
             plt.plot(x, fit, 'r-')
             plt.xlabel('overlap', size=14)
             plt.ylabel('entries', size=14)
@@ -159,28 +163,26 @@ class fitting_histogram:
                 lower = mu - lower_width
 
             elif pn == len(p):
-                # manually identify a peak
+                # manually identify a peak # TODO: does this work well?
                 es_lower = end_of_identifiable
-                lower_idx = np.argmax(self.midBins > es_lower)
 
-                # find the largest bar after estimated lower index # TODO: improve this
-                max_idx =  np.argmax(self.heights[lower_idx:])
-                if self.heights[lower_idx + max_idx] >= 5:   # there is a visible maximum
-                    mu = self.midBins[lower_idx + max_idx]
-                    actual_width = mu - es_lower
-                    end_of_identifiable = mu + actual_width
+                remaining_overlaps = self.overlap[np.where(self.overlap >= es_lower)]
+                rem_heights, rem_bins = np.histogram(remaining_overlaps, bins= len(remaining_overlaps) // 5)
+                rem_troughs, _ = find_peaks(- rem_heights)
+
+                if len(rem_troughs) >=1:
+                    # there is a visible maximum
+                    end_of_identifiable = rem_bins[rem_troughs[0] + 1]
 
                 else:
                     # there is no visible maximum
                     end_of_identifiable = np.max(self.overlap)
-                    mu = 0.5 * (end_of_identifiable + es_lower)
-                    actual_width = end_of_identifiable - mu
 
-                lower_width = actual_width * self.multiplier
-                upper_width = lower_width
+                mu = 0.5 * (end_of_identifiable + es_lower)
+                actual_width = end_of_identifiable - mu
 
-                upper = mu + upper_width
-                lower = mu - lower_width
+                upper = mu + actual_width * self.multiplier
+                lower = mu - actual_width * self.multiplier
 
             else:
                 es_lower = end_of_identifiable
