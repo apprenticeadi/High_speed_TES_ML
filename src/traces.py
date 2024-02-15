@@ -183,7 +183,9 @@ class Traces:
 
         binning_index, _ = self.bin_traces(plot=False)
 
-        pns = binning_index.keys()
+        pns = list(binning_index.keys())
+        pns = np.asarray(pns)
+
         counts = [len(binning_index[pn]) for pn in pns]
         counts = np.asarray(counts)
         if normalised:
