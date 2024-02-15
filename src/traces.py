@@ -129,7 +129,7 @@ class Traces:
 
             if plt_title == '':
                 plt_title = f'{self.freq_str} raw stegosaurus'
-
+            plt.title(plt_title)
         else:
             heights, bin_edges = np.histogram(overlaps, bins=self.num_bins)
 
@@ -354,6 +354,11 @@ class Traces:
         return np.min(ave_trace)
 
 
+class IntpTraces(Traces):
+    # TODO: a class that treats interpolated traces. The period and ideal number of samples need to change.
+
+
+    pass
 
 
 

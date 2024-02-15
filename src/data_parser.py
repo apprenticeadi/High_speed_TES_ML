@@ -72,11 +72,10 @@ class DataParser(object):
         """ Interpolate the raw data by inserting (f-1) evenly spaced sample points between every two neighbouring
         samples"""
         data_raw = np.atleast_2d(data_raw)
-
+        samples = np.arange(data_raw.shape[1])
         if f == 1:
-            return data_raw
+            return samples, data_raw
         else:
-            samples = np.arange(data_raw.shape[1])
             spl = CubicSpline(samples, data_raw, axis=1)
 
             ex_samples = np.arange(max(samples) * f + 1) / f
