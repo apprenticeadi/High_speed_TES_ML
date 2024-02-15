@@ -47,7 +47,7 @@ class DataParser(object):
                 data_files = os.listdir(data_dir)
             except FileNotFoundError:
                 try:
-                    data_dir = '..\\..\\' + data_dir
+                    data_dir = '..\\' + data_dir
                     data_files = os.listdir(data_dir)
                 except FileNotFoundError:
                     raise
