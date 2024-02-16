@@ -163,6 +163,7 @@ class DataCleaner(object):
         triggers = np.zeros(len(data), dtype=int)
 
         if method == 'troughs':
+            data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
             for i in range(len(data)):
                 troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
                 triggers[i] = int(np.median(troughs[1:n_troughs+1] % samples_per_trace))
