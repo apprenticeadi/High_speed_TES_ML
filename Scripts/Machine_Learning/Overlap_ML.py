@@ -17,12 +17,14 @@ script to produce  PN distributions using tabular classifiers, specify power, wh
 '''
 #specify parameters
 data_dir = 'RawData'
-sub_power_name = 'raw_7'
+sub_power_name = 'raw_8'
 feature_extraction = False
 modeltype = 'RF'
+test_size = 0.1
 multiplier = 1.
-num_bins = 500
+num_bins = 1000
 guess_mean_pn = 6.
+vertical_shift = True
 
 dataParser = DataParser(sub_dir=sub_power_name, parent_dir=data_dir)
 
@@ -33,8 +35,10 @@ results_dir = rf'..\..\Results\{modeltype}\{sub_power_name}_{time_stamp}'
 LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
 logging.info(rf'Produce PN distributions using tabular classifiers. Raw data from {data_dir}\{sub_power_name}, ' 
              rf'feature extraction is {feature_extraction}, model type is {modeltype}. '
+             rf'Test_size = {test_size}.'
              rf'Inner product method used to identify calibration data at 100kHz with multiplier={multiplier} and num_bins={num_bins}. '
-             rf'The 100kHz calibration data is used to generate training data by overlapping them to higher frequencies.')
+             rf'The 100kHz calibration data is used to generate training data by overlapping them to higher frequencies.'
+             rf'vertical_shift={vertical_shift}- this is whether the actual data is shifted to meet the same average-trace height as the training data.')
 
 max_depth = 15
 n_estimators = 600
@@ -93,7 +97,8 @@ ML for higher frequencies
 
 freq_values = np.arange(200,1001,100)
 fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
-
+fig2, axs2 = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
+fig3, axs3 = plt.subplots(nrows=3, ncols=3, figsize=(15,12))
 # # results file by matthew, stored in scripts/params
 # probabilities = np.zeros((len(freq_values)+1, len(dist100)))
 # probabilities[0, :] = dist100
@@ -126,18 +131,29 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     '''
     logging.info(f'Start building model for {frequency}kHz with artificial data')
     t1= time.time()
-    model = ML(features, training_labels, modeltype=modeltype, max_depth=max_depth, n_estimators=n_estimators)
+    model = ML(features, training_labels, modeltype=modeltype, max_depth=max_depth, n_estimators=n_estimators,
+               test_size=test_size)
     model.makemodel()
     t2 = time.time()
 
     training_t = t2 -t1
     accuracy = model.accuracy_score()  # accuracy score of the test artificial samples (25% by default)
-    logging.info(f'Model complete after {training_t}s. Test samples (25%) achieve accuracy score={accuracy}')
+    logging.info(f'Model complete after {training_t}s. Test samples ({test_size*100}%) achieve accuracy score={accuracy}')
 
     '''
     load in real data
     '''
     actual_data = dataParser.parse_data(frequency, interpolated=False, triggered=False) # DataUtils.read_high_freq_data(frequency, power= power, new= True)
+
+    '''
+    Plot raw traces
+    '''
+    ax3 = axs3.ravel()[i_freq-1]
+    ax3.plot(training_data[10:30].flatten(), label='training')
+    ax3.plot(actual_data[10:30].flatten(), label='actual')
+    if i_freq == 1 :
+        ax3.legend()
+    fig3.savefig(results_dir + rf'\training_vs_actual.pdf')
 
     '''
     Correct for vertical shift
@@ -146,8 +162,19 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     av_training = np.mean(training_data, axis=0)
     av_actual = np.mean(actual_data, axis=0)
 
-    shift = np.max(av_actual) - np.max(av_training)
-    actual_data = actual_data - shift
+    ax2 = axs2.ravel()[i_freq-1]
+    ax2.plot(av_training, linestyle='dotted', label='training')
+    ax2.plot(av_actual, linestyle='solid', label='actual')
+
+    if vertical_shift:
+        shift = np.max(av_actual) - np.max(av_training)
+        actual_data = actual_data - shift
+        ax2.plot(np.mean(actual_data, axis=0), linestyle='dashed', label='shifted actual')
+    ax2.set_title(f'{frequency}kHz')
+    if i_freq ==1:
+        ax2.legend()
+    fig2.savefig(results_dir + rf'\training_vs_actual_av_trace.pdf')
+
     actual_features = actual_data
 
     if feature_extraction==True:
@@ -161,7 +188,6 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     '''
     make predictions
     '''
-    #TODO: time this
     t1 = time.time()
     predictions = model.predict((actual_features))
     t2 = time.time()
@@ -193,7 +219,7 @@ for frequency,ax in zip(freq_values, axs.ravel()):
     results_df.loc[i_freq] = [frequency, accuracy, fit[0], cov[0,0], training_t, predict_t] + list(y_vals)
     results_df.to_csv(results_dir + rf'\{modeltype}_results_{sub_power_name}.csv', index=False)
 
-    plt.savefig(results_dir + rf'\{modeltype}_results_{sub_power_name}.pdf')
+    fig.savefig(results_dir + rf'\{modeltype}_results_{sub_power_name}.pdf')
 # plt.show()
 
 # '''
