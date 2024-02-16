@@ -311,7 +311,7 @@ class Traces:
 
         return offset, self.get_data()
 
-    def overlap_to_high_freq(self, high_frequency, selected_traces=None):
+    def overlap_to_high_freq(self, high_frequency, selected_traces=None, visualise=False):
         if high_frequency <= self.frequency:
             raise ValueError(f'New frequency {high_frequency}kHz is lower than current frequency {self.frequency}')
 
@@ -325,13 +325,21 @@ class Traces:
         # old_period = 500
         data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
 
+        if visualise:
+            plt.figure()
+            plt.plot(data_overlapped, alpha=0.5)
+            plt.xlim(0, 20*new_period)
+
         for i in range(num_traces):
             data_overlapped[i*new_period: i*new_period + self.period] += current_data[i, :]
+            if visualise and i <=20:
+                plt.plot(data_overlapped, alpha=0.5)
+
 
         return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
 
     # Deprecated
-    def generate_high_freq_data(self,frequency):
+    def generate_high_freq_data(self, frequency):
         # this gives different number of traces as reference data, for some reason...
         warnings.warn('This method is deprecated. Use overlap_to_high_freq() instead. ')
         data_100 = self.get_data()
@@ -391,13 +399,13 @@ class Traces:
         ave_trace = np.mean(self._data, axis=1)
         return np.min(ave_trace)
 
-    def generate_training_data(self, high_frequency):
+    def generate_training_data(self, high_frequency, **kwargs):
         pn_labels = self.return_pn_labels()
 
         filtered_indices = np.where(pn_labels >= 0)
         training_labels = pn_labels[filtered_indices]
 
-        training_data = self.overlap_to_high_freq(high_frequency, filtered_indices)
+        training_data = self.overlap_to_high_freq(high_frequency, filtered_indices, **kwargs)
 
         return training_data, training_labels
 
