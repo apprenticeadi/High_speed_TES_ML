@@ -4,6 +4,7 @@ from scipy.signal import find_peaks
 from scipy.interpolate import CubicSpline
 from math import ceil, floor
 import warnings
+import matplotlib.pyplot as plt
 
 class DataParser(object):
 
@@ -81,7 +82,7 @@ class DataParser(object):
 
         # interpolate the data, such that each trace has 500 sample points
         f = frequency // 100
-        ex_samples, data_intp = DataCleaner.interpolate_data(data_raw, f)
+        ex_samples, data_intp = DataChopper.interpolate_data(data_raw, f)
 
         if triggered:
             if frequency < 300:
@@ -91,20 +92,20 @@ class DataParser(object):
                 trigger = 0
 
             else:
-                triggers = DataCleaner.find_trigger(data_intp, samples_per_trace=500)
+                triggers = DataChopper.find_trigger(data_intp, samples_per_trace=500)
                 trigger = int(np.median(triggers))
 
         else:
             trigger = 0
 
         if interpolated:
-            intp_traces = DataCleaner.chop_traces(data_intp, samples_per_trace=500, trigger=trigger)
+            intp_traces = DataChopper.chop_traces(data_intp, samples_per_trace=500, trigger=trigger)
             return intp_traces
 
         else:
             # give back the un-interpolated data.
             samples_per_trace = int(5e4 / frequency)
-            intp_samples = DataCleaner.chop_traces(ex_samples, samples_per_trace=500, trigger=trigger)
+            intp_samples = DataChopper.chop_traces(ex_samples, samples_per_trace=500, trigger=trigger)
 
             num_rows = len(data_raw)
             num_traces_per_row = len(intp_samples)
@@ -122,7 +123,7 @@ class DataParser(object):
             return traces
 
 
-class DataCleaner(object):
+class DataChopper(object):
 
     @staticmethod
     def interpolate_data(data_raw, f):
@@ -143,6 +144,9 @@ class DataCleaner(object):
     @staticmethod
     def chop_traces(data, samples_per_trace, trigger=0):
         """Reshape data, such that each row is a single trace. """
+        if trigger < 0:
+            raise ValueError(f'Negative trigger {trigger} not accepted. ')
+
         data = np.atleast_2d(data)
         data_trimmed = data[:, trigger: ]
 
@@ -155,6 +159,19 @@ class DataCleaner(object):
         traces = data_trimmed.reshape((n * data_trimmed.shape[1] // samples_per_trace, samples_per_trace))
 
         return traces
+
+    @staticmethod
+    def chop_labelled_traces(data, labels, samples_per_trace, trigger=0):
+        new_data = DataChopper.chop_traces(data, samples_per_trace, trigger=trigger)
+
+        if trigger > 0:
+            labels = labels[:-1] # chopper will always chop off the final trace when trigger>0
+
+        while len(labels) > len(new_data): # this happens if the chopper chopped off the first few traces
+            labels = labels[1:]
+
+        return new_data, labels
+
 
     @staticmethod
     def find_trigger(data, samples_per_trace, method='troughs', n_troughs=10):
@@ -176,6 +193,37 @@ class DataCleaner(object):
         else:
             return triggers
 
+    @staticmethod
+    def overlap_to_high_freq(data, new_period, selected_traces=None, visualise=False, reshape=True):
+        if selected_traces is not None:
+            data = data[selected_traces]
+
+        num_traces, period = data.shape
+
+        if period <= new_period:
+            raise ValueError(f'New period of {new_period} samples is more than that of given data')
+
+        data_overlapped = np.zeros(new_period * (num_traces - 1) + period)
+
+        if visualise:
+            plt.figure()
+            plt.plot(data_overlapped, alpha=0.5)
+            plt.xlim(0, 20*new_period)
+
+        for i in range(num_traces):
+            data_overlapped[i*new_period: i*new_period + period] += data[i, :]
+            if visualise and i <=20:
+                plt.plot(data_overlapped, alpha=0.5)
+
+        final_data = data_overlapped[: new_period * num_traces]
+
+        if reshape:
+            return final_data.reshape((num_traces, new_period))
+        else:
+            return final_data
+
+
+
 
 if __name__ == '__main__':
     frequency = 600
@@ -184,7 +232,7 @@ if __name__ == '__main__':
     samples = np.arange(data_raw.shape[1])
 
     f = frequency // 100
-    ex_samples, data_intp = DataCleaner.interpolate_data(data_raw, f)
+    ex_samples, data_intp = DataChopper.interpolate_data(data_raw, f)
     period = ex_samples[500]
 
     import matplotlib.pyplot as plt
@@ -196,11 +244,11 @@ if __name__ == '__main__':
         ax.plot(ex_samples, data_intp[i])
     show_i = 0
     ax.set_xlim(show_i * period, (show_i + 5) * period)
-    triggers = DataCleaner.find_trigger(data_intp, samples_per_trace=500)
+    triggers = DataChopper.find_trigger(data_intp, samples_per_trace=500)
     for i, ax in enumerate(axs):
         ax.axvline(ex_samples[triggers[i]], ymin=0, ymax=max(data_intp[i]), color='gray', linestyle='dashed')
 
-    raw_traces = DataCleaner.chop_traces(data_raw, samples_per_trace=int(5e4 // frequency), trigger=0)
+    raw_traces = DataChopper.chop_traces(data_raw, samples_per_trace=int(5e4 // frequency), trigger=0)
     intp_traces = dataParser.parse_data(frequency, interpolated=True, triggered=False)
     traces = dataParser.parse_data(frequency, interpolated=False, triggered=True)
 

@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 from tqdm.auto import tqdm
+
+from src.data_utils import DataChopper
 from src.fitting_hist import fitting_histogram
 
 class Traces:
@@ -246,6 +248,7 @@ class Traces:
                 plt.title(plt_title)
 
         return characteristic_traces
+
     def total_traces(self):
         '''
         returns all possible traces, ie average trace with std error trace
@@ -311,33 +314,6 @@ class Traces:
 
         return offset, self.get_data()
 
-    def overlap_to_high_freq(self, high_frequency, selected_traces=None, visualise=False):
-        if high_frequency <= self.frequency:
-            raise ValueError(f'New frequency {high_frequency}kHz is lower than current frequency {self.frequency}')
-
-        current_data = self.get_data()
-        if selected_traces is not None:
-            current_data = current_data[selected_traces]
-
-        num_traces = current_data.shape[0]
-
-        new_period = int(5e4 / high_frequency)  # truncated. so there is no shift.
-        # old_period = 500
-        data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
-
-        if visualise:
-            plt.figure()
-            plt.plot(data_overlapped, alpha=0.5)
-            plt.xlim(0, 20*new_period)
-
-        for i in range(num_traces):
-            data_overlapped[i*new_period: i*new_period + self.period] += current_data[i, :]
-            if visualise and i <=20:
-                plt.plot(data_overlapped, alpha=0.5)
-
-
-        return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
-
     # Deprecated
     def generate_high_freq_data(self, frequency):
         # this gives different number of traces as reference data, for some reason...
@@ -401,11 +377,16 @@ class Traces:
 
     def generate_training_data(self, high_frequency, **kwargs):
         pn_labels = self.return_pn_labels()
+        new_period = int(5e4 / high_frequency)
 
-        filtered_indices = np.where(pn_labels >= 0)
+        filtered_indices = np.where(pn_labels >= 0)[0]
         training_labels = pn_labels[filtered_indices]
 
-        training_data = self.overlap_to_high_freq(high_frequency, filtered_indices, **kwargs)
+        # single row
+        training_data = DataChopper.overlap_to_high_freq(self.get_data(), new_period, filtered_indices, reshape=True, **kwargs)
+
+        training_data = training_data[500//new_period:]
+        training_labels = training_labels[500//new_period:]
 
         return training_data, training_labels
 
