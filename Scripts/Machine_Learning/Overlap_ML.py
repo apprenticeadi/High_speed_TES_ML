@@ -18,12 +18,12 @@ script to produce  PN distributions using tabular classifiers, specify power, wh
 #specify parameters
 data_dir = 'RawData'
 sub_power_name = 'raw_6'
+guess_mean_pn = 8
 feature_extraction = False
 modeltype = 'RF'
 test_size = 0.1
 multiplier = 1.
 num_bins = 1000
-guess_mean_pn = 3
 vertical_shift = True
 triggered = True
 pca_components = None
@@ -95,7 +95,7 @@ pns, ref_distrib = calTraces.pn_bar_plot(plot=True, plt_title='100kHz photon num
 '''
 Fit Poissonian distribution
 '''
-fit, cov = curve_fit(poisson_norm, pns, ref_distrib, p0 = [guess_mean_pn]) #, maxfev=2000)
+fit, cov = curve_fit(poisson_norm, pns, ref_distrib, p0 = [guess_mean_pn], maxfev=2000)  # maxfev is by default only 200
 lam = fit[0]
 lam_var = cov[0,0]
 
