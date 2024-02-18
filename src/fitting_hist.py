@@ -67,7 +67,8 @@ class fitting_histogram:
             y = y + amp * np.exp(-((x - mu) / abs(sig)) ** 2)
         return y
 
-    def fitting(self, plot=False, fig_name='fit'):
+    def fitting(self, plot=False, fig_name='fit', coloring=True, indexing=True,
+                hist_color='aquamarine', plot_fit=True):
         '''
         fitting the histogram
         '''
@@ -99,19 +100,22 @@ class fitting_histogram:
         t, _ = find_peaks(-fit)  # positions of troughs
 
         if plot:
-            plt.figure(fig_name, figsize=(8, 5))
+            if fig_name is not None:
+                plt.figure(fig_name, figsize=(8, 5))
 
             half_bin_widths = 0.5 * np.diff(self.midBins)
             half_bin_widths = np.append(half_bin_widths, half_bin_widths[-1])
             bins = self.midBins - half_bin_widths
             bins = np.append(bins, bins[-1] + half_bin_widths[-1])
-            plt.hist(self.overlap, bins=bins, color='aquamarine')
-            plt.plot(x, fit, 'r-')
-            plt.xlabel('overlap', size=14)
-            plt.ylabel('entries', size=14)
+            plt.hist(self.overlap, bins=bins, color=hist_color)
 
-            plt.plot(x[p], fit[p], 'x', label='peaks')
-            plt.plot(x[t], fit[t], 'x', label='troughs')
+            if plot_fit:
+                plt.plot(x, fit, 'r-')
+                plt.plot(x[p], fit[p], 'x', label='peaks')
+                plt.plot(x[t], fit[t], 'x', label='troughs')
+
+            plt.xlabel('Inner product')
+            plt.ylabel('Counts')
 
         # identify pn peaks and produce upper and lower bounds.
         upper_list = []
@@ -202,13 +206,16 @@ class fitting_histogram:
                 else:
                     id_stop = np.argmax(self.midBins >= upper)
 
-                plt.bar(self.midBins[id_start:id_stop], self.heights[id_start:id_stop], width=self.midBins[1]-self.midBins[0], align='center')
+                if coloring:
+                    plt.bar(self.midBins[id_start:id_stop], self.heights[id_start:id_stop], width=self.midBins[1]-self.midBins[0], align='center')
 
                 if pn < len(p):
-                    text_height = fit[p[pn]] + 2
+                    text_height = fit[p[pn]] + 4
                 else:
-                    text_height = 2
-                plt.text(mu, text_height, f'{pn}', color='gray')
+                    text_height = 4
+
+                if indexing:
+                    plt.text(mu, text_height, f'{pn}', color='black')
 
             upper_list.append(upper)
             lower_list.append(lower)

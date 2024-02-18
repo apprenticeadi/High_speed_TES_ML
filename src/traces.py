@@ -148,19 +148,21 @@ class Traces:
 
             if fig_name == '':
                 fig_name = f'{self.freq_str} raw stegosaurus'
-            plt.figure(fig_name)
+            if fig_name is not None:
+                plt.figure(fig_name)
             heights, bin_edges, _ = plt.hist(overlaps, bins=self.num_bins, color='aquamarine')
-            plt.xlabel('overlaps')
+            plt.xlabel('Inner product')
+            plt.ylabel('Counts')
 
-            if plt_title == '':
-                plt_title = f'{self.freq_str} raw stegosaurus'
+            # if plt_title == '':
+            #     plt_title = f'{self.freq_str} raw stegosaurus'
             plt.title(plt_title)
         else:
             heights, bin_edges = np.histogram(overlaps, bins=self.num_bins)
 
         return overlaps, heights, bin_edges
 
-    def fit_histogram(self, plot=False, fig_name=''):
+    def fit_histogram(self, plot=False, fig_name='', **kwargs):
 
         overlaps, heights, bin_edges = self.raw_histogram(plot=False)
         mid_bins = (bin_edges[1:] + bin_edges[:-1]) / 2
@@ -170,7 +172,7 @@ class Traces:
         if plot:
             if fig_name == '':
                 fig_name = f'{self.freq_str} fit stegosaurus'
-            lower_list, upper_list = hist_fit.fitting(plot=plot, fig_name=fig_name)
+            lower_list, upper_list = hist_fit.fitting(plot=plot, fig_name=fig_name, **kwargs)
 
         return hist_fit
 
@@ -199,8 +201,8 @@ class Traces:
                     fig_name = f'Normalised {self.freq_str} photon number bar plot'
                 else:
                     fig_name = f'{self.freq_str} photon number bar plot'
-            if plt_title == '':
-                plt_title = f'{self.freq_str} photon number distribution for multiplier={self.multiplier}'
+            # if plt_title == '':
+            #     plt_title = f'{self.freq_str} photon number distribution for multiplier={self.multiplier}'
 
             plt.figure(fig_name)
             plt.bar(pns, counts)
