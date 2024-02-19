@@ -29,7 +29,7 @@ LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name=
 logging.info(rf'Run tomography on data from raw_{powers}, with photon number truncated at max_truncation={max_truncation}. '
              )
 
-rep_vals = np.arange(100, 1100, 100)
+rep_vals = [100, 500, 700] # np.arange(100, 1100, 100)
 final_costs = np.zeros(len(rep_vals))
 for i_rep, rep_rate in enumerate(rep_vals):
 
@@ -71,12 +71,18 @@ for i_rep, rep_rate in enumerate(rep_vals):
     sum over column should be smaller than 1.
     '''
     guess_theta = np.zeros((max_photon+1, max_truncation+1))
-    np.fill_diagonal(guess_theta, 1)  # guess value
+
     '''
     define guess values and bounds
     '''
     # bounds = [(0,1)] * (max_photon+1) * max_truncation
-
+    for i in range(4, max_photon+1):
+        guess_theta[i,i] = 0.5
+        guess_theta[i, i-1] = 0.2
+        guess_theta[i, i+1] = 0.2
+        guess_theta[i, i-2] = 0.05
+        guess_theta[i, i+2] = 0.05
+    # np.fill_diagonal(guess_theta, 0.9)  # guess value
 
     '''
     cvxpy least squares minimization, 
@@ -104,23 +110,21 @@ for i_rep, rep_rate in enumerate(rep_vals):
     '''
     create colour plot, using same blue to yellow colours as white paper
     '''
-    fig, ax = plt.subplots(1,1, squeeze=True)
-    cmap_colors = [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]
-    cmap = LinearSegmentedColormap.from_list('blue_to_yellow', cmap_colors)
-    norm = mcolors.Normalize(vmin=np.min(estimated_theta), vmax=np.max(estimated_theta))
-    cax = ax.matshow(estimated_theta, cmap=cmap, norm=norm)
+    fig, ax = plt.subplots()
+    x = np.arange(estimated_theta.shape[1])
+    y = np.arange(estimated_theta.shape[0])
+    X,Y =np.meshgrid(x,y)
 
-    cbar = plt.colorbar(cax, ax=ax)
-    cbar.set_label('theta value')
+    pc= ax.pcolormesh(X,Y, estimated_theta,
+                  norm=mcolors.SymLogNorm(linthresh=0.01))
+    cbar = fig.colorbar(pc)
+    cbar.set_label(r'$|\theta_{nm}|$')
 
-    ax.set_xlabel('m', size = 'xx-large')
-    ax.set_ylabel('n', size = 'xx-large')
+    ax.set_xticks(x[::2])
+    ax.set_yticks(y[::2])
 
-    # ax.set_xticks(np.arange(0, estimated_theta.shape[1], 2))
-    # ax.set_xticklabels(np.arange(0,len(estimated_theta[0]),1))
-    # ax.set_yticks(np.arange(estimated_theta.shape[0]))
-    # ax.set_yticklabels(np.arange(0,len(estimated_theta),1))
-    #
-    ax.set_title(fr'{rep_rate}kHz, fidelity = {fidelity:.4f}')
-    fig.savefig(results_dir+rf'\{rep_rate}kHz_theta_cmap.pdf')
+    ax.set_title(rf'{rep_rate}kHz, fidelity={fidelity:.3f}, final cost={optimal_value}')
 
+    fig.savefig(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta_cmap.pdf'))
+
+np.save(DFUtils.create_filename(results_dir + rf'\optimal_least_squares.npy'), final_costs)
