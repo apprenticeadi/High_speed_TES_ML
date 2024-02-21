@@ -42,7 +42,7 @@ for i_rep, rep_rate in enumerate(rep_vals):
     mean_pns = np.zeros(len(powers))
     max_photon = 0
     for i_power, power in enumerate(powers):
-        df = pd.read_csv(rf'params\{modeltype}_results_raw_{power}.csv')
+        df = pd.read_csv(rf'..\Params\{modeltype}_results_raw_{power}.csv')
         mean_pns[i_power] = df.loc[df['rep_rate']==rep_rate, 'fit_mu'].iloc[0]
         pn = np.array(df.loc[df['rep_rate']==rep_rate, '0':].iloc[0])
         probs[i_power, :len(pn)] = pn
