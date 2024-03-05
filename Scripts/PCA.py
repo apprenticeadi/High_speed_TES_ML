@@ -7,10 +7,10 @@ from src.utils import DataUtils
 # A script that performs PCA on raw data traces. However, so far the improvement in fitting histogram is very limited.
 
 
-frequency = 800
+frequency = 100
 
 if frequency == 100:
-    data_raw = DataUtils.read_raw_data(frequency)
+    data_raw = DataUtils.read_raw_data_old(frequency)
 else:
     data_raw = DataUtils.read_high_freq_data(frequency)
 

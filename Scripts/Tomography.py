@@ -1,160 +1,130 @@
-import math
+from scipy.special import factorial
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
 import cvxpy as cp
+import logging
+import time
+import datetime
+
+from src.utils import LogUtils, DFUtils
+
+#TODO: for higher rep rates, the convergence by cvxpy is just bad, but this makes the final thetas look ok. How to account for this? Read Humphreys again.
+
 '''
 script to perform a tomography routine on the probabilities, using the cvxpy package
 '''
-extra_attenuation = 2.9
+# extra_attenuation = 2.9
 modeltype = 'RF'
-'''
-load in data files, data is from log file, probabilities are calculated in different script and saved in params file
-'''
-log = np.loadtxt('Data/power_attenuation.txt', skiprows=1, unpack = True)
 
+powers = [5, 8, 7]
+max_truncation = 20  #truncation photon number.
 
-probabilities_raw5 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw5.txt', unpack = True).T
-probabilities_raw6 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw6.txt', unpack = True).T
-probabilities_raw7 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw7.txt', unpack = True).T
-probabilities_raw8 = np.loadtxt(rf'Scripts/params/{modeltype}_probs_raw8.txt', unpack = True).T
+time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
+results_dir = rf'..\Results\Tomography\raw_{powers}_{time_stamp}'
 
+LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
+logging.info(rf'Run tomography on data from raw_{powers}, with photon number truncated at max_truncation={max_truncation}. '
+             )
 
-rep_rates = np.array_split(log[0]*10**3, 4)
-av_pn =  np.array_split(log[1], 4)
-attenuations = np.array_split(log[5], 4)
-av_pn[1], av_pn[2], av_pn[3] = av_pn[1]*10, av_pn[2]*10, av_pn[3]*10
-'''
-remove poor distributions by k index for testing, uncomment if want to loop over all k
-'''
-# delete = [1]
-# rep_rates = np.delete(rep_rates, delete, axis = 0)
-# av_pn = np.delete(av_pn, delete, axis = 0)
-# attenuations = np.delete(attenuations, delete, axis = 0)
-
-
-rep_vals = np.arange(0,9.1,1)
-fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(15, 12))
-fid_100 = []
-for rep,ax in zip(rep_vals, axs.ravel()):
-
-    rep_rate = int(rep) # 0=100kHz, 1 = 200kHz ...
-    probs = [probabilities_raw5[rep_rate], probabilities_raw6[rep_rate], probabilities_raw7[rep_rate], probabilities_raw8[rep_rate]]
-
-    '''removing poor distributions if want to  '''
-
-    #probs = [probabilities_raw5[rep_rate], probabilities_raw7[rep_rate],probabilities_raw8[rep_rate]]
-    '''
-    ensure all probabilities are the same length, fill lower powers wil 0 values for higher PN
-    '''
-    if len(probs) ==1:
-        num=0
-    else:
-        num=1
-    for i in range(len(probs)):
-        while len(probs[i])<len(probs[num]):
-            probs[i] = np.append(probs[i],[0])
-    probs = np.array(probs)
-    '''
-    ensure same amount of powers for probabilities and parameters
-    '''
-    if len(rep_rates) != len(probs):
-        raise 'k mismatch'
-
-    def calculate_final_power(power_i, attenuation):
-        '''
-        function to calculate the output power after attenuation
-        '''
-        power_f = power_i/(10**(attenuation/10))
-        return power_f
-
-    pow = 0 # 0 = 1.34, 1 = 8.14, ...
-
-    def qmk(m_values, power=av_pn[pow][rep_rate], attenuation=attenuations[pow][rep_rate], reprate=rep_rates[pow][rep_rate]):
-        f = 3e8 / (1550e-9)
-        h = 6.6261e-34
-        f_power = calculate_final_power(power * 10**-6, attenuation+extra_attenuation)
-        '''
-        calculate alpha_k
-        '''
-        alpha_k = np.sqrt((f_power / reprate) / (h * f))
-        q_mk_values = np.exp(-(alpha_k**2)) * ((alpha_k**(2 * m_values)) / np.array([math.factorial(np.abs(m)) for m in m_values]))
-        return np.array(q_mk_values)
+rep_vals = [100, 500, 700] # np.arange(100, 1100, 100)
+final_costs = np.zeros(len(rep_vals))
+for i_rep, rep_rate in enumerate(rep_vals):
 
     '''
-    find max photon number in sample
+    Load experimental probabilites- matrix P, with dimensions (N+1)*S, where N is the maximum photon number, S is the 
+    number of powers. 
+    P_ns is the experimental probability of measuring n photons from coherent light with power s=|alpha|^2
     '''
-    max_pn = len(max(probs, key = lambda x:len(x)))
-    '''
-    define nmax and m
-    '''
-    nmax,m = max_pn, max_pn
+    probs = np.zeros((len(powers), max_truncation+1))
+    mean_pns = np.zeros(len(powers))
+    max_photon = 0
+    for i_power, power in enumerate(powers):
+        df = pd.read_csv(rf'..\Params\{modeltype}_results_raw_{power}.csv')
+        mean_pns[i_power] = df.loc[df['rep_rate']==rep_rate, 'fit_mu'].iloc[0]
+        pn = np.array(df.loc[df['rep_rate']==rep_rate, '0':].iloc[0])
+        probs[i_power, :len(pn)] = pn
+
+        max_photon = max(max_photon, len(pn)-1)
+
+    probs = probs[:, :max_photon+1]
+    probs = probs.T
 
     '''
-    calculate qmk values
+    Calculate F matrix, dimension (M+1)*S, where M is the maximum truncation photon number. 
+    F_ms is the theoretical (Poissonian) probability of measuring m photons from coherent light with power s=|alpha|^2. 
     '''
-    qmk_vals = np.zeros((len(probs),m))
+    F = np.zeros((len(powers), max_truncation+1))
+    ms = np.arange(max_truncation+1)
+    for i_power in range(len(powers)):
+        F[i_power] = np.exp(- mean_pns[i_power]) * np.power(mean_pns[i_power], ms) / factorial(ms)
+    F = F.T
 
-    for i in range(len(probs)):
-        values = qmk(np.arange(0,m,1),power=av_pn[0][rep_rate], attenuation=attenuations[i][rep_rate], reprate=rep_rates[i][rep_rate])
-        qmk_vals[i] = values
+    '''
+    Theta is the POVM elements that we wish to find, dimension N+1 * M+1. 
+    Theta_nm is the probability that the detector measures n photon, given m photon input. 
+    n_th row corresponds to measuring n photons
+    m-th column corresponds having m photons as input
+    sum over row should be normalised to 1 
+    sum over column should be smaller than 1.
+    '''
+    guess_theta = np.zeros((max_photon+1, max_truncation+1))
+
     '''
     define guess values and bounds
     '''
-    bounds = [(0,1) for _ in range(nmax*m)]
-    guess = np.zeros((nmax,m))
-    np.fill_diagonal(guess, 1)
+    # bounds = [(0,1)] * (max_photon+1) * max_truncation
+    for i in range(4, max_photon+1):
+        guess_theta[i,i] = 0.5
+        guess_theta[i, i-1] = 0.2
+        guess_theta[i, i+1] = 0.2
+        guess_theta[i, i-2] = 0.05
+        guess_theta[i, i+2] = 0.05
+    # np.fill_diagonal(guess_theta, 0.9)  # guess value
 
     '''
-    cvxpy least squares minimization, theta as a nxm matrix
+    cvxpy least squares minimization, 
     cost function as a sum of squares
     constraints that sum over rows and columns equal 1
-    fidelity calculated as trace/sum
     '''
-    theta = cp.Variable((nmax, m), nonneg=True, value=guess)
-    cost = cp.sum_squares(cp.abs(probs - cp.matmul(qmk_vals, theta)))
-    constraints = [0 <= theta,theta <=1, cp.sum(theta, axis=0) == 1, cp.sum(theta, axis = 1)==1]
+    theta = cp.Variable((max_photon+1, max_truncation+1), nonneg=True, value=guess_theta)
+    cost = cp.sum_squares(cp.abs(probs - theta @ F))
+    constraints = [0 <= theta, theta <=1, cp.sum(theta, axis=0) <= 1, cp.sum(theta, axis = 1)==1]
     problem = cp.Problem(cp.Minimize(cost), constraints)
 
-    problem.solve()
+    t1 = time.time()
+    optimal_value = problem.solve()
+    t2 = time.time()
+    msg= f'For {rep_rate}kHz, min squares routine finish after {t2-t1}s, optimal_value = {optimal_value}'
+    logging.info(msg)
+    final_costs[i_rep] = optimal_value
 
     estimated_theta = theta.value
 
+    np.save(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta.npy'), estimated_theta)
+
     fidelity = np.trace(estimated_theta)/ np.sum(estimated_theta)
-    if rep_rate ==0:
-        theta100 = estimated_theta
-    else:
-        fidelity100 = 1 - np.sum(np.abs(estimated_theta-theta100))/ np.sum(theta100)
-        fid_100.append(fidelity100)
+
     '''
     create colour plot, using same blue to yellow colours as white paper
     '''
-    cmap_colors = [(0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]
-    cmap = LinearSegmentedColormap.from_list('blue_to_yellow', cmap_colors)
-    norm = mcolors.Normalize(vmin=np.min(estimated_theta), vmax=np.max(estimated_theta))
-    cax = ax.matshow(estimated_theta, cmap=cmap, norm=norm)
+    fig, ax = plt.subplots()
+    x = np.arange(estimated_theta.shape[1])
+    y = np.arange(estimated_theta.shape[0])
+    X,Y =np.meshgrid(x,y)
 
-    cbar = plt.colorbar(cax, ax=ax)
-    cbar.set_label('theta value')
+    pc= ax.pcolormesh(X,Y, estimated_theta,
+                  norm=mcolors.SymLogNorm(linthresh=0.01))
+    cbar = fig.colorbar(pc)
+    cbar.set_label(r'$|\theta_{nm}|$')
 
-    ax.set_xlabel('m', size = 'xx-large')
-    ax.set_ylabel('n', size = 'xx-large')
+    ax.set_xticks(x[::2])
+    ax.set_yticks(y[::2])
 
-    ax.set_xticks(np.arange(estimated_theta.shape[1]))
-    ax.set_xticklabels(np.arange(0,len(estimated_theta[0]),1))
-    ax.set_yticks(np.arange(estimated_theta.shape[0]))
-    ax.set_yticklabels(np.arange(0,len(estimated_theta),1))
+    ax.set_title(rf'{rep_rate}kHz, fidelity={fidelity:.3f}, final cost={optimal_value}')
 
-    ax.set_title(fr'least squares, {rep_rates[0][rep_rate]/1000} kHz, fidelity = {fidelity:.4f}')
+    fig.savefig(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta_cmap.pdf'))
 
-plt.tight_layout()
-plt.show()
-
-freq_values = np.arange(200,901,100)
-plt.plot(freq_values, fid_100, '+')
-plt.xlabel('repitition rate', size = 'x-large')
-plt.ylabel(r'adjusted fidelity , 1 - $\frac{\sum_{i,j} \theta^{100}_{i,j} - \theta^{rr}_{i}}{\sum_{i,j}\theta^{100}_{i,j}}$', size = 'x-large')
-plt.tight_layout()
-plt.show()
-
+np.save(DFUtils.create_filename(results_dir + rf'\optimal_least_squares.npy'), final_costs)

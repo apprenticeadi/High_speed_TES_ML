@@ -131,7 +131,7 @@ def search_maj_voting(target_data, comp_char_traces, pn_combs, k=4):
     return pns, errors
 
 def get_total_comp_traces(num=100, multiplier = 1.2, num_bins = 1000):
-    data_100 = DataUtils.read_raw_data(num)
+    data_100 = DataUtils.read_raw_data_old(num)
     calibrationTraces = Traces(frequency=num, data=data_100, multiplier=multiplier, num_bins=num_bins)
     offset_cal, _ = calibrationTraces.subtract_offset()
     '''

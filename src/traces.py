@@ -1,24 +1,30 @@
+import warnings
+
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
 from tqdm.auto import tqdm
+
+from src.data_utils import DataChopper
 from src.fitting_hist import fitting_histogram
 
 class Traces:
 
-    def __init__(self, frequency, data, multiplier=0.6, num_bins=1000):
+    def __init__(self, frequency, data, multiplier=1., num_bins=1000):
 
-        self.multiplier = multiplier
-        self.num_bins = num_bins
+        self._multiplier = multiplier
+        self._num_bins = num_bins
 
         self._data = data
 
-        self.frequency = frequency
+        self._frequency = frequency
 
-        if frequency == 1000:
-            self.freq_str = '1MHz'
-        else:
-            self.freq_str = f'{frequency}kHz'
+        # no longer used in the new conventions
+        # if frequency == 1000:
+        #     self.freq_str = '1MHz'
+        # else:
+        #     self.freq_str = f'{frequency}kHz'
+        self.freq_str = f'{frequency}kHz'
 
         self.idealSamples = 5e4 / frequency  # number of sampling data points per trace
         self.period = int(self.idealSamples)  # integer number of sampling data points per trace (i.e. period of trace)
@@ -26,18 +32,35 @@ class Traces:
         self.min_voltage = np.amin(data)
         self.max_voltage = np.amax(data)
 
-
         # self.min_voltage = min(data.any())
         # self.max_voltage = max(data.any())
 
         self.ymin = 5000 * (self.min_voltage // 5000)
         self.ymax = 5000 * (self.max_voltage // 5000 + 1)
 
-    def set_multiplier(self, multiplier):
-        self.multiplier = multiplier
+    @property
+    def multiplier(self):
+        return self._multiplier
 
-    def set_num_bins(self, num_bins):
-        self.num_bins = num_bins
+    @multiplier.setter
+    def multiplier(self, new_multiplier):
+        self._multiplier = new_multiplier
+
+    @property
+    def num_bins(self):
+        return self._num_bins
+
+    @num_bins.setter
+    def num_bins(self, new_num_bins):
+        self._num_bins = new_num_bins
+
+    @property
+    def frequency(self):
+        return self._frequency
+
+    @property
+    def num_traces(self):
+        return self._data.shape[0]
 
     def get_data(self):
         """numpy array is mutable"""
@@ -99,6 +122,8 @@ class Traces:
 
             plt.figure(fig_name)
             plt.plot(ave_trace)
+            plt.plot(ave_trace + std_trace, linestyle='dashed')
+            plt.plot(ave_trace - std_trace, linestyle='dashed')
             plt.ylabel('voltage')
             plt.xlabel('time (in sample)')
             plt.ylim(self.ymin, self.ymax)
@@ -123,19 +148,21 @@ class Traces:
 
             if fig_name == '':
                 fig_name = f'{self.freq_str} raw stegosaurus'
-            plt.figure(fig_name)
+            if fig_name is not None:
+                plt.figure(fig_name)
             heights, bin_edges, _ = plt.hist(overlaps, bins=self.num_bins, color='aquamarine')
-            plt.xlabel('overlaps')
+            plt.xlabel('Inner product')
+            plt.ylabel('Counts')
 
-            if plt_title == '':
-                plt_title = f'{self.freq_str} raw stegosaurus'
-
+            # if plt_title == '':
+            #     plt_title = f'{self.freq_str} raw stegosaurus'
+            plt.title(plt_title)
         else:
             heights, bin_edges = np.histogram(overlaps, bins=self.num_bins)
 
         return overlaps, heights, bin_edges
 
-    def fit_histogram(self, plot=False, fig_name=''):
+    def fit_histogram(self, plot=False, fig_name='', **kwargs):
 
         overlaps, heights, bin_edges = self.raw_histogram(plot=False)
         mid_bins = (bin_edges[1:] + bin_edges[:-1]) / 2
@@ -145,7 +172,7 @@ class Traces:
         if plot:
             if fig_name == '':
                 fig_name = f'{self.freq_str} fit stegosaurus'
-            lower_list, upper_list = hist_fit.fitting(plot=plot, fig_name=fig_name)
+            lower_list, upper_list = hist_fit.fitting(plot=plot, fig_name=fig_name, **kwargs)
 
         return hist_fit
 
@@ -156,24 +183,37 @@ class Traces:
 
         return binning_index, binning_traces
 
-    def pn_bar_plot(self,plot = True, fig_name='', plt_title=''):
+    def pn_bar_plot(self,plot = True, fig_name='', plt_title='', normalised=False):
 
         binning_index, _ = self.bin_traces(plot=False)
-        max_pn_steg = max(binning_index.keys())
-        num_trace_per_pn = [len(binning_index[pn]) for pn in range(max_pn_steg + 1)]
+
+        pns = list(binning_index.keys())
+        pns = np.asarray(pns)
+
+        counts = [len(binning_index[pn]) for pn in pns]
+        counts = np.asarray(counts)
+        if normalised:
+            counts = counts / np.sum(counts)
+
         if plot:
             if fig_name == '':
-                fig_name = f'{self.freq_str} photon number bar plot'
-            if plt_title == '':
-                plt_title = f'{self.freq_str} photon number bar plot for multiplier={self.multiplier}'
+                if normalised:
+                    fig_name = f'Normalised {self.freq_str} photon number bar plot'
+                else:
+                    fig_name = f'{self.freq_str} photon number bar plot'
+            # if plt_title == '':
+            #     plt_title = f'{self.freq_str} photon number distribution for multiplier={self.multiplier}'
 
             plt.figure(fig_name)
-            plt.bar(list(range(max_pn_steg + 1)), num_trace_per_pn)
+            plt.bar(pns, counts)
             plt.xlabel('Photon number')
-            plt.ylabel('Counts')
+            if normalised:
+                plt.ylabel('Probability')
+            else:
+                plt.ylabel('Counts')
             plt.title(plt_title)
 
-        return list(range(max_pn_steg + 1)), num_trace_per_pn
+        return pns, counts
 
     def characteristic_traces_pn(self, plot=False, fig_name='', plt_title=''):
         """
@@ -210,6 +250,7 @@ class Traces:
                 plt.title(plt_title)
 
         return characteristic_traces
+
     def total_traces(self):
         '''
         returns all possible traces, ie average trace with std error trace
@@ -275,32 +316,13 @@ class Traces:
 
         return offset, self.get_data()
 
-    def overlap_to_high_freq(self, high_frequency, num_traces=0):
-
-        if high_frequency <= self.frequency:
-            raise ValueError(f'New frequency {high_frequency}kHz is lower than current frequency {self.frequency}')
-
-        current_data = self.get_data()
-        if num_traces==0:
-            num_traces = current_data.shape[0]
-            #num_traces = len(current_data)
-
-        new_period = int(5e4 / high_frequency)
-        old_period = 500
-        data_overlapped = np.zeros(new_period * (num_traces - 1) + self.period)
-
-        for i in range(num_traces):
-            data_overlapped[i*new_period: i*new_period + self.period] = current_data[i, :]
-
-
-        return data_overlapped[: new_period * num_traces].reshape((num_traces, new_period))
-
-
-
-    def generate_high_freq_data(self,frequency):
+    # Deprecated
+    def generate_high_freq_data(self, frequency):
+        # this gives different number of traces as reference data, for some reason...
+        warnings.warn('This method is deprecated. Use overlap_to_high_freq() instead. ')
         data_100 = self.get_data()
         num_traces = data_100.shape[0]
-        new_period = int(5e4/frequency)
+        new_period = int(5e4/frequency)  # truncated, note the truncation error.
         overlapped = np.zeros(num_traces-1)
         overlapped = []
         for i in range(2,num_traces):
@@ -333,15 +355,15 @@ class Traces:
 
         return data_cleaned
 
-    def return_labelled_traces(self):
+    def return_pn_labels(self):
         '''
-        returns the labels at the correct indices
+        returns the photon number labels at the correct indices
         '''
         binning_index, _ = self.bin_traces(plot=False)
         keys = [key for key in binning_index]
-        values = list(binning_index.values()) # [binning_index[key] for key in binning_index]
+        values = list(binning_index.values()) # list of lists
         # indices = np.zeros(len(self._data))
-        indices = np.full((len(self._data)), -1)
+        indices = np.full(self.num_traces, -1)
 
         for i in range(len(keys)):
             for j in values[i]:
@@ -350,10 +372,33 @@ class Traces:
         return indices
 
     def return_av_diff(self):
+        # TODO: suspicious, why average over axis=1?
+        warnings.warn('Function suspicious, double check. ')
         ave_trace = np.mean(self._data, axis=1)
         return np.min(ave_trace)
 
+    def generate_training_data(self, high_frequency, **kwargs):
+        pn_labels = self.return_pn_labels()
+        new_period = int(5e4 / high_frequency)
 
+        filtered_indices = np.where(pn_labels >= 0)[0]
+        training_labels = pn_labels[filtered_indices]
+
+        # single row
+        training_data = DataChopper.overlap_to_high_freq(self.get_data(), new_period, filtered_indices, reshape=True, **kwargs)
+
+        training_data = training_data[500//new_period:]
+        training_labels = training_labels[500//new_period:]
+
+        return training_data, training_labels
+
+
+
+class IntpTraces(Traces):
+    # TODO: a class that treats interpolated traces. The period and ideal number of samples need to change.
+
+
+    pass
 
 
 

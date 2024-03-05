@@ -15,7 +15,7 @@ composite_num = 4
 load in data
 '''
 #calibration data
-data_100 = DataUtils.read_raw_data(100)
+data_100 = DataUtils.read_raw_data_old(100)
 calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 offset_cal, _ = calibrationTraces.subtract_offset()
 

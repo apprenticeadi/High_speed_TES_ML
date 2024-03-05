@@ -1,3 +1,5 @@
+import warnings
+
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
@@ -16,13 +18,13 @@ class ML:
     '''
     class which contains the tabular models
     '''
-    def __init__(self, dataset, labels, modeltype = 'RF', n_estimators = 400, max_depth = 5):
+    def __init__(self, dataset, labels, modeltype = 'RF', n_estimators = 400, max_depth = 5, test_size=0.25):
 
         self.dataset = dataset
         self.labels = labels
         self.modeltype = modeltype
         # default test size is 25%
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.dataset, self.labels)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.dataset, self.labels, test_size=test_size)
 
         if self.modeltype == 'RF':
             self.classifier = RandomForestClassifier(n_estimators=n_estimators)
@@ -71,11 +73,13 @@ def return_artifical_data(frequency, multiplier, power):
     '''
     function which returns an artificial dataset with its corresponding PN label
     '''
+    warnings.warn('This method should be deprecated. Use Traces.generate_training_data() instead')
+
     num_bins = 1000
     data_100 = DataUtils.read_raw_data_new(100, power)
     calibrationTraces = Traces(frequency=100, data=data_100, multiplier=multiplier, num_bins=num_bins)
 
-    labels = calibrationTraces.return_labelled_traces()
+    labels = calibrationTraces.return_pn_labels()
 
     # Filter out traces that were not labelled due to choice of multiplier
     filtered_ind = np.where(labels == -1)[0]

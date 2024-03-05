@@ -11,7 +11,7 @@ class DataUtils:
 
     @staticmethod
     def read_raw_data_old(frequency):
-        warnings.warn('This method is outdated and should be deprecated soon. Use DataUtils.read_raw_data() instead.')
+        warnings.warn('This method is outdated and should be deprecated soon. Use src.data_utils.DataParser')
 
         if frequency == 1000:
             freq_name = '1M'
@@ -34,7 +34,7 @@ class DataUtils:
     #TODO: Make this cleaner.
     @staticmethod
     def read_raw_data_new(frequency, power, file_num=0):
-        warnings.warn('This method is outdated and should be deprecated soon. Use DataUtils.read_raw_data() instead.')
+        warnings.warn('This method is outdated and should be deprecated soon. Use src.data_utils.DataParser')
 
         freq_name = f'{frequency}k'
         try:
@@ -68,6 +68,7 @@ class DataUtils:
 
     @staticmethod
     def read_raw_data(frequency, dir_name: str, file_num=0):
+        warnings.warn('This method is outdated and should be deprecated soon. Use src.data_utils.DataParser')
 
         if dir_name.startswith('\\'):
             data_dir = DataUtils.data_parent_dir + dir_name
@@ -144,7 +145,7 @@ class DataUtils:
         data_high = []
         for data_set in data_high_:
             for i in range(1, traces_per_raw_row):  # Skip the first trace per row
-                start = int(i * idealSamples)
+                start = int(i * idealSamples)  # this step already corrects for the trace shift via truncation error in period=int(idealSamples)
                 if start + period < samples:
                     trace = data_set[start:start + period]
                     data_high.append(trace)
