@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 
 
 # TODO: still needs a data reader class. Given an array of data, where each row may contain many traces, this class
-#  offers functions to chop it to the right homogoneous np array, such that each row is a single trace.
+#  offers functions to chop it to the right homogoneous np array, such that each row is a single trace. THis function
+#  doesn't need to read file. It just needs to take in data array and outputs data array
 
 class DataChopper(object):
 
