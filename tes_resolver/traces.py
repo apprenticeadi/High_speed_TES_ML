@@ -8,6 +8,8 @@ from tes_resolver.data_chopper import DataChopper
 
 # No classifying algorithms here.
 
+
+#TODO: 1. Logically, sampling_rate should not be here. 2. Data should always be homogoenous 2d array.
 class Traces(object):
 
     def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4):
@@ -47,7 +49,18 @@ class Traces(object):
 
     @property
     def num_traces(self):
-        return self.data.shape[0]
+        return len(self.data)
+
+    # @property
+    # def data_array(self):
+    #     '''Returns numpy array of the data traces with homogoneous lengths. The longer traces are trimmed to the length
+    #     of the shorter ones. '''
+    #     trace_length = len(min(self.data, key = lambda x: len(x)))
+    #     data_arr = np.zeros((self.num_traces, trace_length))
+    #     for i in range(self.num_traces):
+    #         data_arr[i, :] = self.data[i, :trace_length]
+    #
+    #     return data_arr
 
     def average_trace(self):
         return np.mean(self.data, axis=0)
@@ -55,30 +68,23 @@ class Traces(object):
     def std_trace(self):
         return np.std(self.data, axis=0)
 
-    def inner_products(self, target_trace=None):
-        if target_trace is None:
-            target_trace = self.average_trace()
 
-        overlaps = target_trace @ self.data.T
-
-        return overlaps
-
-    def pca_cleanup(self, pca_components=1):
-        data = self.data
-        # To perform PCA, first zero the mean along each column
-        col_means = np.mean(data, axis=0)
-        data_zeroed = data - col_means
-
-        # Singular value decomposition to find factor scores and loading matrix
-        P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
-        F = P * Delta  # Factor scores
-
-        '''
-        Truncate at first few principal components
-        '''
-        F_truncated = F[:, :pca_components]
-        data_cleaned = F_truncated @ QT[:pca_components, :] + col_means
-
-        return data_cleaned
+    # def pca_cleanup(self, pca_components=1):
+    #     data = self.data
+    #     # To perform PCA, first zero the mean along each column
+    #     col_means = np.mean(data, axis=0)
+    #     data_zeroed = data - col_means
+    #
+    #     # Singular value decomposition to find factor scores and loading matrix
+    #     P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
+    #     F = P * Delta  # Factor scores
+    #
+    #     '''
+    #     Truncate at first few principal components
+    #     '''
+    #     F_truncated = F[:, :pca_components]
+    #     data_cleaned = F_truncated @ QT[:pca_components, :] + col_means
+    #
+    #     return data_cleaned
 
 

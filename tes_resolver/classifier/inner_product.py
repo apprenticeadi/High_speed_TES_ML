@@ -68,15 +68,15 @@ class InnerProductClassifier(Classifier):
 
         '''Calculate the inner products and fit histogram'''
         self.target_trace = trainingTraces.average_trace()
-        overlaps = trainingTraces.inner_products(target_trace=self.target_trace)
+        overlaps = self.calc_inner_prod(trainingTraces.data)
 
         mid_bins, heights = self.raw_histogram(overlaps)
 
-        popt, _ = HistFitter.fit_histogram(mid_bins, heights)
+        popt, _ = InnerProductUtils.fit_histogram(mid_bins, heights)
 
         '''Find peaks and troughs of histogram'''
         x = np.linspace(min(mid_bins), max(mid_bins), 10000)
-        fit = HistFitter.fit_func(x, *popt)
+        fit = InnerProductUtils.fit_func(x, *popt)
 
         p, _ = find_peaks(fit)  # positions of peaks
         t, _ = find_peaks(-fit)  # positions of troughs
@@ -198,7 +198,7 @@ class InnerProductClassifier(Classifier):
 
 
 
-class HistFitter:
+class InnerProductUtils:
 
     @staticmethod
     def fit_func(x, *params):
@@ -231,7 +231,7 @@ class HistFitter:
         """Fit the multi-gaussian function to the histogram of overlaps"""
 
         '''Initial guess for the fit. '''
-        positions, amplitudes = HistFitter.guess_peaks(mid_bins, heights)
+        positions, amplitudes = InnerProductUtils.guess_peaks(mid_bins, heights)
         num_peaks = len(positions)
         sigmas = np.diff(positions) / 4
         sigmas = np.append(sigmas, sigmas[-1])
@@ -243,6 +243,6 @@ class HistFitter:
             [max(mid_bins), max(heights), max(sigmas)] * num_peaks
         )
         # popt contains [position, amplitude, sigma] of each Gaussian peak
-        popt, pcov = curve_fit(HistFitter.fit_func, mid_bins, heights, p0=guess, bounds=bounds)
+        popt, pcov = curve_fit(InnerProductUtils.fit_func, mid_bins, heights, p0=guess, bounds=bounds)
 
         return popt, pcov

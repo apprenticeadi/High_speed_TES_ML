@@ -6,6 +6,11 @@ from math import ceil, floor
 import warnings
 import matplotlib.pyplot as plt
 
+
+
+# TODO: still needs a data reader class. Given an array of data, where each row may contain many traces, this class
+#  offers functions to chop it to the right homogoneous np array, such that each row is a single trace.
+
 class DataChopper(object):
 
     @staticmethod
