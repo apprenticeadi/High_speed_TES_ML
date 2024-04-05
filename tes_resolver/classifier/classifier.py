@@ -5,19 +5,19 @@ from tes_resolver.traces import Traces
 class Classifier(ABC):
 
     @abstractmethod
-    def train(self, calTraces: Traces):
+    def train(self, trainingTraces: Traces):
         pass
 
     @abstractmethod
-    def save(self):
+    def save(self, **kwargs):
         pass
 
     # load from existing file.
     @abstractmethod
-    def load(self):
+    def load(self, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self):
+    def predict(self, trace_data):
         pass
 
