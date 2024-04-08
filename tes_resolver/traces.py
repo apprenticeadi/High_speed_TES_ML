@@ -32,7 +32,8 @@ class Traces(object):
         self.ideal_samples = sampling_rate / rep_rate  # the ideal number of sampling data points per trace
         self.period = int(self.ideal_samples)  # integer number of sampling data points per trace (i.e. period of trace)
 
-        # parse data if necessary]
+        # parse data if necessary
+        data = np.atleast_2d(data)
         parse_args = {'interpolated': False, 'trigger': 'automatic'}
         parse_args.update(data_parsing_kwargs)
         if parse_data and data.shape[1] != self.period:
@@ -40,21 +41,32 @@ class Traces(object):
 
         # TODO: average trace and std trace methods don't work if the traces have slightly different lengths. E.g. some 83 samples some 84 samples.
         self._data = data
+        self.indices_dict = {}  # they will have -1 key if no labels are given
+        self.traces_dict = {}
         if labels is None:
-            self._labels = np.full((len(self.data), ), np.nan)
+            self._labels = np.full((len(self.data), ), -1)
         else:
             if len(labels) != len(self.data):
                 raise ValueError('Input labels and data dimensions do not match')
             else:
                 self._labels = labels
 
+        _ = self.bin_traces()
     @property
     def data(self):
         return copy.deepcopy(self._data)
 
+    @data.setter
+    def data(self, new_data):
+        self._data = copy.deepcopy(new_data)
+
     @property
     def labels(self):
         return copy.deepcopy(self._labels)
+
+    @labels.setter
+    def labels(self, new_labels):
+        self._labels = new_labels
 
     @property
     def num_traces(self):
@@ -66,24 +78,51 @@ class Traces(object):
     def std_trace(self):
         return np.std(self.data, axis=0)
 
+    def bin_traces(self):
+        pns = set(self.labels)
 
-    # def pca_cleanup(self, pca_components=1):
-    #     data = self.data
-    #     # To perform PCA, first zero the mean along each column
-    #     col_means = np.mean(data, axis=0)
-    #     data_zeroed = data - col_means
-    #
-    #     # Singular value decomposition to find factor scores and loading matrix
-    #     P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
-    #     F = P * Delta  # Factor scores
-    #
-    #     '''
-    #     Truncate at first few principal components
-    #     '''
-    #     F_truncated = F[:, :pca_components]
-    #     data_cleaned = F_truncated @ QT[:pca_components, :] + col_means
-    #
-    #     return data_cleaned
+        # Initialise a dictionary to store indices for each photon number
+        indices_dict = {}
+        for pn in pns:
+            indices_dict[pn] = np.where(self.labels == pn)[0]
+
+        traces_dict = {}
+        for pn in pns:
+            traces_dict[pn] = self.data[indices_dict[pn]]
+
+        self.indices_dict = indices_dict
+        self.traces_dict = traces_dict
+
+        return indices_dict, traces_dict
+
+    def characteristic_traces(self):
+        char_traces_dict = {}
+        for pn in self.traces_dict.keys():
+            char_traces_dict[pn] = np.mean(self.traces_dict[pn], axis=0)
+
+        return char_traces_dict
+
+
+
+
+
+    def pca_cleanup(self, pca_components=1):
+        data = self.data
+        # To perform PCA, first zero the mean along each column
+        col_means = np.mean(data, axis=0)
+        data_zeroed = data - col_means
+
+        # Singular value decomposition to find factor scores and loading matrix
+        P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
+        F = P * Delta  # Factor scores
+
+        '''
+        Truncate at first few principal components
+        '''
+        F_truncated = F[:, :pca_components]
+        data_cleaned = F_truncated @ QT[:pca_components, :] + col_means
+
+        self.data = data_cleaned
 
 
 class TraceUtils:
