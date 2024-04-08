@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tes_resolver.classifier.inner_product import InnerProductClassifier
 from tes_resolver.traces import Traces
 from src.data_utils import DataReader
+import tes_resolver.config as config
 
 '''Test run the inner product classifier, compare between different data groups as well. '''
 
@@ -81,3 +82,8 @@ ax3.legend()
 ax3.set_xlabel('Samples')
 
 plt.show()
+
+'''Save classifiers'''
+for data_group in classifiers.keys():
+    classifier = classifiers[data_group]
+    classifier.save(rf'{data_group}_trained_{config.time_stamp}.pkl')
