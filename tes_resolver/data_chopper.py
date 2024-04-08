@@ -42,6 +42,7 @@ class DataChopper(object):
         """
 
         trigger = str(trigger)
+
         if trigger.isdecimal():
             trigger = int(trigger)
             if trigger < 0:
@@ -49,6 +50,7 @@ class DataChopper(object):
         else:
             if trigger == 'automatic':
                 trigger = 'troughs'
+
             triggers = DataChopper.find_triggers(data, samples_per_trace, method=trigger)
             trigger = int(np.median(triggers))
 
@@ -117,10 +119,14 @@ class DataChopper(object):
         triggers = np.zeros(len(data), dtype=int)
 
         if method == 'troughs':
-            data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
-            for i in range(len(data)):
-                troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
-                triggers[i] = int(np.median(troughs[1:n_troughs+1] % samples_per_trace))
+            if samples_per_trace >= 250:
+                warnings.warn(f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via troughs method')
+
+            else:
+                data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
+                for i in range(len(data)):
+                    troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
+                    triggers[i] = int(np.median(troughs[1:n_troughs+1] % samples_per_trace))
 
         else:
             raise ValueError(rf'method {method} not supported yet.')

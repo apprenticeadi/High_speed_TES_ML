@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+from math import ceil, floor
 
 from tes_resolver.data_chopper import DataChopper
 
@@ -12,19 +13,32 @@ from tes_resolver.data_chopper import DataChopper
 #TODO: 1. Logically, sampling_rate should not be here. 2. Data should always be homogoenous 2d array.
 class Traces(object):
 
-    def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4):
+    def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4, parse_data=True, **data_parsing_kwargs):
         """
         Object to handle tes voltage traces. No plotting functionality.
         :param rep_rate: repetition rate, unit: kHz.
-        :param data: array_like, each element is assumed to be a trace
+        :param data: np.array, each row is assumed to be a trace
         :param sampling_rate: sampling rate, i.e. how many sampling datapoints per second. Default is 50MHz, which
         corresponds to 500 datapoints per period for 100kHz data.
+        :param parse_data: If True, parse the data such that each row is a trace and with same length. If False, then
+        leave data as is.
         """
 
         #TODO: maybe make it possible to change the unit.
         self.rep_rate = rep_rate
         self.freq_str = f'{rep_rate}kHz'
 
+        self.sampling_rate = sampling_rate
+        self.ideal_samples = sampling_rate / rep_rate  # the ideal number of sampling data points per trace
+        self.period = int(self.ideal_samples)  # integer number of sampling data points per trace (i.e. period of trace)
+
+        # parse data if necessary]
+        parse_args = {'interpolated': False, 'trigger': 'automatic'}
+        parse_args.update(data_parsing_kwargs)
+        if parse_data and data.shape[1] != self.period:
+            data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
+
+        # TODO: average trace and std trace methods don't work if the traces have slightly different lengths. E.g. some 83 samples some 84 samples.
         self._data = data
         if labels is None:
             self._labels = np.full((len(self.data), ), np.nan)
@@ -33,11 +47,6 @@ class Traces(object):
                 raise ValueError('Input labels and data dimensions do not match')
             else:
                 self._labels = labels
-
-        self.sampling_rate = sampling_rate
-        self.ideal_samples = sampling_rate / rep_rate  # the ideal number of sampling data points per trace
-        self.period = int(self.ideal_samples)  # integer number of sampling data points per trace (i.e. period of trace)
-
 
     @property
     def data(self):
@@ -50,17 +59,6 @@ class Traces(object):
     @property
     def num_traces(self):
         return len(self.data)
-
-    # @property
-    # def data_array(self):
-    #     '''Returns numpy array of the data traces with homogoneous lengths. The longer traces are trimmed to the length
-    #     of the shorter ones. '''
-    #     trace_length = len(min(self.data, key = lambda x: len(x)))
-    #     data_arr = np.zeros((self.num_traces, trace_length))
-    #     for i in range(self.num_traces):
-    #         data_arr[i, :] = self.data[i, :trace_length]
-    #
-    #     return data_arr
 
     def average_trace(self):
         return np.mean(self.data, axis=0)
@@ -88,3 +86,57 @@ class Traces(object):
     #     return data_cleaned
 
 
+class TraceUtils:
+
+    @staticmethod
+    def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger = 'automatic'):
+        """
+        Return numpy array, where each row is a trace
+
+        :param rep_rate: Repetition rate (kHz)
+        :param data_raw: raw data array
+        :param sampling_rate: Sampling rate (kHz).
+        :param interpolated: If interpolated is True, then result will contain 500 samples per trace, which contains
+        interpolated data points that supplements the original data_raw.
+        If False, then int(sampling_rate/frequency) samples per trace.
+        :param trigger: Trigger argument to pass to DataChopper.chop_traces
+
+        :return: Numpy array, where each row is a trace and every trace has the same length (trimmed if necessary)
+        """
+
+        ideal_samples = sampling_rate / rep_rate  # not always an integer
+        period = int(ideal_samples)  # always an integer with some cutoff.
+
+        # interpolate the data, such that each trace has the same samples as 100kHz data
+        f = rep_rate // 100
+
+        # extended samples gives the index of a row. integer indices are the original data from data_raw,
+        # decimal indices are the interpolated datapoints.
+        # data_interpolated is the data after interpolation, which retains the row number of data_raw
+        extended_samples, data_interpolated = DataChopper.interpolate_data(data_raw, f)
+
+        if interpolated:
+            # give back the interpolated data
+            data_traces = DataChopper.chop_traces(data_interpolated, samples_per_trace=500, trigger=trigger)
+
+        else:
+            # give back the un-interpolated data
+            num_rows = len(data_raw)
+
+            # intp_samples is a numpy array of indices, where each row corresponds to a trace, and in each row,
+            # integer indices mark the original data from data_raw, whereas decimal ones are the interpolated datapoints.
+            # Number of rows in intp_samples is the number of traces per row in data_raw
+            intp_samples = DataChopper.chop_traces(extended_samples, samples_per_trace=500, trigger=0)  # no triggering, because these are just indices.
+            num_traces_per_row = len(intp_samples)
+
+            data_unintp = np.zeros((num_rows, period * num_traces_per_row))
+
+            for i, s in enumerate(intp_samples):
+                integer_s = np.arange(ceil(s[0]), floor(s[-1] + 1))  # the integer indices, which correspond to original data from data_raw
+                integer_s = integer_s[:period]  # trim to the same length
+
+                data_unintp[:, i* period: (i+1) * period] = data_raw[:, integer_s]
+
+            data_traces = DataChopper.chop_traces(data_unintp, samples_per_trace=period, trigger=trigger)
+
+        return data_traces
