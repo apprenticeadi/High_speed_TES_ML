@@ -18,6 +18,9 @@ fig2, axs2 = plt.subplot_mosaic(data_groups.reshape((2,2)), figsize=(12, 10), la
 classifiers = {}
 trace_objects = {}
 
+# Todo: try choosing one single target Trace to bin the overlaps from all 4 data groups!
+# Maybe try pooling together the data groups in random order?
+
 for data_group in data_groups:#
     ax1 = axs1[data_group]  # for plotting raw traces
     ax2 = axs2[data_group]  # for plotting histograms
@@ -70,4 +73,11 @@ for i, data_group in enumerate(trace_objects.keys()):
     characeristic_traces = calTraces.characteristic_traces()
 
     for pn in characeristic_traces.keys():
-        ax3.plot(characeristic_traces[pn], color=colors[i], alpha=0.5)
+        if pn == 0 :
+            ax3.plot(characeristic_traces[pn], color=colors[i], alpha=0.5, label=data_group)
+        else:
+            ax3.plot(characeristic_traces[pn], color=colors[i], alpha=0.5,)
+ax3.legend()
+ax3.set_xlabel('Samples')
+
+plt.show()
