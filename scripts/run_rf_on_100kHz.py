@@ -12,15 +12,16 @@ from src.data_utils import DataReader
 '''Train RF and inner product classifiers with 100kHz data from one group and test it on another datagroup'''
 
 dataReader = DataReader('RawData')
+rep_rate = 100
 
 '''Pick two data groups'''
-train_data_group = 'raw_8'
-train_data = dataReader.read_raw_data(train_data_group, 100)
-trainTraces = Traces(100, train_data, parse_data=True, trigger=0)
+train_data_group = 'raw_7'
+train_data = dataReader.read_raw_data(train_data_group, rep_rate)
+trainTraces = Traces(rep_rate, train_data, parse_data=True, trigger=0)
 
-test_data_group = 'raw_5'
-test_data = dataReader.read_raw_data(test_data_group, 100)
-testTraces = Traces(100, test_data, parse_data=True, trigger=0)
+test_data_group = 'raw_8'
+test_data = dataReader.read_raw_data(test_data_group, rep_rate)
+testTraces = Traces(rep_rate, test_data, parse_data=True, trigger=0)
 
 '''Classify training data with inner product method first.'''
 ipClassifier = InnerProductClassifier()
@@ -52,7 +53,7 @@ testTraces.labels = gt_test_labels
 gt_labels, gt_counts = testTraces.pn_distribution(normalised=False)
 
 '''Compare the results'''
-rf_predictedTraces = Traces(100, testTraces.data, labels=rf_test_labels, parse_data=False)
+rf_predictedTraces = Traces(rep_rate, testTraces.data, labels=rf_test_labels, parse_data=False)
 rf_labels, rf_counts = rf_predictedTraces.pn_distribution(normalised=False)
 
 
@@ -74,8 +75,8 @@ plt.show()
 
 
 '''Save classifier'''
-rfClassifier.save(filename=f'RF_trained_by_{train_data_group}_{config.time_stamp}')
+rfClassifier.save(filename=f'RF_{rep_rate}kHz_trained_by_{train_data_group}_{config.time_stamp}')
 
 '''Load classifier again'''
 loadClassifier = TabularClassifier()
-loadClassifier.load(f'RF_trained_by_{train_data_group}_{config.time_stamp}')
+loadClassifier.load(f'RF_{rep_rate}kHz_trained_by_{train_data_group}_{config.time_stamp}')
