@@ -88,6 +88,19 @@ class Traces(object):
 
         return indices_dict, traces_dict
 
+    def pn_distribution(self, normalised=False):
+        indices_dict, _ = self.bin_traces()
+
+        labels = np.asarray(list(indices_dict.keys()))
+        counts = np.zeros_like(labels)
+        for i_pn, pn in enumerate(labels):
+            counts[i_pn] = len(indices_dict[pn])
+
+        if normalised:
+            counts = counts / np.sum(counts)
+
+        return labels, counts
+
     def characteristic_traces(self):
         _, traces_dict = self.bin_traces()
 
