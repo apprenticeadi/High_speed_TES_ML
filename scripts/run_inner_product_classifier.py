@@ -80,7 +80,6 @@ for i, data_group in enumerate(trace_objects.keys()):
 ax3.legend()
 ax3.set_xlabel('Samples')
 
-plt.show()
 
 '''Save classifiers'''
 if save_classifiers:
@@ -93,5 +92,60 @@ if save_classifiers:
 train_data_group = 'raw_8'
 test_data_group = 'raw_5'
 
-cross_classifier = classifiers[data_group]
+selfClassifier = classifiers[test_data_group]
+testTraces = trace_objects[test_data_group]  # result of self classification
+test_pns, test_counts = testTraces.pn_distribution(normalised=False)
+
+crossClassifier = classifiers[train_data_group]
+cross_labels = crossClassifier.predict(testTraces)
+crosspredictedTraces = Traces(rep_rate, testTraces.data, labels=cross_labels, parse_data=False)  # result of cross classification
+cross_pns, cross_counts = crosspredictedTraces.pn_distribution(normalised=False)
+
+'''Plot pn distributions'''
+fig4, ax4 = plt.subplots(layout='constrained', figsize=(8,8))
+
+width=0.4
+bar_params = {'width': width, 'align': 'center', 'alpha':0.8}
+
+ax = ax4
+ax.bar(test_pns - width/2, test_counts, label=f'{test_data_group} trained IPClassifier', **bar_params)
+ax.bar(cross_pns + width/2, cross_counts, label=f'{train_data_group} trained IPClassifier', **bar_params)
+ax.set_xlabel('Photon number')
+ax.set_ylabel('Counts')
+ax.set_title(f'Classifying {test_data_group} 100kHz')
+
+ax.legend()
+
+'''Plot the inner product histograms'''
+fig5, axs5 = plt.subplots(2,1, figsize=(8, 10), layout='constrained', sharey=True)
+
+ax = axs5[0]
+test_overlaps = selfClassifier.calc_inner_prod(testTraces)
+
+ax.hist(test_overlaps, bins=selfClassifier.num_bins, alpha=0.5, label=test_data_group)
+for pn_bin in selfClassifier.inner_prod_bins.values():
+    ax.axvline(pn_bin, ymin=0, ymax=0.5, ls='dashed')
+ax.legend()
+ax.set_title(f'IPClassifier trained by {test_data_group}')
+
+# ip classifier which is trained by a different train_data_group and then applied on test_data_group.
+ax = axs5[1]
+
+train_overlaps = crossClassifier.calc_inner_prod(trace_objects[train_data_group])
+cross_overlaps = crossClassifier.calc_inner_prod(crosspredictedTraces)
+
+ax.hist(train_overlaps, bins=crossClassifier.num_bins, alpha=0.5, label=train_data_group)
+ax.hist(cross_overlaps, bins=crossClassifier.num_bins, alpha=0.5, label=test_data_group)
+for pn_bin in crossClassifier.inner_prod_bins.values():
+    ax.axvline(pn_bin, ymin=0, ymax=0.5, ls='dashed')
+ax.set_title(f'IPClassifier trained by {train_data_group}')
+ax.set_xlabel('Inner product')
+ax.legend()
+
+
+plt.show()
+
+
+
+
 
