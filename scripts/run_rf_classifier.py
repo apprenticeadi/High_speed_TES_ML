@@ -36,8 +36,6 @@ rfClassifier.train(trainTraces)
 t2 = time.time()
 print(f'RF training finished after {t2-t1}s')
 
-'''Save classifier'''
-rfClassifier.save(filename=f'RF_trained_by_{train_data_group}_{config.time_stamp}')
 
 '''Test the RF classifier on the test data'''
 t1 = time.time()
@@ -71,3 +69,13 @@ ax.set_ylabel('Counts')
 ax.set_title(f'Classifying {test_data_group} 100kHz')
 
 ax.legend()
+
+plt.show()
+
+
+'''Save classifier'''
+rfClassifier.save(filename=f'RF_trained_by_{train_data_group}_{config.time_stamp}')
+
+'''Load classifier again'''
+loadClassifier = TabularClassifier()
+loadClassifier.load(f'RF_trained_by_{train_data_group}_{config.time_stamp}')
