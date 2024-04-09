@@ -89,8 +89,8 @@ if save_classifiers:
 
 
 '''Use the classifier trained by one group and apply it to classify another group- test model persistence'''
-train_data_group = 'raw_8'
-test_data_group = 'raw_5'
+train_data_group = 'raw_7'
+test_data_group = 'raw_8'
 
 selfClassifier = classifiers[test_data_group]
 testTraces = trace_objects[test_data_group]  # result of self classification
@@ -141,7 +141,6 @@ for pn_bin in crossClassifier.inner_prod_bins.values():
 ax.set_title(f'IPClassifier trained by {train_data_group}')
 ax.set_xlabel('Inner product')
 ax.legend()
-
 
 plt.show()
 
