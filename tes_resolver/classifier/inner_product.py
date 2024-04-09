@@ -28,6 +28,10 @@ class InnerProductClassifier(Classifier):
         self.default_dir = os.path.join(config.home_dir, 'saved_classifiers', 'InnerProductClassifier')
 
     @property
+    def time_stamp(self):
+        return self._params['time_stamp']
+
+    @property
     def target_trace(self):
         target_trace = self._params['target_trace']
         return copy.deepcopy(target_trace)
@@ -124,7 +128,7 @@ class InnerProductClassifier(Classifier):
     def save(self, filename=None, filedir=None):
 
         if filename is None:
-            filename = config.time_stamp + r'.pkl'
+            filename = self.time_stamp + r'.pkl'
         elif filename[-4:] != r'.pkl':
             filename = filename + r'.pkl'
 
