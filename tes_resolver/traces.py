@@ -41,8 +41,6 @@ class Traces(object):
 
         # TODO: average trace and std trace methods don't work if the traces have slightly different lengths. E.g. some 83 samples some 84 samples.
         self._data = data
-        self.indices_dict = {}  # they will have -1 key if no labels are given
-        self.traces_dict = {}
         if labels is None:
             self._labels = np.full((len(self.data), ), -1)
         else:
@@ -50,8 +48,6 @@ class Traces(object):
                 raise ValueError('Input labels and data dimensions do not match')
             else:
                 self._labels = labels
-
-        _ = self.bin_traces()
     @property
     def data(self):
         return copy.deepcopy(self._data)
@@ -90,15 +86,14 @@ class Traces(object):
         for pn in pns:
             traces_dict[pn] = self.data[indices_dict[pn]]
 
-        self.indices_dict = indices_dict
-        self.traces_dict = traces_dict
-
         return indices_dict, traces_dict
 
     def characteristic_traces(self):
+        _, traces_dict = self.bin_traces()
+
         char_traces_dict = {}
-        for pn in self.traces_dict.keys():
-            char_traces_dict[pn] = np.mean(self.traces_dict[pn], axis=0)
+        for pn in traces_dict.keys():
+            char_traces_dict[pn] = np.mean(traces_dict[pn], axis=0)
 
         return char_traces_dict
 
