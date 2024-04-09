@@ -156,7 +156,7 @@ class InnerProductClassifier(Classifier):
 
         self._params.update(params)
 
-    def predict(self, unknownTraces: Traces):
+    def predict(self, unknownTraces: Traces, update=False):
         overlaps = self.calc_inner_prod(unknownTraces)  # at least one dimensional
         photon_bins = np.array(list(self.inner_prod_bins.values()))
 
@@ -183,6 +183,9 @@ class InnerProductClassifier(Classifier):
             raw_labels[raw_labels % 2 != 0] = -1  # sit between bins and is rendered invalid
 
             labels = raw_labels // 2
+
+        if update:
+            unknownTraces.labels = labels
 
         return labels
 

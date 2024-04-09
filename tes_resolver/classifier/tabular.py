@@ -72,9 +72,13 @@ class TabularClassifier(Classifier):
         predictions_test = self.classifier.predict(x_test)
         self._params['accuracy_score'] = accuracy_score(y_test, predictions_test)
 
-    def predict(self, unknownTraces: Traces):
+    def predict(self, unknownTraces: Traces, update=False):
         """Wrapper method around the predict method of the classifier itself. """
         labels = self.classifier.predict(unknownTraces.data)
+
+        if update:
+            unknownTraces.labels = labels
+
         return labels
 
     def save(self, filename=None, filedir=None):
