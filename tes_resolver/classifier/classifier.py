@@ -18,6 +18,6 @@ class Classifier(ABC):
         pass
 
     @abstractmethod
-    def predict(self, targetTraces: Traces):
+    def predict(self, unknownTraces: Traces):
         pass
 

@@ -156,8 +156,8 @@ class InnerProductClassifier(Classifier):
 
         self._params.update(params)
 
-    def predict(self, targetTraces: Traces):
-        overlaps = self.calc_inner_prod(targetTraces)  # at least one dimensional
+    def predict(self, unknownTraces: Traces):
+        overlaps = self.calc_inner_prod(unknownTraces)  # at least one dimensional
         photon_bins = np.array(list(self.inner_prod_bins.values()))
 
         if self.multiplier == 1:
@@ -184,11 +184,10 @@ class InnerProductClassifier(Classifier):
 
             labels = raw_labels // 2
 
-        targetTraces.labels = labels
+        return labels
 
-
-    def calc_inner_prod(self, targetTraces: Traces):
-        trace_data = targetTraces.data
+    def calc_inner_prod(self, unknownTraces: Traces):
+        trace_data = unknownTraces.data
         trace_data = np.atleast_2d(trace_data)
 
         overlaps = self.target_trace @ trace_data.T
