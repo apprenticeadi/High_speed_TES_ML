@@ -12,6 +12,7 @@ rep_rate = 100
 raw_traces_range = list(range(1000))
 save_classifiers = False
 
+dataReader = DataReader('RawData')
 
 data_groups = np.array(['raw_5', 'raw_6', 'raw_7', 'raw_8'])
 fig1, axs1 = plt.subplot_mosaic(data_groups.reshape((2,2)), sharex=True, sharey=True, figsize=(12, 10), layout='constrained')
@@ -20,16 +21,12 @@ fig2, axs2 = plt.subplot_mosaic(data_groups.reshape((2,2)), figsize=(12, 10), la
 classifiers = {}
 trace_objects = {}
 
-# Todo: try choosing one single target Trace to bin the overlaps from all 4 data groups!
-# Maybe try pooling together the data groups in random order?
-
 for data_group in data_groups:#
     ax1 = axs1[data_group]  # for plotting raw traces
     ax2 = axs2[data_group]  # for plotting histograms
 
     '''Read data'''
-    dataReader = DataReader(data_group)
-    data_raw = dataReader.read_raw_data(rep_rate)
+    data_raw = dataReader.read_raw_data(data_group, rep_rate)
     calTraces = Traces(rep_rate, data_raw, parse_data=True, trigger=0)
 
     trace_objects[data_group] = calTraces
@@ -58,6 +55,7 @@ for data_group in data_groups:#
 
     '''Classify the traces '''
     labels = ipClassifier.predict(calTraces)
+    calTraces.labels = labels  # update the labels
 
     indices_dict, traces_dict = calTraces.bin_traces()  # dictionary of the indices and traces to their assigned photon number label
     characeristic_traces = calTraces.characteristic_traces()
@@ -89,3 +87,11 @@ if save_classifiers:
     for data_group in classifiers.keys():
         classifier = classifiers[data_group]
         classifier.save(rf'{data_group}_trained_{config.time_stamp}.pkl')
+
+
+'''Use the classifier trained by one group and apply it to classify another group- test model persistence'''
+train_data_group = 'raw_8'
+test_data_group = 'raw_5'
+
+cross_classifier = classifiers[data_group]
+

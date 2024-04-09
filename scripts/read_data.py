@@ -5,10 +5,10 @@ from src.data_utils import DataReader
 from tes_resolver.traces import Traces, TraceUtils
 from tes_resolver.data_chopper import DataChopper
 
-dataReader = DataReader('raw_5')
+dataReader = DataReader('RawData')
 
 rep_rate = 600
-data_raw = dataReader.read_raw_data(frequency=rep_rate)
+data_raw = dataReader.read_raw_data('raw_5', rep_rate=rep_rate)
 
 rawTraces = Traces(rep_rate, data=data_raw, parse_data=False)
 

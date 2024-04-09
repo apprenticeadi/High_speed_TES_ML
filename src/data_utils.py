@@ -8,46 +8,32 @@ import matplotlib.pyplot as plt
 
 class DataReader(object):
 
-    def __init__(self, sub_dir= None, parent_dir= r'RawData'):
-
-        while sub_dir.startswith('\\'):
-            sub_dir = sub_dir[1:]
-        self._sub_dir = sub_dir
-
+    def __init__(self, parent_dir= r'RawData'):
         while parent_dir.startswith('\\'):
             parent_dir = parent_dir[1:]
-        self._parent_dir = parent_dir
+        self.parent_dir = parent_dir
 
-    @property
-    def sub_dir(self):
-        return self._sub_dir
+    def data_dir(self, data_group):
+        return os.path.join(self.parent_dir, data_group)
 
-    @property
-    def parent_dir(self):
-        return self._parent_dir
-
-    @property
-    def data_dir(self):
-        return self.parent_dir + '\\' + self.sub_dir
-
-    def read_raw_data(self, frequency, file_num=0):
+    def read_raw_data(self, data_group, rep_rate, file_num=0):
         """Reads the raw data file for given frequency. No processing. Sampling rate is 20ns. """
-        data_dir = self.data_dir
+        data_dir = self.data_dir(data_group)
 
         try:
             data_files = os.listdir(data_dir)
         except FileNotFoundError:
             try:
-                data_dir = '..\\' + data_dir
+                data_dir = os.path.join('..', data_dir)
                 data_files = os.listdir(data_dir)
             except FileNotFoundError:
                 try:
-                    data_dir = '..\\' + data_dir
+                    data_dir = os.path.join('..', data_dir)
                     data_files = os.listdir(data_dir)
                 except FileNotFoundError:
                     raise
 
-        freq_name = rf'{frequency}kHz'
+        freq_name = rf'{rep_rate}kHz'
 
         correct_files = []
         for file in data_files:
