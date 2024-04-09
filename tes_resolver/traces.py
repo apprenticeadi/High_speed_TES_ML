@@ -97,10 +97,6 @@ class Traces(object):
 
         return char_traces_dict
 
-
-
-
-
     def pca_cleanup(self, pca_components=1):
         data = self.data
         # To perform PCA, first zero the mean along each column

@@ -57,20 +57,14 @@ class InnerProductClassifier(Classifier):
     def multiplier(self):
         return self._params['multiplier']
 
-    def raw_histogram(self, overlaps):
-        heights, bin_edges = np.histogram(overlaps, bins=self.num_bins)
-        mid_bins = (bin_edges[1:] + bin_edges[:-1]) / 2
-
-        return mid_bins, heights
-
     def train(self, trainingTraces: Traces):
         """Train the classifier on the training traces. Updates the target trace and inner_prod_bins."""
 
         '''Calculate the inner products and fit histogram'''
         self.target_trace = trainingTraces.average_trace()
-        overlaps = self.calc_inner_prod(trainingTraces.data)
+        overlaps = self.calc_inner_prod(trainingTraces)
 
-        mid_bins, heights = self.raw_histogram(overlaps)
+        mid_bins, heights = InnerProductUtils.raw_histogram(overlaps, num_bins=self.num_bins)
 
         popt, _ = InnerProductUtils.fit_histogram(mid_bins, heights)
 
@@ -226,6 +220,13 @@ class InnerProductUtils:
         positions = mid_bins[peaks]
 
         return positions, amplitudes
+
+    @staticmethod
+    def raw_histogram(overlaps, num_bins):
+        heights, bin_edges = np.histogram(overlaps, bins=num_bins)
+        mid_bins = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+        return mid_bins, heights
 
     @staticmethod
     def fit_histogram(mid_bins, heights):

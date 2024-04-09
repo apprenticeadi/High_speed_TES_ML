@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.data_utils import DataReader
-from tes_resolver.classifier.inner_product import InnerProductClassifier, InnerProductUtils
 from tes_resolver.traces import Traces, TraceUtils
 from tes_resolver.data_chopper import DataChopper
 
