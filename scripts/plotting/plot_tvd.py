@@ -15,7 +15,7 @@ special_reprate = 700
 special_reprate2 = 900
 results_dict = {}
 for power in powers:
-    df = pd.read_csv(rf'..\params\RF_results_raw_{power}.csv')
+    df = pd.read_csv(rf'..\..\Params\RF_results_raw_{power}.csv')
     df = df.sort_values('rep_rate')
     results_dict[power] = df
 
@@ -85,7 +85,7 @@ ax2.plot(labels - width, poisson_norm(labels, mu_100), 'rx-', label=rf'$\mu=${mu
 ax2.legend(loc='upper right', fontsize=fontsize-2)
 plt.show()
 
-fig.savefig(DFUtils.create_filename(r'..\..\Plots\TVD_plots\TVD_plot_sidebyside_3specials.pdf'))
+# fig.savefig(DFUtils.create_filename(r'..\..\Plots\TVD_plots\TVD_plot_sidebyside_3specials.pdf'))
 
 
 plt.figure('accuracy')
@@ -104,4 +104,4 @@ plt.legend(fontsize=fontsize-2)
 plt.ylabel('Test accuracy score', fontsize=fontsize)
 plt.xlabel('Repetition rate/kHz', fontsize=fontsize)
 plt.tick_params(labelsize = fontsize-2)
-plt.savefig(r'..\..\Plots\TVD_plots\RF_accuracy_scores.pdf')
+# plt.savefig(r'..\..\Plots\TVD_plots\RF_accuracy_scores.pdf')

@@ -43,6 +43,6 @@ cbar.set_label(r'$|\theta_{nm}|$', fontsize=fontsize+2)
 
 plt.show()
 
-fig.savefig(DFUtils.create_filename(fr'..\..\Plots\tomography_plots' + sub_dir + r'\tomography.pdf'))
+# fig.savefig(DFUtils.create_filename(fr'..\..\Plots\tomography_plots' + sub_dir + r'\tomography.pdf'))
 
 optimal_values = np.load(results_dir + rf'\optimal_least_squares.npy')
