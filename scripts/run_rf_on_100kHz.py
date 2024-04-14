@@ -7,7 +7,7 @@ from tes_resolver.classifier.tabular import TabularClassifier
 from tes_resolver.traces import Traces
 import tes_resolver.config as config
 
-from src.data_utils import DataReader
+from src.data_reader import DataReader
 
 '''Train RF and inner product classifiers with 100kHz data from one group and test it on another datagroup'''
 

@@ -10,7 +10,7 @@ from tes_resolver.traces import Traces
 import tes_resolver.config as config
 
 from src.utils import LogUtils, DFUtils
-from src.data_utils import DataReader
+from src.data_reader import DataReader
 
 '''
 script to produce  PN distributions using tabular classifiers, specify power, whether FE and modeltype.
