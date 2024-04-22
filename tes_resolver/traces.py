@@ -32,6 +32,7 @@ class Traces(object):
         self.ideal_samples = sampling_rate / rep_rate  # the ideal number of sampling data points per trace
         self.period = int(self.ideal_samples)  # integer number of sampling data points per trace (i.e. period of trace)
 
+        # TODO: doesn't work on 150kHz data.
         # parse data if necessary
         data = np.atleast_2d(data)
         parse_args = {'interpolated': False, 'trigger': 'automatic'}
