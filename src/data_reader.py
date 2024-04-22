@@ -11,6 +11,14 @@ class DataReader(object):
     def __init__(self, parent_dir= r'RawData'):
         while parent_dir.startswith('\\'):
             parent_dir = parent_dir[1:]
+
+        if not os.path.isdir(parent_dir):
+            parent_dir = os.path.join('..', parent_dir)
+            if not os.path.isdir(parent_dir):
+                parent_dir = os.path.join('..', parent_dir)
+                if not os.path.isdir(parent_dir):
+                    raise ValueError(f'No directory found: {parent_dir}')
+
         self.parent_dir = parent_dir
 
     def data_dir(self, data_group):
@@ -19,19 +27,7 @@ class DataReader(object):
     def read_raw_data(self, data_group, rep_rate, file_num=0):
         """Reads the raw data file for given frequency. No processing. Sampling rate is 20ns. """
         data_dir = self.data_dir(data_group)
-
-        try:
-            data_files = os.listdir(data_dir)
-        except FileNotFoundError:
-            try:
-                data_dir = os.path.join('..', data_dir)
-                data_files = os.listdir(data_dir)
-            except FileNotFoundError:
-                try:
-                    data_dir = os.path.join('..', data_dir)
-                    data_files = os.listdir(data_dir)
-                except FileNotFoundError:
-                    raise
+        data_files = os.listdir(data_dir)
 
         freq_name = rf'{rep_rate}kHz'
 

@@ -3,23 +3,26 @@ import matplotlib.pyplot as plt
 from scipy.special import factorial
 from scipy.constants import h, c
 
-# import sys
-#
-# sys.path.insert(0, r'F:\TES_python')
-
 from tes_resolver.classifier.inner_product import InnerProductClassifier
 from tes_resolver.traces import Traces
 from src.data_reader import DataReader
 import tes_resolver.config as config
-
+from src.utils import DFUtils
 
 '''Data'''
 dataReader = DataReader('Data_2024_04')
 
-data_group = 'raw_20'
-rep_rate = 100
+data_group = 'raw_21'
+rep_rate = 200
 file_num = 0
 raw_traces_to_plot = 1000
+
+if rep_rate < 100:
+    parse_data = False
+else:
+    parse_data = True
+
+save_fig = True
 
 '''Estimate mean photon number '''
 attenuation_db = -60.16
@@ -27,8 +30,8 @@ attenuation_pctg = 10 ** (attenuation_db / 10)
 bs_ratio = 98.35526316
 bs_ratio_error = 0.73315
 # laser_power = 1842 / 1e9 / 1.0138  #W
-pm_reading = 3.668 * 1e-6  # W
-pm_reading_error = 0.001 * 1e-6
+pm_reading = 7.575 * 1e-6  # W
+pm_reading_error = 0.002 * 1e-6
 wavelength = 1550 * 1e-9
 
 laser_power = pm_reading / bs_ratio  #W
@@ -40,7 +43,7 @@ print(rf'Estimated mean photon number = {est_mean_ph} with error= {est_error}')
 
 '''Run the inner product classifier'''
 data_raw = dataReader.read_raw_data(data_group, rep_rate, file_num=file_num)
-calTraces = Traces(rep_rate, data_raw, parse_data=True, trigger=0)
+calTraces = Traces(rep_rate, data_raw, parse_data=parse_data, trigger=0)
 
 ipClassifier = InnerProductClassifier(multiplier=1., num_bins=1000)
 ipClassifier.train(calTraces)
@@ -85,7 +88,6 @@ ax.legend()
 #
 # ave_trace = calTraces.average_trace()
 # plt.plot(ave_trace, color='black', alpha=1.)
-
 
 plt.show()
 
