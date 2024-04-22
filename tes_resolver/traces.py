@@ -24,7 +24,7 @@ class Traces(object):
         leave data as is.
         """
 
-        #TODO: maybe make it possible to change the unit.
+        #TODO: what if only collect the trace partially?
         self.rep_rate = rep_rate
         self.freq_str = f'{rep_rate}kHz'
 

@@ -10,11 +10,17 @@ from tes_resolver.traces import Traces
 import tes_resolver.config as config
 
 from src.utils import LogUtils, DFUtils
-from src.data_utils import DataReader
+from src.data_reader import DataReader
 
 '''
 script to produce  PN distributions using tabular classifiers, specify power, whether FE and modeltype.
 '''
+
+#TODO: if i take data more carefully this time, can I remove the need for subtract offset? Because there is no good way
+# to subtract offset in actual experiment, where the data's distribution might be different from calibration, and also
+# no way of subtracting offset of 0-photon traces because they are difficult to identify (or even might not exist!)
+
+# Todo: also consider pooling together data from mulitple groups and train a classifier based on the pooled-together data.
 
 '''Specify parameters'''
 # Data

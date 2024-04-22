@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from tes_resolver.classifier.inner_product import InnerProductClassifier
 from tes_resolver.traces import Traces
-from src.data_utils import DataReader
+from src.data_reader import DataReader
 import tes_resolver.config as config
 
 '''Test run the inner product classifier, compare between different data groups as well. '''

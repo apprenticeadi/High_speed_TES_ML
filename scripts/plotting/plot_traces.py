@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 
-from src.data_utils import DataReader
+from src.data_reader import DataReader
 from src.utils import DFUtils
 from tes_resolver.traces import Traces
 
