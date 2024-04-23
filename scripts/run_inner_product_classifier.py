@@ -12,8 +12,8 @@ from src.utils import DFUtils, TomoUtils
 '''Data'''
 dataReader = DataReader('Tomography_data_2024_04')
 
-data_group = 'power_6'
-rep_rate = 500
+data_group = 'power_11'
+rep_rate = 100
 file_num = 0
 raw_traces_to_plot = 100
 
@@ -26,7 +26,7 @@ else:
 attenuation_db = -60.16
 bs_ratio = 98.35526316
 bs_ratio_error = 0.73315
-pm_reading = 26.84 * 1e-6  # W
+pm_reading = 8.710 * 1e-6  # W
 pm_reading_error = 0.01 * 1e-6
 
 # laser_power = pm_reading / bs_ratio  #W
