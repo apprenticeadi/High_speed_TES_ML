@@ -9,6 +9,9 @@ from src.data_reader import DataReader
 import tes_resolver.config as config
 from src.utils import DFUtils, TomoUtils
 
+'''Script that runs inner product classifier on given data. Plots raw traces, stegosaurus, and photon number 
+distribution'''
+
 '''Data'''
 dataReader = DataReader('Tomography_data_2024_04')
 

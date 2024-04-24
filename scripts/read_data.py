@@ -5,6 +5,8 @@ from src.data_reader import DataReader
 from tes_resolver.traces import Traces, TraceUtils
 from tes_resolver.data_chopper import DataChopper
 
+'''Script that reads raw traces and plots them'''
+
 dataReader = DataReader('RawData')
 
 rep_rate = 600
