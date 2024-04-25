@@ -41,18 +41,8 @@ class DataChopper(object):
         :return: np.array, where each row is a single trace with the specified trigger.
         """
 
-        trigger = str(trigger)
-
-        if trigger.isdecimal():
-            trigger = int(trigger)
-            if trigger < 0:
-                raise ValueError(f'Negative trigger {trigger} not accepted. ')
-        else:
-            if trigger == 'automatic':
-                trigger = 'troughs'
-
-            triggers = DataChopper.find_triggers(data, samples_per_trace, method=trigger)
-            trigger = int(np.median(triggers))
+        if trigger < 0:
+            raise ValueError(f'Negative trigger {trigger} not accepted. ')
 
         data = np.atleast_2d(data)
         data_trimmed = data[:, trigger: ]
@@ -70,16 +60,8 @@ class DataChopper(object):
     @staticmethod
     def chop_labelled_traces(data, labels, samples_per_trace, trigger=0):
         """Chop 2d array of traces while keeping the labels correct and in the right order. """
-        trigger = str(trigger)
-        if trigger.isdecimal():
-            trigger = int(trigger)
-            if trigger < 0:
-                raise ValueError(f'Negative trigger {trigger} not accepted. ')
-        else:
-            if trigger == 'automatic':
-                trigger = 'troughs'
-            triggers = DataChopper.find_triggers(data, samples_per_trace, method=trigger)
-            trigger = int(np.median(triggers))
+        if trigger < 0:
+            raise ValueError(f'Negative trigger {trigger} not accepted. ')
 
         data = np.atleast_2d(data)
         labels = np.atleast_2d(labels)
@@ -113,7 +95,7 @@ class DataChopper(object):
         return new_data, labels
 
     @staticmethod
-    def find_triggers(data, samples_per_trace, method='troughs', n_troughs=10):
+    def find_trigger(data, samples_per_trace, method='troughs', n_troughs=10):
         """Find the appropriate trigger time, such that the data is triggered at the rising edge of a trace. """
         data = np.atleast_2d(data)
         triggers = np.zeros(len(data), dtype=int)
@@ -131,7 +113,9 @@ class DataChopper(object):
         else:
             raise ValueError(rf'method {method} not supported yet.')
 
-        return triggers
+        trigger = int(np.median(triggers))
+
+        return trigger
 
     @staticmethod
     def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False, reshape=True):

@@ -38,10 +38,12 @@ class Traces(object):
         parse_args = {'interpolated': False, 'trigger': 'automatic'}
         parse_args.update(data_parsing_kwargs)
         if parse_data and data.shape[1] != self.period:
-            data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
+            data, trigger = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
+        else:
+            trigger = 0
 
-        # TODO: average trace and std trace methods don't work if the traces have slightly different lengths. E.g. some 83 samples some 84 samples.
         self._data = data
+        self.trigger = trigger
         if labels is None:
             self._labels = np.full((len(self.data), ), -1)
         else:
@@ -129,11 +131,21 @@ class Traces(object):
 
         self.data = data_cleaned
 
+    def find_offset(self):
+        '''Find the average voltage value of zero-photon traces'''
+        _, traces_dict = self.bin_traces()
+
+        if 0 in traces_dict.keys():
+            return np.mean(traces_dict[0])
+        else:
+            raise Exception('No 0-photon traces in this dataset. ')
+
+
 
 class TraceUtils:
 
     @staticmethod
-    def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger = 'automatic'):
+    def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger='automatic'):
         """
         Return numpy array, where each row is a trace
 
@@ -143,7 +155,8 @@ class TraceUtils:
         :param interpolated: If interpolated is True, then result will contain 500 samples per trace, which contains
         interpolated data points that supplements the original data_raw.
         If False, then int(sampling_rate/frequency) samples per trace.
-        :param trigger: Trigger argument to pass to DataChopper.chop_traces
+        :param trigger: If integer value, then specifies the trigger value; if string, then specifies the method to find
+        trigger.
 
         :return: Numpy array, where each row is a trace and every trace has the same length (trimmed if necessary)
         """
@@ -161,7 +174,8 @@ class TraceUtils:
 
         if interpolated:
             # give back the interpolated data
-            data_traces = DataChopper.chop_traces(data_interpolated, samples_per_trace=500, trigger=trigger)
+            data_to_chop = data_interpolated
+            samples_per_trace = 500
 
         else:
             # give back the un-interpolated data
@@ -173,14 +187,27 @@ class TraceUtils:
             intp_samples = DataChopper.chop_traces(extended_samples, samples_per_trace=500, trigger=0)  # no triggering, because these are just indices.
             num_traces_per_row = len(intp_samples)
 
-            data_unintp = np.zeros((num_rows, period * num_traces_per_row))
-
+            data_to_chop = np.zeros((num_rows, period * num_traces_per_row))
             for i, s in enumerate(intp_samples):
                 integer_s = np.arange(ceil(s[0]), floor(s[-1] + 1))  # the integer indices, which correspond to original data from data_raw
                 integer_s = integer_s[:period]  # trim to the same length
 
-                data_unintp[:, i* period: (i+1) * period] = data_raw[:, integer_s]
+                data_to_chop[:, i* period: (i+1) * period] = data_raw[:, integer_s]
 
-            data_traces = DataChopper.chop_traces(data_unintp, samples_per_trace=period, trigger=trigger)
+            samples_per_trace = period
 
-        return data_traces
+        '''Find trigger'''
+        trigger = str(trigger)
+        if trigger.isdecimal():
+            trigger = int(trigger)
+            if trigger < 0:
+                raise ValueError(f'Negative trigger {trigger} not accepted. ')
+        else:
+            if trigger == 'automatic':
+                trigger = 'troughs'
+            trigger = DataChopper.find_trigger(data_to_chop, samples_per_trace=samples_per_trace, method=trigger)
+
+        data_traces = DataChopper.chop_traces(data_to_chop, samples_per_trace=samples_per_trace, trigger=trigger)
+
+        return data_traces, trigger
+
