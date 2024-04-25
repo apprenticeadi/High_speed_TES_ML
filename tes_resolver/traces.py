@@ -10,7 +10,7 @@ from tes_resolver.data_chopper import DataChopper
 # No classifying algorithms here.
 
 
-#TODO: 1. Logically, sampling_rate should not be here. 2. Data should always be homogoenous 2d array.
+#TODO: 1. Logically, sampling_rate should not be here. 2. Data should always be 2d array.
 class Traces(object):
 
     def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4, parse_data=True, **data_parsing_kwargs):
@@ -44,10 +44,7 @@ class Traces(object):
         if labels is None:
             self._labels = np.full((len(self.data), ), -1)
         else:
-            if len(labels) != len(self.data):
-                raise ValueError('Input labels and data dimensions do not match')
-            else:
-                self._labels = labels
+            self._labels = labels
     @property
     def data(self):
         return copy.deepcopy(self._data)
@@ -144,7 +141,8 @@ class TraceUtils:
     @staticmethod
     def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger_delay=0):
         """
-        Return numpy array, where each row is a trace
+        Return numpy array, where each row is a trace. Use interpolation as an intermediate step, to remove the shift in
+        traces due to the cutoff from ideal_samples to period.
 
         :param rep_rate: Repetition rate (kHz)
         :param data_raw: raw data array
