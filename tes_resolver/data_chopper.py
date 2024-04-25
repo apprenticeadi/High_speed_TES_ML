@@ -105,6 +105,7 @@ class DataChopper(object):
                 warnings.warn(f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via troughs method')
 
             else:
+                # TODO: there might be a small error here when running on non-interpolated data.
                 data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
                 for i in range(len(data)):
                     troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
