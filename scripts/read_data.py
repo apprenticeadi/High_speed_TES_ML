@@ -29,7 +29,7 @@ for i in plot_trace_index_range:
     plt.plot(data_chopped[i], alpha=0.5)
 
 '''Parse the data- their peak positions are more aligned with each other '''
-data_parsed, _ = TraceUtils.parse_data(rep_rate, data_raw, interpolated=False, trigger=0)
+data_parsed = TraceUtils.parse_data(rep_rate, data_raw, interpolated=False, trigger_delay=0)
 plt.figure('Parsed data')
 for i in plot_trace_index_range:
     plt.plot(data_parsed[i], alpha=0.5)

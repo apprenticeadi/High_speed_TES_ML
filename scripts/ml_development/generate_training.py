@@ -12,21 +12,26 @@ from src.data_reader import DataReader
 
 # maybe also try plotting the raw traces and see how they cluster (training data vs actual data)
 
+'''Parameters'''
 ref_rep_rate = 200
 high_rep_rates = np.arange(300, 1100, 100)
 raw_traces_to_plot = 1000
 
+sampling_rate = 5e4
 dataReader = DataReader('Tomography_data_2024_04')
 data_group = 'power_6'
 
-'''Find the vertical offset'''
-cal_data_raw = dataReader.read_raw_data(data_group, 100)
-calTraces = Traces(100, cal_data_raw, parse_data=True, trigger=0)
+'''Inner product classifier'''
 ipClassifier = InnerProductClassifier(multiplier=1., num_bins=1000)
-ipClassifier.train(calTraces)
-ipClassifier.predict(calTraces, update=True)
 
-vertical_offset = calTraces.find_offset()
+# '''Find the vertical offset'''
+# cal_data_raw = dataReader.read_raw_data(data_group, ref_rep_rate)
+# calTraces = Traces(ref_rep_rate, cal_data_raw, parse_data=True, trigger=0)
+#
+# ipClassifier.train(calTraces)
+# ipClassifier.predict(calTraces, update=True)
+#
+# vertical_offset = calTraces.find_offset()
 
 '''Loop over high rep rates'''
 training_traces = {}
@@ -47,30 +52,29 @@ for high_rep_rate in high_rep_rates:
 
     '''Read actual traces'''
     actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
-    actual_data = actual_data - vertical_offset  # subtract vertical offset
 
     if high_rep_rate <= 300:
-        trigger = 0
+        trigger_delay = 0
     else:
-        trigger = 'automatic'
+        trigger_delay = DataChopper.find_trigger(actual_data, samples_per_trace=int(sampling_rate/high_rep_rate))
 
-    actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger=trigger)
+    actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay=trigger_delay)
     actual_traces[high_rep_rate] = actualTraces
 
-    trigger = actualTraces.trigger  # update the trigger
-
-    '''Read reference traces with the correct trigger and offset'''
+    '''Read reference traces with the correct trigger'''
     ref_data = dataReader.read_raw_data(data_group, ref_rep_rate)
-    ref_data = ref_data - vertical_offset
-
-    refTraces = Traces(ref_rep_rate, ref_data, parse_data=True, trigger=trigger)
+    refTraces = Traces(ref_rep_rate, ref_data, parse_data=True, trigger_delay=trigger_delay)
 
     '''Label reference traces'''
     ipClassifier.train(refTraces)  # retrain the ip classifier
     ipClassifier.predict(refTraces, update=True)
+    vertical_offset = refTraces.find_offset()  # this is the average value of zero-photon traces
 
     '''Generate training data'''
     trainingTraces = generate_training_traces(refTraces, high_rep_rate)
+
+    num_tails = int(high_rep_rate / ref_rep_rate + 0.5) - 1
+    trainingTraces.data = trainingTraces.data - num_tails * vertical_offset  # subtract the appropriate number of offsets.
     training_traces[high_rep_rate] = trainingTraces
 
     '''Plot average traces'''
@@ -90,7 +94,7 @@ for high_rep_rate in high_rep_rates:
         ax3.plot(actualTraces.data[i], alpha=0.1)
     ax3.set_xlabel('Samples')
 
-axs1[300].legend()
+axs1[high_rep_rates[0]].legend()
 ax2.set_ylim([-1000, 25000])
 ax3.set_ylim([-1000, 25000])
 plt.show()

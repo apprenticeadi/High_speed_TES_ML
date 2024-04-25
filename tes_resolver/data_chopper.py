@@ -31,21 +31,21 @@ class DataChopper(object):
             return ex_samples, data_intp
 
     @staticmethod
-    def chop_traces(data, samples_per_trace, trigger=0):
+    def chop_traces(data, samples_per_trace, trigger_delay=0):
         """
         Reshape data, such that each row is a single trace.
         :param data: Raw data array, where each row may be many traces.
         :param samples_per_trace: Number of samples per trace (i.e. number of element per row in output array)
-        :param trigger: int. The first trigger number of elements will be removed from the initial data array.
+        :param trigger_delay: int. The first trigger_delay number of elements will be removed from the initial data array.
 
         :return: np.array, where each row is a single trace with the specified trigger.
         """
 
-        if trigger < 0:
-            raise ValueError(f'Negative trigger {trigger} not accepted. ')
+        if trigger_delay < 0:
+            raise ValueError(f'Negative trigger delay {trigger_delay} not accepted. ')
 
         data = np.atleast_2d(data)
-        data_trimmed = data[:, trigger: ]
+        data_trimmed = data[:, trigger_delay:]
 
         n, m = data_trimmed.shape
 
@@ -58,10 +58,10 @@ class DataChopper(object):
         return traces
 
     @staticmethod
-    def chop_labelled_traces(data, labels, samples_per_trace, trigger=0):
+    def chop_labelled_traces(data, labels, samples_per_trace, trigger_delay=0):
         """Chop 2d array of traces while keeping the labels correct and in the right order. """
-        if trigger < 0:
-            raise ValueError(f'Negative trigger {trigger} not accepted. ')
+        if trigger_delay < 0:
+            raise ValueError(f'Negative trigger delay {trigger_delay} not accepted. ')
 
         data = np.atleast_2d(data)
         labels = np.atleast_2d(labels)
@@ -72,7 +72,7 @@ class DataChopper(object):
             raise ValueError(f'Number of traces in data do not match number of labels. ')
 
         # trigger the data
-        data_trimmed = data[:, trigger: ]
+        data_trimmed = data[:, trigger_delay:]
         n, m = data_trimmed.shape
 
         # remove the tail
@@ -96,7 +96,7 @@ class DataChopper(object):
 
     @staticmethod
     def find_trigger(data, samples_per_trace, method='troughs', n_troughs=10):
-        """Find the appropriate trigger time, such that the data is triggered at the rising edge of a trace. """
+        """Find the appropriate trigger delay time, such that the data is triggered at the rising edge of a trace. """
         data = np.atleast_2d(data)
         triggers = np.zeros(len(data), dtype=int)
 
@@ -113,9 +113,9 @@ class DataChopper(object):
         else:
             raise ValueError(rf'method {method} not supported yet.')
 
-        trigger = int(np.median(triggers))
+        trigger_delay = int(np.median(triggers))
 
-        return trigger
+        return trigger_delay
 
     @staticmethod
     def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False, reshape=True):

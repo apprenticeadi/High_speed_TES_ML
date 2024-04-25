@@ -35,15 +35,12 @@ class Traces(object):
         # TODO: doesn't work on 150kHz data.
         # parse data if necessary
         data = np.atleast_2d(data)
-        parse_args = {'interpolated': False, 'trigger': 'automatic'}
+        parse_args = {'interpolated': False, 'trigger_delay': 0}
         parse_args.update(data_parsing_kwargs)
         if parse_data and data.shape[1] != self.period:
-            data, trigger = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
-        else:
-            trigger = 0
+            data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
 
         self._data = data
-        self.trigger = trigger
         if labels is None:
             self._labels = np.full((len(self.data), ), -1)
         else:
@@ -145,7 +142,7 @@ class Traces(object):
 class TraceUtils:
 
     @staticmethod
-    def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger='automatic'):
+    def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger_delay=0):
         """
         Return numpy array, where each row is a trace
 
@@ -155,9 +152,7 @@ class TraceUtils:
         :param interpolated: If interpolated is True, then result will contain 500 samples per trace, which contains
         interpolated data points that supplements the original data_raw.
         If False, then int(sampling_rate/frequency) samples per trace.
-        :param trigger: If integer value, then specifies the trigger value; if string, then specifies the method to find
-        trigger.
-
+        :param trigger_delay: Integer value for trigger delay
         :return: Numpy array, where each row is a trace and every trace has the same length (trimmed if necessary)
         """
 
@@ -184,7 +179,7 @@ class TraceUtils:
             # intp_samples is a numpy array of indices, where each row corresponds to a trace, and in each row,
             # integer indices mark the original data from data_raw, whereas decimal ones are the interpolated datapoints.
             # Number of rows in intp_samples is the number of traces per row in data_raw
-            intp_samples = DataChopper.chop_traces(extended_samples, samples_per_trace=500, trigger=0)  # no triggering, because these are just indices.
+            intp_samples = DataChopper.chop_traces(extended_samples, samples_per_trace=500, trigger_delay=0)  # no triggering, because these are just indices.
             num_traces_per_row = len(intp_samples)
 
             data_to_chop = np.zeros((num_rows, period * num_traces_per_row))
@@ -196,18 +191,18 @@ class TraceUtils:
 
             samples_per_trace = period
 
-        '''Find trigger'''
-        trigger = str(trigger)
-        if trigger.isdecimal():
-            trigger = int(trigger)
-            if trigger < 0:
-                raise ValueError(f'Negative trigger {trigger} not accepted. ')
-        else:
-            if trigger == 'automatic':
-                trigger = 'troughs'
-            trigger = DataChopper.find_trigger(data_to_chop, samples_per_trace=samples_per_trace, method=trigger)
+        # '''Find trigger'''
+        # trigger = str(trigger)
+        # if trigger.isdecimal():
+        #     trigger = int(trigger)
+        #     if trigger < 0:
+        #         raise ValueError(f'Negative trigger {trigger} not accepted. ')
+        # else:
+        #     if trigger == 'automatic':
+        #         trigger = 'troughs'
+        #     trigger = DataChopper.find_trigger(data_to_chop, samples_per_trace=samples_per_trace, method=trigger)
 
-        data_traces = DataChopper.chop_traces(data_to_chop, samples_per_trace=samples_per_trace, trigger=trigger)
+        data_traces = DataChopper.chop_traces(data_to_chop, samples_per_trace=samples_per_trace, trigger_delay=trigger_delay)
 
-        return data_traces, trigger
+        return data_traces
 
