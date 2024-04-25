@@ -135,7 +135,7 @@ class DataChopper(object):
         data_overlapped = np.zeros(new_period * (num_traces - 1) + period)
 
         if visualise:
-            plt.figure()
+            plt.figure('Visualise overlap traces', figsize=(15, 6))
             plt.plot(data_overlapped, alpha=0.5)
             plt.xlim(0, 20*new_period)
 
