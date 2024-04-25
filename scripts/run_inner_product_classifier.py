@@ -16,9 +16,9 @@ distribution'''
 dataReader = DataReader('Tomography_data_2024_04')
 
 data_group = 'power_11'
-rep_rate = 100
+rep_rate = 1000
 file_num = 0
-raw_traces_to_plot = 100
+raw_traces_to_plot = 10000
 
 if rep_rate <= 300:
     trigger = 0
@@ -89,9 +89,9 @@ ax.legend()
 # ave_trace = calTraces.average_trace()
 # plt.plot(ave_trace, color='black', alpha=1.)
 #
-# plt.figure('trace train')
-# plt.plot(calTraces.data[:10, :].flatten())
-# plt.xlabel('Samples')
+fig2, ax2 = plt.subplots(figsize=(20, 8))
+ax2.plot(calTraces.data[:100000, :].flatten())
+ax2.set_xlabel('Samples')
 
 plt.show()
 
