@@ -14,7 +14,7 @@ rep_rate = 100
 # raw_traces_range = list(range(100))
 save_classifiers = False
 
-dataReader = DataReader('Tomography_data_2024_04')
+dataReader = DataReader('Data/Tomography_data_2024_04')
 
 powers = np.arange(12)
 data_groups = np.array([f'power_{p}' for p in powers])
@@ -67,7 +67,7 @@ for data_group in data_groups:#
     print(f'Classifier predict {data_group} after {t2-t1}s')
     calTraces.labels = labels  # update the labels
 
-    indices_dict, traces_dict = calTraces.bin_traces()  # dictionary of the indices and traces to their assigned photon number label
+    # indices_dict, traces_dict = calTraces.bin_traces()  # dictionary of the indices and traces to their assigned photon number label
     characeristic_traces = calTraces.characteristic_traces()
 
     # for pn in characeristic_traces.keys():

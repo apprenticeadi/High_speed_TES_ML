@@ -37,8 +37,17 @@ class Traces(object):
         data = np.atleast_2d(data)
         parse_args = {'interpolated': False, 'trigger_delay': 0}
         parse_args.update(data_parsing_kwargs)
-        if parse_data and data.shape[1] != self.period:
-            data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
+        if parse_data:
+            if data.shape[1] <= self.period:
+                warnings.warn(f'Input data array length <= period={self.period}, no parsing performed. ')
+            elif labels is not None:
+                # Input labels is not None, labels and data will only be chopped to dimension. There will be no parsing
+                data, labels = DataChopper.chop_labelled_traces(data, labels, samples_per_trace=self.period, trigger_delay=parse_args['trigger_delay'])
+            else:
+                # When ideal_samples != period, e.g. 600kHz, ideally some traces should have 84 samples, while others 83
+                # samples. What parsing does is remove the extra sample from every 84-long traces, while making sure
+                # that every trace still starts roughly at the same relative position.
+                data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
 
         self._data = data
         if labels is None:
@@ -79,14 +88,14 @@ class Traces(object):
         for pn in pns:
             indices_dict[pn] = np.where(self.labels == pn)[0]
 
-        traces_dict = {}
-        for pn in pns:
-            traces_dict[pn] = self.data[indices_dict[pn]]
+        # traces_dict = {}
+        # for pn in pns:
+        #     traces_dict[pn] = self.data[indices_dict[pn]]
 
-        return indices_dict, traces_dict
+        return indices_dict
 
     def pn_distribution(self, normalised=False):
-        indices_dict, _ = self.bin_traces()
+        indices_dict = self.bin_traces()
 
         labels = np.asarray(list(indices_dict.keys()))
         counts = np.zeros_like(labels)
@@ -98,12 +107,21 @@ class Traces(object):
 
         return labels, counts
 
+    def pn_traces(self, pn):
+        """Return all traces with the specified photon number labels"""
+        indices_dict = self.bin_traces()
+
+        if pn not in indices_dict.keys():
+            return None
+        else:
+            return self.data[indices_dict[pn]]
+
     def characteristic_traces(self):
-        _, traces_dict = self.bin_traces()
+        indices_dict = self.bin_traces()
 
         char_traces_dict = {}
-        for pn in traces_dict.keys():
-            char_traces_dict[pn] = np.mean(traces_dict[pn], axis=0)
+        for pn in indices_dict.keys():
+            char_traces_dict[pn] = np.mean(self.pn_traces(pn), axis=0)
 
         return char_traces_dict
 
@@ -126,14 +144,13 @@ class Traces(object):
         self.data = data_cleaned
 
     def find_offset(self):
-        '''Find the average voltage value of zero-photon traces'''
-        _, traces_dict = self.bin_traces()
+        '''Find the median voltage value of the zero-photon traces'''
+        zero_traces = self.pn_traces(0)
 
-        if 0 in traces_dict.keys():
-            return np.mean(traces_dict[0])
-        else:
+        if zero_traces is None:
             raise Exception('No 0-photon traces in this dataset. ')
-
+        else:
+            return np.median(zero_traces)
 
 
 class TraceUtils:
@@ -141,8 +158,8 @@ class TraceUtils:
     @staticmethod
     def parse_data(rep_rate, data_raw, sampling_rate=5e4, interpolated=False, trigger_delay=0):
         """
-        Return numpy array, where each row is a trace. Use interpolation as an intermediate step, to remove the shift in
-        traces due to the cutoff from ideal_samples to period.
+        Return numpy array, where each row is a trace. Parsing uses interpolation as an intermediate step, to remove
+        the shift in traces due to the cutoff from ideal_samples to period.
 
         :param rep_rate: Repetition rate (kHz)
         :param data_raw: raw data array
