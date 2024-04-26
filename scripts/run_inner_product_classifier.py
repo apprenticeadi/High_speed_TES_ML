@@ -16,7 +16,7 @@ from src.utils import DFUtils, TomoUtils
 distribution'''
 
 '''Data'''
-dataReader = DataReader('Tomography_data_2024_04')
+dataReader = DataReader('Data/Tomography_data_2024_04')
 
 data_group = 'power_0'
 rep_rate = 500
