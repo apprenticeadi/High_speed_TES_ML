@@ -56,9 +56,8 @@ docs/_build/
 .DS_Store
 
 /Plots/
-/RawData/
+/Data/
 /dev_Scripts/models2/
 /Results/
 /drafts/
 /Params/
-/Tomography_data_2024_04/
