@@ -114,11 +114,5 @@ for data_group in data_groups:
         results_df.loc[i_rep + 1] = [high_rep_rate, actualTraces.num_traces, accuracy, t2-t1, t4-t3] + list(yvals)
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
-        mlClassifier.save(filename=rf'{modeltype}_trained_by_{data_group}_{config.time_stamp}', filedir=results_dir)
-
-
-
-
-
-
+        mlClassifier.save(filename=rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz', filedir=results_dir + r'\saved_classifiers')
 
