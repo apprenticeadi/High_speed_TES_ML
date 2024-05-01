@@ -29,7 +29,6 @@ class DFUtils:
 
     @staticmethod
     def create_filename(filename: str):
-
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         return filename
@@ -38,7 +37,8 @@ class DFUtils:
 class TomoUtils:
 
     @staticmethod
-    def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=1550*1e-9, pm_error=0., bs_error=0.):
+    def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=1550 * 1e-9, pm_error=0.,
+                       bs_error=0.):
         attenuation_pctg = 10 ** (attenuation_db / 10)
 
         laser_power = pm_reading / bs_ratio  # W
@@ -48,3 +48,4 @@ class TomoUtils:
         est_error = est_mean_ph * np.sqrt(bs_error ** 2 / bs_ratio ** 2 + pm_error ** 2 / pm_reading ** 2)
 
         return est_mean_ph, est_error
+
