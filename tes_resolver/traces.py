@@ -81,7 +81,8 @@ class Traces(object):
         return np.std(self.data, axis=0)
 
     def bin_traces(self):
-        pns = set(self.labels)
+        max_pn = np.max(self.labels)
+        pns = np.arange(max_pn + 1)
 
         # Initialise a dictionary to store indices for each photon number
         indices_dict = {}
