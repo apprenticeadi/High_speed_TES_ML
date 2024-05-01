@@ -36,14 +36,14 @@ ipClassifier.predict(refTraces, update=True)
 baseline_ref = refTraces.find_offset()
 refTraces.data = refTraces.data - baseline_ref  # remove the baseline
 
-plt.figure('reference data', figsize=(12, 5))
-plt.plot(refTraces.data[:10, :].flatten())
-plt.title('reference data')
-for i in range(10):
-    plt.axvline(i * 500, ymin=0, ymax=0.8, color='black', ls='dashed')
-plt.axhline(0, 0, 1, color='red', ls = 'dashed')
+# plt.figure('reference data flatten', figsize=(12, 5))
+# plt.plot(refTraces.data[:10, :].flatten())
+# plt.title('reference data')
+# for i in range(10):
+#     plt.axvline(i * 500, ymin=0, ymax=0.8, color='black', ls='dashed')
+# plt.axhline(0, 0, 1, color='red', ls = 'dashed')
 
-plt.figure('more reference data')
+plt.figure('reference data')
 for i in range(raw_traces_to_plot):
     plt.plot(refTraces.data[i, :], alpha=0.5)
 plt.axhline(0, 0, 1, color='black', ls='dashed', alpha=0.5)
@@ -81,13 +81,13 @@ for high_rep_rate in high_rep_rates:
     '''Generate training '''
     trainingTraces = generate_training_traces(refTraces, high_rep_rate, trigger_delay=trigger_delay)
 
-    # for high overlap data, zero the zero-photon characteristic trace in training data.
-    if high_rep_rate >= 600:
-        zero_of_the_zero = np.min(np.mean(trainingTraces.pn_traces(0), axis=0))
-        if zero_of_the_zero >0:
-            trainingTraces.data = trainingTraces.data - zero_of_the_zero
+    # # for high overlap data, zero the zero-photon characteristic trace in training data.
+    # if high_rep_rate >= 600:
+    #     zero_of_the_zero = np.min(np.mean(trainingTraces.pn_traces(0), axis=0))
+    #     if zero_of_the_zero >0:
+    #         trainingTraces.data = trainingTraces.data - zero_of_the_zero
 
-    # trainingTraces.data = trainingTraces.data + baseline_ref  # add back the baseline
+    trainingTraces.data = trainingTraces.data + baseline_ref  # add back the baseline
     training_traces[high_rep_rate] = trainingTraces
 
     '''Plot average traces'''
@@ -104,7 +104,7 @@ for high_rep_rate in high_rep_rates:
     # plot characteristic traces
     char_trace_dict = trainingTraces.characteristic_traces()
     for pn in char_trace_dict.keys():
-        ax2.plot(char_trace_dict[pn], color='red')
+        ax2.plot(char_trace_dict[pn], color='red', ls='dashed')
 
     ax2.set_xlabel('Samples')
 
@@ -113,6 +113,10 @@ for high_rep_rate in high_rep_rates:
     for i in range(raw_traces_to_plot):
         ax3.plot(actualTraces.data[i], alpha=0.1)
     ax3.set_xlabel('Samples')
+
+    # overlap training characteristic traces on top of the plot
+    for pn in char_trace_dict.keys():
+        ax3.plot(char_trace_dict[pn], color='red', ls='dashed')
 
 axs1[high_rep_rates[0]].legend()
 ax2.set_ylim([-1000, 25000])
