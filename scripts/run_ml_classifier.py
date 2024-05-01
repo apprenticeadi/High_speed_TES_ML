@@ -73,6 +73,7 @@ for data_group in data_groups:
     for i_rep, high_rep_rate in enumerate(high_rep_rates):
 
         '''Load actual traces'''
+        ti = time.time()
         actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
 
         # set suitable trigger delay
@@ -82,19 +83,24 @@ for data_group in data_groups:
             trigger_delay = DataChopper.find_trigger(actual_data, samples_per_trace=int(sampling_rate/high_rep_rate))
 
         actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay=trigger_delay)
+        tf = time.time()
+        print(f'Load high rep rate data into traces took {tf-ti}s')
 
         '''Generate training'''
+        ti = time.time()
         trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay=trigger_delay)
 
         # correct for the vertical shift
         offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
         trainingTraces.data = trainingTraces.data - offset
+        tf = time.time()
+        print(f'Generate training traces took {tf-ti}s')
 
         '''ML Classifier'''
+        t1 = time.time()
         mlClassifier = TabularClassifier(modeltype, test_size=test_size)
 
         print(f'\nTraining ml classifier for {high_rep_rate}kHz')
-        t1 = time.time()
         mlClassifier.train(trainingTraces)
         t2 = time.time()
 
