@@ -27,7 +27,7 @@ powers = np.arange(12)
 data_groups = np.array([f'power_{p}' for p in powers])
 
 for data_group in data_groups:
-    print(f'Processing {data_group}...')
+    print(f'\nProcessing {data_group}...')
     # save data
     results_dir = rf'..\Results\{modeltype}\Tomography_data_2024_4\{data_group}_{config.time_stamp}'
 
