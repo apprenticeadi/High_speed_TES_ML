@@ -46,10 +46,12 @@ for data_group in data_groups:
     print(f'For {cal_rep_rate}kHz, ip classifier trained after {t2-t1}s, predict {calTraces.num_traces} traces after {t3-t2}s.')
 
     pns, cal_distrib = calTraces.pn_distribution(normalised=True)
+    print(f'PN distribution is {cal_distrib}')
 
     # Result file
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     results_df.loc[0] = [cal_rep_rate, calTraces.num_traces, np.nan, t2-t1, t3-t2] + list(cal_distrib)
+    results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
     '''Plot the calibration data stegosaurus'''
     # fig1, ax1 = plt.subplots(layout='constrained', figsize=(12,8))
@@ -91,24 +93,24 @@ for data_group in data_groups:
         '''ML Classifier'''
         mlClassifier = TabularClassifier(modeltype, test_size=test_size)
 
-        print(f'Training ml classifier for {high_rep_rate}kHz')
+        print(f'\nTraining ml classifier for {high_rep_rate}kHz')
         t1 = time.time()
         mlClassifier.train(trainingTraces)
         t2 = time.time()
 
         accuracy = mlClassifier.accuracy_score
-        print(f'Training finished after {t2-t1}s. Accuracy score = {accuracy}.')
 
         print(f'Making predictions for {actualTraces.num_traces} traces')
         t3 = time.time()
         mlClassifier.predict(actualTraces, update=True)
         t4 = time.time()
-        print(f'Prediction finished after {t4-t3}s. ')
+        print(f'Training finished after {t2-t1}s. Accuracy score = {accuracy}. Prediction finished after {t4-t3}s. ')
 
         # results
         pn_labels, predicted_distrib = actualTraces.pn_distribution(normalised=True)
         yvals = np.zeros_like(cal_distrib)
         yvals[:len(predicted_distrib)] = predicted_distrib
+        print(f'Predicted pn distribution = {yvals}')
 
         '''Save results'''
         results_df.loc[i_rep + 1] = [high_rep_rate, actualTraces.num_traces, accuracy, t2-t1, t4-t3] + list(yvals)
