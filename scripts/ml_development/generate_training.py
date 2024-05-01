@@ -87,26 +87,31 @@ for high_rep_rate in high_rep_rates:
     #     if zero_of_the_zero >0:
     #         trainingTraces.data = trainingTraces.data - zero_of_the_zero
 
-    trainingTraces.data = trainingTraces.data + baseline_ref  # add back the baseline
+    # trainingTraces.data = trainingTraces.data + baseline_ref  # add back the baseline
+
+    # correct for the vertical shift
+    offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
+    trainingTraces.data = trainingTraces.data - offset
+
     training_traces[high_rep_rate] = trainingTraces
 
+    char_trace_dict = trainingTraces.characteristic_traces()
     '''Plot average traces'''
     ax1.set_title(f'{high_rep_rate}kHz')
     ax1.plot(trainingTraces.average_trace(), label='Training')
     ax1.plot(actualTraces.average_trace(), label='Actual')
     ax1.set_xlabel('Samples')
 
-    '''Plot training traces'''
-    ax2.set_title(f'{high_rep_rate}kHz')
-    for i in range(raw_traces_to_plot):
-        ax2.plot(trainingTraces.data[i], alpha=0.1)
-
-    # plot characteristic traces
-    char_trace_dict = trainingTraces.characteristic_traces()
-    for pn in char_trace_dict.keys():
-        ax2.plot(char_trace_dict[pn], color='red', ls='dashed')
-
-    ax2.set_xlabel('Samples')
+    # '''Plot training traces'''
+    # ax2.set_title(f'{high_rep_rate}kHz')
+    # for i in range(raw_traces_to_plot):
+    #     ax2.plot(trainingTraces.data[i], alpha=0.1)
+    #
+    # # plot characteristic traces
+    # for pn in char_trace_dict.keys():
+    #     ax2.plot(char_trace_dict[pn], color='red', ls='dashed')
+    #
+    # ax2.set_xlabel('Samples')
 
     '''Plot actual traces'''
     ax3.set_title(f'{high_rep_rate}kHz')
