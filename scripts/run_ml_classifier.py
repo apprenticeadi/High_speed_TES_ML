@@ -29,7 +29,7 @@ data_groups = np.array([f'power_{p}' for p in powers])
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
     # save data
-    results_dir = rf'..\Results\{modeltype}\Tomography_data_2024_4\{data_group}_{config.time_stamp}'
+    results_dir = rf'..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
 
     '''Read the calibration data'''
     cal_data = dataReader.read_raw_data(data_group, cal_rep_rate)
