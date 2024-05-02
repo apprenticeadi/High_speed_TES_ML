@@ -6,14 +6,14 @@ from scipy.special import factorial
 from src.utils import DFUtils, poisson_norm, tvd
 
 
-powers = np.arange(0, 12, 3)
-rep_rates = np.arange(100, 900, 100)
+powers = np.arange(0, 12, 1)
+rep_rates = np.arange(100, 1100, 100)
 modeltype='RF'
 
 
-special_power = 6
-special_reprate = 700
-special_reprate2 = 800
+special_power = 10
+special_reprate = 500
+special_reprate2 = 1000
 
 params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
@@ -25,8 +25,8 @@ for power in powers:
     df = df.sort_values('rep_rate')
     results_dict[power] = df
 
-fontsize=14
-fig, axs = plt.subplot_mosaic([['(a)', '(b)']], figsize=(12, 4), layout='constrained')
+fontsize=12
+fig, axs = plt.subplot_mosaic([['(a)', '(b)']], figsize=(15, 8), layout='constrained')
 # left, bottom, width, height = [0.2, 0.4, 0.4, 0.45]
 # ax2 = fig.add_axes([left, bottom, width, height])
 
@@ -75,6 +75,10 @@ ax1.set_xlabel('Repetition rate/kHz', fontsize=fontsize)
 ax1.set_ylabel('TVD', fontsize=fontsize)
 ax1.tick_params(labelsize=fontsize-2)
 
+
+'''Plot special '''
+# fig2, ax2 = plt.subplots(figsize=(12, 6))
+
 df = results_dict[special_power]
 row_100 = df.loc[df['rep_rate']==100, :]
 
@@ -88,7 +92,7 @@ ax2.bar(labels - width, pn_100, width=width, align='center', alpha=0.8, label='1
 ax2.bar(labels, pn, width=width, align='center', alpha=0.8, label=f'{special_reprate}kHz', color='gray')
 ax2.bar(labels + width, pn2, width=width, align='center', alpha=0.8, label=f'{special_reprate2}kHz', color='saddlebrown')
 
-ax2.set_ylim(0, 0.3)
+ax2.set_ylim(0, 0.5)
 ax2.set_ylabel('Probability', fontsize=fontsize)
 ax2.set_xlabel('Photon number', fontsize=fontsize)
 ax2.tick_params(labelsize=fontsize-2)

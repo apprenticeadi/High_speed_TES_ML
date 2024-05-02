@@ -50,3 +50,8 @@ def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=15
 
 def poisson_norm(x, mu):
     return (mu ** x) * np.exp(-mu) / factorial(x)
+
+def tvd(a, b):
+    a = np.asarray(a)
+    b = np.asarray(b)
+    return 0.5 * np.sum(np.absolute(a-b))

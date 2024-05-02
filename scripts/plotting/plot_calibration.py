@@ -50,7 +50,8 @@ for i_power, power in enumerate(powers):
     ax1.set_xticks(labels[::3])
 
 ax2.set_title('Detector efficiency')
-ax2.plot(pm_mean_pns, tes_mean_pns, 'o', ls='None')
+errors = pm_mean_pns * 0.058
+ax2.errorbar(pm_mean_pns, tes_mean_pns, xerr=errors, fmt= 'o', ls='None')
 ax2.set_xlabel('Measured average photon number')
 ax2.set_ylabel('Input average photon number')
 

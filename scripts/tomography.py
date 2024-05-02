@@ -8,6 +8,7 @@ import cvxpy as cp
 import logging
 import time
 import datetime
+import string
 
 from src.utils import LogUtils, DFUtils
 
@@ -16,10 +17,11 @@ from src.utils import LogUtils, DFUtils
 '''
 script to perform a tomography routine on the probabilities, using the cvxpy package
 '''
-# extra_attenuation = 2.9
 modeltype = 'RF'
 
-powers = np.arange(12)
+alphabet = list(string.ascii_lowercase)
+
+powers = np.arange(11)
 max_truncation = 20  #truncation photon number.
 
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
@@ -33,7 +35,12 @@ logging.info(f'Run tomography on data from power_{powers}, processed with {model
              f'photon number truncated at max_truncation={max_truncation}. ')
 
 rep_vals = np.arange(100, 1100, 100)
+
+fig, axs = plt.subplots(2, 5, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(15,7))
+axs = axs.flatten()
+
 final_costs = np.zeros(len(rep_vals))
+fidelities = np.zeros(len(rep_vals))
 for i_rep, rep_rate in enumerate(rep_vals):
 
     '''
@@ -113,25 +120,51 @@ for i_rep, rep_rate in enumerate(rep_vals):
     theta_df.to_csv(results_dir + rf'\{rep_rate}kHz_theta.csv')
 
     fidelity = np.trace(estimated_theta) / np.sum(estimated_theta)
+    fidelities[i_rep] = fidelity
 
     '''
     create colour plot, using same blue to yellow colours as White paper
     '''
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
+    ax = axs[i_rep]
+
     x = np.arange(estimated_theta.shape[1])
     y = np.arange(estimated_theta.shape[0])
     X, Y = np.meshgrid(x, y)
 
     pc = ax.pcolormesh(X, Y, estimated_theta,
                        norm=mcolors.SymLogNorm(linthresh=0.01))
-    cbar = fig.colorbar(pc)
-    cbar.set_label(r'$|\theta_{nm}|$')
 
     ax.set_xticks(x[::2])
     ax.set_yticks(y[::2])
 
-    ax.set_title(rf'{rep_rate}kHz, fidelity={fidelity:.3f}, final cost={optimal_value}')
+    # ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={fidelity:.3g}, final cost={optimal_value:.2g}')
+    ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz', loc='left')
 
-    fig.savefig(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta_cmap.pdf'))
+    # fig.savefig(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta_cmap.pdf'))
+
+
+cbar = fig.colorbar(pc, ax=axs.ravel().tolist())
+cbar.set_label(r'$|\theta_{nm}|$')
+fig.savefig(DFUtils.create_filename(results_dir + rf'\theta_cmap.pdf'))
 
 np.save(DFUtils.create_filename(results_dir + rf'\optimal_least_squares.npy'), final_costs)
+
+fig2, axs2 = plt.subplots(1, 2, squeeze=True, sharex='all', figsize=(10, 4), layout='constrained')
+
+ax = axs2[0]
+ax.plot(rep_vals, fidelities, 'o-')
+ax.set_ylim(0,1)
+ax.set_xlabel('Rep rates/kHz')
+ax.set_ylabel('Fidelity')
+ax.set_title('(a) Fidelity', loc='left')
+
+ax = axs2[1]
+ax.plot(rep_vals, final_costs, 'o-')
+ax.set_xlabel('Rep rates/kHz')
+ax.set_ylabel('Optimised cost function value')
+ax.set_title('(b) Final cost', loc='left')
+
+fig2.savefig(results_dir + rf'\Fidelity_and_final_costs.pdf')
+
+plt.show()
