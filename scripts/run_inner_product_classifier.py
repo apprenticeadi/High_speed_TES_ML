@@ -10,7 +10,7 @@ from tes_resolver.traces import Traces
 from tes_resolver.data_chopper import DataChopper
 from src.data_reader import DataReader
 import tes_resolver.config as config
-from src.utils import DFUtils, TomoUtils
+from src.utils import DFUtils, poisson_norm, estimate_av_pn
 
 '''Script that runs inner product classifier on given data. Plots raw traces, stegosaurus, and photon number 
 distribution'''
@@ -81,8 +81,6 @@ ax = axs[2]
 ax.set_title('PN distribution')
 ax.bar(pns, freq)
 ax.set_xlabel('Photon number')
-def poisson_norm(x, mu):
-    return (mu ** x) * np.exp(-mu) / factorial(x)
 
 ax.plot(pns, poisson_norm(pns, mean_photon_number), '-o', color='red', label=f'mean={mean_photon_number}')
 ax.plot(pns, poisson_norm(pns, est_mean_ph), '-o', color='orange', label=f'mean={est_mean_ph}')

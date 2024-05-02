@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from scipy.special import factorial
 
-from src.utils import DFUtils
+from src.utils import DFUtils, poisson_norm
+
 def tvd(a, b):
     a = np.asarray(a)
     b = np.asarray(b)
@@ -78,8 +79,8 @@ ax2.set_ylabel('Probability', fontsize=fontsize)
 ax2.set_xlabel('Photon number', fontsize=fontsize)
 ax2.tick_params(labelsize=fontsize-2)
 
-def poisson_norm(x, mu):
-    return (mu ** x) * np.exp(-mu) / factorial(x)
+# def poisson_norm(x, mu):
+#     return (mu ** x) * np.exp(-mu) / factorial(x)
 ax2.plot(labels - width, poisson_norm(labels, mu_100), 'rx-', label=rf'$\mu=${mu_100:.2f}')
 
 ax2.legend(loc='upper right', fontsize=fontsize-2)

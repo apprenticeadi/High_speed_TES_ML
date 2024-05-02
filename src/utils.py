@@ -4,7 +4,7 @@ import logging
 import sys
 import warnings
 from scipy.constants import h, c
-
+from scipy.special import factorial
 
 class LogUtils:
 
@@ -34,18 +34,19 @@ class DFUtils:
         return filename
 
 
-class TomoUtils:
 
-    @staticmethod
-    def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=1550 * 1e-9, pm_error=0.,
-                       bs_error=0.):
-        attenuation_pctg = 10 ** (attenuation_db / 10)
+def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=1550 * 1e-9, pm_error=0.,
+                   bs_error=0.):
+    attenuation_pctg = 10 ** (attenuation_db / 10)
 
-        laser_power = pm_reading / bs_ratio  # W
-        tes_input_power = laser_power * attenuation_pctg  # W
-        energy_per_pulse = tes_input_power / (rep_rate * 1000)
-        est_mean_ph = energy_per_pulse / (h * c / wavelength)
-        est_error = est_mean_ph * np.sqrt(bs_error ** 2 / bs_ratio ** 2 + pm_error ** 2 / pm_reading ** 2)
+    laser_power = pm_reading / bs_ratio  # W
+    tes_input_power = laser_power * attenuation_pctg  # W
+    energy_per_pulse = tes_input_power / (rep_rate * 1000)
+    est_mean_ph = energy_per_pulse / (h * c / wavelength)
+    est_error = est_mean_ph * np.sqrt(bs_error ** 2 / bs_ratio ** 2 + pm_error ** 2 / pm_reading ** 2)
 
-        return est_mean_ph, est_error
+    return est_mean_ph, est_error
 
+
+def poisson_norm(x, mu):
+    return (mu ** x) * np.exp(-mu) / factorial(x)
