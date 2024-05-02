@@ -108,7 +108,9 @@ for i_rep, rep_rate in enumerate(rep_vals):
     estimated_theta = theta.value
 
     np.save(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta.npy'), estimated_theta)
-    # TODO: save as csv file.
+
+    theta_df = pd.DataFrame(data=estimated_theta, index=list(range(max_photon+1)), columns=list(range(max_truncation+1)))
+    theta_df.to_csv(results_dir + rf'\{rep_rate}kHz_theta.csv')
 
     fidelity = np.trace(estimated_theta) / np.sum(estimated_theta)
 
