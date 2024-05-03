@@ -22,7 +22,7 @@ modeltype = 'RF'
 alphabet = list(string.ascii_lowercase)
 
 powers = np.arange(11)
-max_truncation = 20  #truncation photon number.
+max_truncation = 17  #truncation photon number.
 
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 results_dir = rf'..\Results\Tomography_data_2024_04\tomography_{time_stamp}'
@@ -56,11 +56,14 @@ for i_rep, rep_rate in enumerate(rep_vals):
 
         df = pd.read_csv(params_dir + rf'\{modeltype}\{modeltype}_results_power_{power}.csv')
         pn = np.array(df.loc[df['rep_rate'] == rep_rate, '0':].iloc[0])
+        if len(pn) > max_truncation + 1:
+            pn = pn[:max_truncation + 1]
         probs[i_power, :len(pn)] = pn
 
         max_photon = max(max_photon, len(pn) - 1)
+        # max_photon = 10
 
-    probs = probs[:, :max_photon + 1]
+    probs = probs[:, :max_photon + 2]  # extra row in the end for pn = max_photon + 1 and beyond, experimental probs=0 for them
     probs = probs.T
 
     '''
@@ -74,35 +77,42 @@ for i_rep, rep_rate in enumerate(rep_vals):
     F = F.T
 
     '''
-    Theta is the POVM elements that we wish to find, dimension N+1 * M+1. 
+    Theta is the POVM elements that we wish to find, dimension N+2 * M+1. 
     Theta_nm is the probability that the detector measures n photon, given m photon input. 
     n_th row corresponds to measuring n photons
     m-th column corresponds having m photons as input
     sum over row should be normalised to 1 
-    sum over column should be smaller than 1.
+    sum over column should be normalised to 1 after normalisation by the last row. 
     '''
-    guess_theta = np.zeros((max_photon + 1, max_truncation + 1))
+    guess_theta = np.zeros((max_photon + 2, max_truncation + 1))  # last row is for n=max_photon+1 and beyond
 
     '''
     define guess values and bounds
     '''
     # bounds = [(0,1)] * (max_photon+1) * max_truncation
-    for i in range(4, max_photon + 1):
-        guess_theta[i, i] = 0.5
-        guess_theta[i, i - 1] = 0.2
-        guess_theta[i, i + 1] = 0.2
-        guess_theta[i, i - 2] = 0.05
-        guess_theta[i, i + 2] = 0.05
-    # np.fill_diagonal(guess_theta, 0.9)  # guess value
+    # for i in range(4, max_photon + 1):
+    #     guess_theta[i, i] = 0.5
+    #     guess_theta[i, i - 1] = 0.2
+    #     guess_theta[i, i + 1] = 0.2
+    #     guess_theta[i, i - 2] = 0.05
+    #     guess_theta[i, i + 2] = 0.05
+    np.fill_diagonal(guess_theta, 0.93)  # guess value
+    guess_theta[0, 0] = 1.
+    guess_theta[-1, -(max_truncation - max_photon):] = 1.
+    guess_theta[0, 1] = 0.07  # given 1, measure 0
+    for i in range(2, max_photon + 1):
+        guess_theta[i - 2, i] = 0.004
+        guess_theta[i - 1, i] = 0.066
+
 
     '''
     cvxpy least squares minimization, 
     cost function as a sum of squares
     constraints that sum over rows and columns equal 1
     '''
-    theta = cp.Variable((max_photon + 1, max_truncation + 1), nonneg=True, value=guess_theta)
+    theta = cp.Variable((max_photon + 2, max_truncation + 1), nonneg=True, value=guess_theta)
     cost = cp.sum_squares(cp.abs(probs - theta @ F))
-    constraints = [0 <= theta, theta <= 1, cp.sum(theta, axis=0) <= 1, cp.sum(theta, axis=1) == 1]
+    constraints = [0 <= theta, theta <= 1, cp.sum(theta, axis=0) == 1]
     problem = cp.Problem(cp.Minimize(cost), constraints)
 
     t1 = time.time()
@@ -114,9 +124,11 @@ for i_rep, rep_rate in enumerate(rep_vals):
 
     estimated_theta = theta.value
 
-    np.save(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta.npy'), estimated_theta)
+    # np.save(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta.npy'), estimated_theta)
 
-    theta_df = pd.DataFrame(data=estimated_theta, index=list(range(max_photon+1)), columns=list(range(max_truncation+1)))
+    indices = [f'{i}' for i in range(max_photon+1)] + [f'{max_photon+1}+']
+    columns = [f'{i}' for i in range(max_truncation+1)]
+    theta_df = pd.DataFrame(data=estimated_theta, index= indices, columns=list(range(max_truncation+1)))
     theta_df.to_csv(results_dir + rf'\{rep_rate}kHz_theta.csv')
 
     fidelity = np.trace(estimated_theta) / np.sum(estimated_theta)
@@ -136,7 +148,9 @@ for i_rep, rep_rate in enumerate(rep_vals):
                        norm=mcolors.SymLogNorm(linthresh=0.01))
 
     ax.set_xticks(x[::2])
-    ax.set_yticks(y[::2])
+    ax.set_xticklabels(columns[::2])
+    ax.set_yticks(y)
+    ax.set_yticklabels(indices)
 
     # ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={fidelity:.3g}, final cost={optimal_value:.2g}')
     ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz', loc='left')
