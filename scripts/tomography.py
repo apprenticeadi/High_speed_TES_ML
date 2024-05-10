@@ -2,6 +2,7 @@ from scipy.special import factorial
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from math import comb
 import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
 import cvxpy as cp
@@ -24,9 +25,15 @@ alphabet = list(string.ascii_lowercase)
 powers = np.arange(11)
 rep_vals = np.arange(100, 1100, 100)
 
+time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
+results_dir = rf'..\Results\Tomography_data_2024_04\tomography_{time_stamp}'
+
+params_dir = rf'..\Results\Tomography_data_2024_04\Params'
+log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
+
 '''Define truncation'''
-max_input = 12  # truncated input number, will keep a max_input+1+
-max_detected = 12  # truncated detected number, will keep a max_detected+1+
+max_input = 8  # truncated input number, will keep a max_input+1+
+max_detected = 8  # truncated detected number, will keep a max_detected+1+
 assert max_input >= max_detected
 
 indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
@@ -36,30 +43,25 @@ columns = [f'{i}' for i in range(max_input + 1)] + [f'{max_input + 1}+']
 Theta is the POVM elements that we wish to find, dimension N+2 * M+2, N=max_detect, M=max_input
 Theta_nm is the probability that the detector measures n photon, given m photon input. 
 sum over column should be normalised to 1
+Define guess values
 '''
+guess_efficiency = 0.95
 guess_theta = np.zeros((max_detected + 2, max_input + 2))
+for i in range(guess_theta.shape[0]):
+    if i < max_detected + 1:
+        guess_theta[i, i:] = [comb(j, i) * ((1-guess_efficiency)**(j-i)) * (guess_efficiency ** i) for j in range(i, max_input+2)]
+    else: # last row
+        guess_theta[i, i:] = 1. - np.sum(guess_theta[:i, i:], axis=0)
+guess_df = pd.DataFrame(data=guess_theta, index=indices, columns=columns)
+guess_df.to_csv(DFUtils.create_filename(results_dir + rf'\guess_theta.csv'))
 
-'''
-define guess values
-'''
-np.fill_diagonal(guess_theta, 0.93)  # guess value
-guess_theta[0, 0] = 1.
-guess_theta[0, 1] = 0.07  # given 1, measure 0
-for i in range(2, max_detected + 1):
-    guess_theta[i - 2, i] = 0.004
-    guess_theta[i - 1, i] = 0.066
-if max_input > max_detected:
-    guess_theta[-1, -(max_input-max_detected):] = 1.
 
-time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-results_dir = rf'..\Results\Tomography_data_2024_04\tomography_{time_stamp}'
-
-params_dir = rf'..\Results\Tomography_data_2024_04\Params'
-log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
-
+'''Logging'''
 LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
 logging.info(f'Run tomography on data from power_{powers}, rep rates = {rep_vals}, processed with {modeltype} classifier. For tomography, '
-             f'input photon number truncated at max_input={max_input}, detected photon number truncated at max_detected={max_detected} ')
+             f'input photon number truncated at max_input={max_input}, detected photon number truncated at max_detected={max_detected}. '
+             # f'Input light characterised by 100kHz inner product method instead of power meter. '
+             )
 
 fig, axs = plt.subplots(2, 5, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(15,7))
 axs = axs.flatten()
@@ -161,7 +163,7 @@ cbar = fig.colorbar(pc, ax=axs.ravel().tolist())
 cbar.set_label(r'$|\theta_{nm}|$')
 fig.savefig(DFUtils.create_filename(results_dir + rf'\theta_cmap.pdf'))
 
-# save costs and fidelities
+'''Save costs and fidelities'''
 np.save(DFUtils.create_filename(results_dir + rf'\optimal_least_squares.npy'), final_costs)
 
 fidelities_df = pd.DataFrame(data=fidelities, index=indices, columns=[f'{f}kHz' for f in rep_vals])
@@ -170,31 +172,32 @@ fidelities_df.to_csv(results_dir + rf'\fidelities_with_ideal.csv')
 rel_fid_df = pd.DataFrame(data=rel_fidelities, index=indices, columns=[f'{f}kHz' for f in rep_vals])
 rel_fid_df.to_csv(results_dir + rf'\fidelities_with_{rep_vals[0]}kHz.csv')
 
-fig2, axs2 = plt.subplots(1, 3, squeeze=True, sharex='all', figsize=(10, 4), layout='constrained')
+'''Plot fidelities'''
+x2 = np.arange(len(rep_vals))
+y2 = np.arange(max_detected + 2)
+X2, Y2 = np.meshgrid(x2, y2)
+
+fig2, axs2 = plt.subplots(1, 2, figsize=(12, 6), layout='constrained', sharex='all', sharey='all')
 
 ax = axs2[0]
-for i in range(fidelities.shape[0]):
-    ax.plot(rep_vals, fidelities[i], 'o-', label=f'n={i}')
-ax.set_ylim(0,1)
-ax.set_xlabel('Rep rates/kHz')
-ax.set_ylabel('Fidelity')
+pc = ax.pcolormesh(X2, Y2, fidelities, vmin=0., vmax=1.)
+
+ax.set_xlabel('Rep rate/kHz')
+ax.set_ylabel(r'$n$')
+ax.set_xticks(x2)
+ax.set_xticklabels(rep_vals)
+ax.set_yticks(y2)
+ax.set_yticklabels(indices)
 ax.set_title('(a) Fidelity with ideal', loc='left')
-ax.legend()
 
-ax=axs2[1]
-for i in range(rel_fidelities.shape[0]):
-    ax.plot(rep_vals, rel_fidelities[i], 'o-', label=f'n={i}')
-ax.set_ylim(0,1)
-ax.set_xlabel('Rep rates/kHz')
-ax.set_ylabel('Fidelity')
-ax.set_title(f'(b) Fidelity with {rep_vals[0]}kHz', loc='left')
+ax = axs2[1]
+pc = ax.pcolormesh(X2, Y2, rel_fidelities, vmin=0., vmax=1.)
+ax.set_xlabel('Rep rate/kHz')
+ax.set_title('(b) Fidelity with 100kHz', loc='left')
 
-ax = axs2[2]
-ax.plot(rep_vals, final_costs, 'o-')
-ax.set_xlabel('Rep rates/kHz')
-ax.set_ylabel('Optimised cost function value')
-ax.set_title('(c) Final cost', loc='left')
+cbar2 = fig2.colorbar(pc, ax=axs2.ravel().tolist())
+cbar2.set_label(r'Fidelity')
 
-fig2.savefig(results_dir + rf'\Fidelity_and_final_costs.pdf')
+fig2.savefig(results_dir + rf'\Fidelities.pdf')
 
 plt.show()
