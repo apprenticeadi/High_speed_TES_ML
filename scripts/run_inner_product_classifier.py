@@ -30,7 +30,7 @@ bs_ratio_error = 0.73315
 pm_reading = 8.710 * 1e-6  # W
 pm_reading_error = 0.01 * 1e-6
 
-est_mean_ph, est_error = TomoUtils.estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, pm_error=pm_reading_error, bs_error=bs_ratio_error)
+est_mean_ph, est_error = estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, pm_error=pm_reading_error, bs_error=bs_ratio_error)
 print(rf'Estimated mean photon number = {est_mean_ph} with error= {est_error}')
 
 '''Read data '''
