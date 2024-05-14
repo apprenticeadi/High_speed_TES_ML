@@ -5,21 +5,23 @@ import matplotlib.transforms as mtransforms
 from src.data_reader import DataReader
 from src.utils import DFUtils
 from tes_resolver.traces import Traces
+from tes_resolver.data_chopper import DataChopper
 
-dataReader = DataReader('RawData')
+dataReader = DataReader(r'\Data\RawData_2023_07')
 
 data_group = 'raw_8'
 
-save_dir = r'../../Plots/trace_plots'
+# save_dir = r'../../Plots/trace_plots'
 
 data100_raw = dataReader.read_raw_data(data_group, rep_rate=100)
-refTraces = Traces(100, data100_raw, parse_data=True, trigger=0)
+refTraces = Traces(100, data100_raw, parse_data=True, trigger_delay=0)
 data100 = refTraces.data
 
 high_freq = 700
 period = int(5e4  / high_freq)
 data_high_raw = dataReader.read_raw_data(data_group, rep_rate=high_freq)
-highTraces = Traces(high_freq, data_high_raw, parse_data=True, trigger='automatic')
+trigger_delay = DataChopper.find_trigger(data_high_raw, samples_per_trace= period)
+highTraces = Traces(high_freq, data_high_raw, parse_data=True, trigger_delay=trigger_delay)
 data_high = highTraces.data
 
 '''Plot trace trains'''
@@ -46,8 +48,7 @@ data_high_to_plot = data_high[:2*to_show].reshape((to_show, 2*period))
 
 fontsize = 14
 # plot together
-fig, axs = plt.subplot_mosaic([['(a) 100kHz', f'(b) {high_freq}kHz']],
-                              figsize=(10,3), layout='constrained')
+fig, axs = plt.subplot_mosaic([['(a) 100kHz'], [f'(b) {high_freq}kHz']], figsize=(8,6), layout='constrained', sharey=True)
 # plt.subplots_adjust(hspace=0.5, wspace=0.)
 
 for label, ax in axs.items():
@@ -68,7 +69,7 @@ for i in range(to_show):
     ax2.plot(np.arange(data_high_to_plot.shape[1])*20/1000, data_high_to_plot[i], alpha=0.05)
 ax2.set_xlabel(r'$\mu s$', fontsize=fontsize)
 ax2.set_ylim(-1000, 20000)
-ax2.set_yticks([])
+# ax2.set_yticks([])
 ax2.set_xlim(0, 2*period*20/1000)
 ax2.tick_params(labelsize=fontsize-2)
 
