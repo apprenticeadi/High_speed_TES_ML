@@ -17,7 +17,7 @@ data100_raw = dataReader.read_raw_data(data_group, rep_rate=100)
 refTraces = Traces(100, data100_raw, parse_data=True, trigger_delay=0)
 data100 = refTraces.data
 
-high_freq = 700
+high_freq = 800
 period = int(5e4  / high_freq)
 data_high_raw = dataReader.read_raw_data(data_group, rep_rate=high_freq)
 trigger_delay = DataChopper.find_trigger(data_high_raw, samples_per_trace= period)
@@ -58,7 +58,7 @@ ax1 = axs['(a) 100kHz']
 for i in range(to_show):
     ax1.plot(np.arange(data100_to_plot.shape[1])*20/1000, data100_to_plot[i],alpha=0.05)
 ax1.set_xlabel(r'$\mu s$', fontsize=fontsize)
-ax1.set_ylabel(r'$\mu V$', fontsize=fontsize)
+# ax1.set_ylabel(r'$\mu V$', fontsize=fontsize)  # this unit is probably not correct. need to divide alazar card range with resolution (should be 14bits)
 ax1.set_ylim(-1000, 20000)
 ax1.set_xlim(0, 20)
 ax1.set_xticks(np.arange(0, 20, 5))
