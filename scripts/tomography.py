@@ -23,7 +23,7 @@ modeltype = 'RF'
 alphabet = list(string.ascii_lowercase)
 
 powers = np.arange(11)
-rep_vals = np.arange(100, 1100, 100)
+rep_vals = [100, 500, 800] #  np.arange(100, 900, 100)
 
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 results_dir = rf'..\Results\Tomography_data_2024_04\tomography_{time_stamp}'
@@ -32,8 +32,8 @@ params_dir = rf'..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 
 '''Define truncation'''
-max_input = 8  # truncated input number, will keep a max_input+1+
-max_detected = 8  # truncated detected number, will keep a max_detected+1+
+max_input = 16 # truncated input number, will keep a max_input+1+
+max_detected = 16 # truncated detected number, will keep a max_detected+1+
 assert max_input >= max_detected
 
 indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
@@ -63,7 +63,8 @@ logging.info(f'Run tomography on data from power_{powers}, rep rates = {rep_vals
              # f'Input light characterised by 100kHz inner product method instead of power meter. '
              )
 
-fig, axs = plt.subplots(2, 5, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(15,7))
+# fig, axs = plt.subplots(2, 4, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(15,7))
+fig, axs = plt.subplots(1, 3, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(12, 4))
 axs = axs.flatten()
 
 final_costs = np.zeros(len(rep_vals))
@@ -80,7 +81,8 @@ for i_rep, rep_rate in enumerate(rep_vals):
     probs = np.zeros((len(powers), max_detected + 2))  # later transposed, last column is for all photons beyond max_detected+1.
     mean_pns = np.zeros(len(powers))
     for i_power, power in enumerate(powers):
-        mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
+        # mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
+        mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == 100), 'ip_classifier_av_pn'].iloc[0]
 
         df = pd.read_csv(params_dir + rf'\{modeltype}\{modeltype}_results_power_{power}.csv')
         pn = np.array(df.loc[df['rep_rate'] == rep_rate, '0':].iloc[0])  # the resolved photon number distribution
@@ -155,8 +157,10 @@ for i_rep, rep_rate in enumerate(rep_vals):
     ax.set_yticklabels(indices)
 
     # ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={fidelity:.3g}, final cost={optimal_value:.2g}')
-    ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz', loc='left')
-
+    if rep_rate==100:
+        ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz', loc='left')
+    else:
+        ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={np.mean(rel_fidelities[:, i_rep])*100:.2f}%', loc='left')
     # fig.savefig(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta_cmap.pdf'))
 
 cbar = fig.colorbar(pc, ax=axs.ravel().tolist())
