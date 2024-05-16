@@ -56,8 +56,8 @@ docs/_build/
 .DS_Store
 
 /Plots/
-/RawData/
-/Scripts/models2/
+/Data/
+/dev_Scripts/models2/
 /Results/
 /drafts/
 /Params/
