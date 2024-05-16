@@ -14,7 +14,7 @@ import tes_resolver.config as config
 
 '''Parameters'''
 cal_rep_rate = 100  # the rep rate to generate training
-high_rep_rates = np.arange(200, 1100, 100)  # the higher rep rates to predict
+high_rep_rates = [100] # np.arange(200, 1100, 100)  # the higher rep rates to predict
 
 # ML parameters
 modeltype='RF'
@@ -23,14 +23,11 @@ test_size=0.1
 # read data
 sampling_rate = 5e4
 dataReader = DataReader('Data/Tomography_data_2024_04')
-powers = np.arange(12)
+powers =  np.arange(1, 12)
 data_groups = np.array([f'power_{p}' for p in powers])
 
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
-    # save data
-    results_dir = os.path.join(config.home_dir, '..', 'Results', 'Tomography_data_2024_4', f'{modeltype}', f'{data_group}_{config.time_stamp}')
-    # results_dir = rf'..\..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
 
     '''Read the calibration data'''
     cal_data = dataReader.read_raw_data(data_group, cal_rep_rate)
@@ -49,22 +46,12 @@ for data_group in data_groups:
     pns, cal_distrib = calTraces.pn_distribution(normalised=True)
     print(f'PN distribution is {cal_distrib}')
 
-    # Result file
+    '''Result file'''
+    results_dir = os.path.join(config.home_dir, '..', 'Results', 'Tomography_data_2024_04', f'{modeltype}', f'{data_group}_{config.time_stamp}')
+    # results_dir = rf'..\..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     # results_df.loc[0] = [cal_rep_rate, calTraces.num_traces, np.nan, t2-t1, t3-t2] + list(cal_distrib)
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
-
-    '''Plot the calibration data stegosaurus'''
-    # fig1, ax1 = plt.subplots(layout='constrained', figsize=(12,8))
-    # overlaps = ipClassifier.calc_inner_prod(calTraces)
-    # ax1.hist(overlaps, bins=ipClassifier.num_bins, alpha=1, label=data_group)
-    # ip_bins = ipClassifier.inner_prod_bins
-    # for pn in ip_bins.keys():
-    #     ax1.axvline(ip_bins[pn], ymin=0, ymax=0.25, ls='dashed', color='black')
-    # ax1.set_xlabel('Inner product')
-    # ax1.set_ylabel('Occurences')
-    # ax1.set_title(f'IPClassifier trained by {ip_training_group}')
-    # plt.show()
 
     '''Remove the baseline for calibration traces'''
     cal_baseline = calTraces.find_offset()
@@ -72,36 +59,48 @@ for data_group in data_groups:
 
     '''ML for higher rep rates'''
     for i_rep, high_rep_rate in enumerate(high_rep_rates):
+        print('')
+        if high_rep_rate == cal_rep_rate:
+            # use half the 100kHz data to train classifier, classifier to predict the rest
+            training_data = calTraces.data[:calTraces.num_traces // 2]
+            training_labels = calTraces.labels[:len(training_data)]
+            trainingTraces = Traces(high_rep_rate, training_data, labels=training_labels, parse_data=False)
 
-        '''Load actual traces'''
-        ti = time.time()
-        actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
+            actual_data = calTraces.data[calTraces.num_traces // 2:]
+            actualTraces = Traces(high_rep_rate, actual_data, parse_data=False)
 
-        # set suitable trigger delay
-        if high_rep_rate <= 300:
-            trigger_delay = 0
+            print(f'Load first half of {high_rep_rate}kHz traces as training data, use classifier to predict second half')
+
         else:
-            trigger_delay = DataChopper.find_trigger(actual_data, samples_per_trace=int(sampling_rate/high_rep_rate))
+            '''Load actual traces'''
+            ti = time.time()
+            actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
 
-        actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay=trigger_delay)
-        tf = time.time()
-        print(f'Load high rep rate data into traces took {tf-ti}s')
+            # set suitable trigger delay
+            if high_rep_rate <= 300:
+                trigger_delay = 0
+            else:
+                trigger_delay = DataChopper.find_trigger(actual_data, samples_per_trace=int(sampling_rate/high_rep_rate))
 
-        '''Generate training'''
-        ti = time.time()
-        trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay=trigger_delay)
+            actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay=trigger_delay)
+            tf = time.time()
+            print(f'Load high rep rate data into traces took {tf-ti}s')
 
-        # correct for the vertical shift
-        offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
-        trainingTraces.data = trainingTraces.data - offset
-        tf = time.time()
-        print(f'Generate training traces took {tf-ti}s')
+            '''Generate training'''
+            ti = time.time()
+            trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay=trigger_delay)
+
+            # correct for the vertical shift
+            offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
+            trainingTraces.data = trainingTraces.data - offset
+            tf = time.time()
+            print(f'Generate training traces took {tf-ti}s')
 
         '''ML Classifier'''
         t1 = time.time()
         mlClassifier = TabularClassifier(modeltype, test_size=test_size)
 
-        print(f'\nTraining ml classifier for {high_rep_rate}kHz')
+        print(f'Training ml classifier for {high_rep_rate}kHz')
         mlClassifier.train(trainingTraces)
         t2 = time.time()
 
