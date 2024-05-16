@@ -8,12 +8,11 @@ from src.utils import DFUtils, poisson_norm, tvd
 
 powers = np.arange(0, 12, 1)
 rep_rates = np.arange(100, 1100, 100)
-modeltype='RF'
+modeltype='IP'
 
-
-special_power = 10
-special_reprate = 500
-special_reprate2 = 1000
+special_power = 0
+special_reprate = 300
+special_reprate2 = 500
 
 params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
@@ -39,7 +38,7 @@ ax1 = axs['(a)']
 ax2 = axs['(b)']
 
 mean_photons = {}
-for i, power in enumerate(powers):
+for power in powers:
 
     df = results_dict[power]
 
@@ -49,6 +48,7 @@ for i, power in enumerate(powers):
 
     for i, rep_rate in enumerate(rep_rates):
         tes_distrib = np.array(df.loc[df['rep_rate'] == int(rep_rate), '0':].iloc[0])
+        tes_distrib = np.nan_to_num(tes_distrib)  # nan to 0s.
         labels = np.arange(len(tes_distrib))
 
         # power meter mean photon number
