@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-
+import os
 import pandas as pd
 
 from tes_resolver.ml_funcs import generate_training_traces
@@ -29,7 +29,8 @@ data_groups = np.array([f'power_{p}' for p in powers])
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
     # save data
-    results_dir = rf'..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
+    results_dir = os.path.join(config.home_dir, '..', 'Results', 'Tomography_data_2024_4', f'{modeltype}', f'{data_group}_{config.time_stamp}')
+    # results_dir = rf'..\..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
 
     '''Read the calibration data'''
     cal_data = dataReader.read_raw_data(data_group, cal_rep_rate)
@@ -50,7 +51,7 @@ for data_group in data_groups:
 
     # Result file
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
-    results_df.loc[0] = [cal_rep_rate, calTraces.num_traces, np.nan, t2-t1, t3-t2] + list(cal_distrib)
+    # results_df.loc[0] = [cal_rep_rate, calTraces.num_traces, np.nan, t2-t1, t3-t2] + list(cal_distrib)
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
     '''Plot the calibration data stegosaurus'''
@@ -119,7 +120,7 @@ for data_group in data_groups:
         print(f'Predicted pn distribution = {yvals}')
 
         '''Save results'''
-        results_df.loc[i_rep + 1] = [high_rep_rate, actualTraces.num_traces, accuracy, t2-t1, t4-t3] + list(yvals)
+        results_df.loc[i_rep] = [high_rep_rate, actualTraces.num_traces, accuracy, t2-t1, t4-t3] + list(yvals)
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
         mlClassifier.save(filename=rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz', filedir=results_dir + r'\saved_classifiers')
