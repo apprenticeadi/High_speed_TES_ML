@@ -107,7 +107,10 @@ class InnerProductClassifier(Classifier):
                 es_lower = end_of_identifiable
 
                 remaining_overlaps = overlaps[np.where(overlaps >= es_lower)]
-                rem_heights, rem_bins = np.histogram(remaining_overlaps, bins=len(remaining_overlaps) // 5)
+                rem_num_bins = len(remaining_overlaps) // 5
+                if rem_num_bins < 1 :
+                    rem_num_bins = 1
+                rem_heights, rem_bins = np.histogram(remaining_overlaps, bins=rem_num_bins)
                 rem_troughs, _ = find_peaks(- rem_heights)
 
                 if len(rem_troughs) >= 1:
