@@ -8,7 +8,7 @@ from src.utils import DFUtils, poisson_norm, tvd
 
 powers = [1, 5, 8, 10]
 rep_rates = np.arange(100, 900, 100)
-modeltype='RF'
+modeltype='IP'
 
 special_power = 5
 special_reprate = 700
@@ -51,8 +51,9 @@ for power in powers:
         tes_distrib = np.nan_to_num(tes_distrib)  # nan to 0s.
         labels = np.arange(len(tes_distrib))
 
-        # power meter mean photon number
-        pm_mu = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
+        # power meter mean photon number/ or maybe the 100kHz mean photon for that power
+        # pm_mu = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
+        pm_mu = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == 100), 'ip_classifier_av_pn'].iloc[0]
         pm_distrib = poisson_norm(labels, pm_mu)
 
         tvds[i] = tvd(tes_distrib, pm_distrib)
