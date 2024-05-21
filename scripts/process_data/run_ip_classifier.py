@@ -17,8 +17,10 @@ import tes_resolver.config as config
 # data parameters
 sampling_rate = 5e4
 dataReader = DataReader('Data/Tomography_data_2024_04')
-powers = np.arange(1, 12)
+powers = np.arange(0, 12)
 data_groups = np.array([f'power_{p}' for p in powers])  # different groups of coherent states
+
+config.time_stamp = r'2024-05-15(19-27-44.036789)'
 
 rep_rates = np.arange(100, 1100, 100)  # the higher rep rates to predict
 
@@ -33,7 +35,7 @@ for data_group in data_groups:
 
     # Result file
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'])
-    results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
+    # results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
     # Plotting
     fig, axs = plt.subplot_mosaic(mosaic, sharex=True, sharey=True, figsize=(20, 8), layout='constrained')
@@ -66,7 +68,7 @@ for data_group in data_groups:
         # Predict
         print(f'Making predictions for {actualTraces.num_traces} traces')
         t3 = time.time()
-        ipClassifier.predict(actualTraces, update=True)
+        raw_labels = ipClassifier.predict(actualTraces, update=True)
         t4 = time.time()
         print(f'Training finished after {t2-t1}s. Prediction finished after {t4-t3}s. ')
 
@@ -82,8 +84,9 @@ for data_group in data_groups:
             else:
                 results_df[label] = i_rep * [0.] + [predicted_distrib[i_label]]
 
-
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
+
+        np.save(results_dir + rf'\{modeltype}_{data_group}_{rep_rate}kHz_raw_labels.npy', raw_labels)
 
         # Plot stegosaurus
         ax = axs[rep_rate]
