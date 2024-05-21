@@ -6,13 +6,13 @@ from scipy.special import factorial
 from src.utils import DFUtils, poisson_norm, tvd
 
 
-powers = np.arange(0, 12, 1)
-rep_rates = np.arange(100, 1100, 100)
-modeltype='IP'
+powers = [1, 5, 8, 10]
+rep_rates = np.arange(100, 900, 100)
+modeltype='RF'
 
-special_power = 0
-special_reprate = 300
-special_reprate2 = 500
+special_power = 5
+special_reprate = 700
+special_reprate2 = 800
 
 params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
