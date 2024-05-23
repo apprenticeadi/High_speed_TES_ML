@@ -22,7 +22,7 @@ from src.utils import LogUtils, DFUtils
 script to perform a tomography routine on the probabilities, using the cvxpy package
 '''
 
-params_dir = rf'..\Results\Tomography_data_2024_04\Params'
+params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 
 def tomography(probs, F_matrix, guess_theta):
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     guess_efficiency = 0.93
 
     time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-    results_dir = rf'..\Results\Tomography_data_2024_04\tomography\tomography_on_{modeltype}_{time_stamp}'
+    results_dir = params_dir + rf'..\tomography\tomography_on_{modeltype}_{time_stamp}'
 
     '''Define truncation'''
     max_input = 8 # truncated input number, will keep a max_input+1+
