@@ -1,3 +1,5 @@
+import warnings
+
 from scipy.special import factorial
 import numpy as np
 import pandas as pd
@@ -23,17 +25,20 @@ modeltype = 'RF'
 alphabet = list(string.ascii_lowercase)
 
 powers = np.arange(11)
-rep_vals = [100, 500, 800] #  np.arange(100, 900, 100)
+rep_vals = np.arange(100, 900, 100)
+plot_mosaic = rep_vals.reshape((2, 4))  # np.atleast_2d(rep_vals)  #
+
+compare_with_pm = True  # if true, compare with power meter estimated state, else compare with 100kHz IP state
 
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-results_dir = rf'..\Results\Tomography_data_2024_04\tomography_{time_stamp}'
+results_dir = rf'..\Results\Tomography_data_2024_04\tomography\tomography_on_{modeltype}_{time_stamp}'
 
 params_dir = rf'..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 
 '''Define truncation'''
-max_input = 16 # truncated input number, will keep a max_input+1+
-max_detected = 16 # truncated detected number, will keep a max_detected+1+
+max_input = 8 # truncated input number, will keep a max_input+1+
+max_detected = 8 # truncated detected number, will keep a max_detected+1+
 assert max_input >= max_detected
 
 indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
@@ -45,7 +50,7 @@ Theta_nm is the probability that the detector measures n photon, given m photon 
 sum over column should be normalised to 1
 Define guess values
 '''
-guess_efficiency = 0.95
+guess_efficiency = 0.93
 guess_theta = np.zeros((max_detected + 2, max_input + 2))
 for i in range(guess_theta.shape[0]):
     if i < max_detected + 1:
@@ -59,13 +64,17 @@ guess_df.to_csv(DFUtils.create_filename(results_dir + rf'\guess_theta.csv'))
 '''Logging'''
 LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
 logging.info(f'Run tomography on data from power_{powers}, rep rates = {rep_vals}, processed with {modeltype} classifier. For tomography, '
-             f'input photon number truncated at max_input={max_input}, detected photon number truncated at max_detected={max_detected}. '
-             # f'Input light characterised by 100kHz inner product method instead of power meter. '
-             )
+             f'input photon number truncated at max_input={max_input}, detected photon number truncated at max_detected={max_detected}. ')
+
+if compare_with_pm:
+    logging.info('Input state characterised by power meter')
+else:
+    # logging.info('Input state characterised by TES inner product classifier at 100kHz')
+    logging.info('Input state characterised by TES inner product classifier at the respective rep rate')
 
 # fig, axs = plt.subplots(2, 4, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(15,7))
-fig, axs = plt.subplots(1, 3, squeeze=True, sharey=True, sharex=True, layout='constrained', figsize=(12, 4))
-axs = axs.flatten()
+fig, axs = plt.subplot_mosaic(plot_mosaic, sharey=True, sharex=True, layout='constrained', figsize=(15, 7))
+
 
 final_costs = np.zeros(len(rep_vals))
 fidelities = np.zeros((max_detected+2, len(rep_vals)))  # fidelity with respect to ideal (delta function)
@@ -81,19 +90,27 @@ for i_rep, rep_rate in enumerate(rep_vals):
     probs = np.zeros((len(powers), max_detected + 2))  # later transposed, last column is for all photons beyond max_detected+1.
     mean_pns = np.zeros(len(powers))
     for i_power, power in enumerate(powers):
-        # mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
-        mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == 100), 'ip_classifier_av_pn'].iloc[0]
+        if compare_with_pm:
+            mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
+        else:
+            mean_pns[i_power] = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == 100), 'ip_classifier_av_pn'].iloc[0]
+
+        # mean_df = pd.read_csv(params_dir + rf'\..\IP_distributions\power_{power}\means_and_tvds.csv')
+        # mean_pns[i_power] = mean_df.loc[mean_df['rep_rate'] == rep_rate, 'means'].iloc[0]
 
         df = pd.read_csv(params_dir + rf'\{modeltype}\{modeltype}_results_power_{power}.csv')
         pn = np.array(df.loc[df['rep_rate'] == rep_rate, '0':].iloc[0])  # the resolved photon number distribution
-        if len(pn) <= max_input + 2:
+        if len(pn) <= max_detected + 2:
             probs[i_power, :len(pn)] = pn
         else:
-            probs[i_power, :-1] = pn[:max_input+1]
-            probs[i_power, -1] = np.sum(pn[max_input+1:])
+            probs[i_power, :-1] = pn[:max_detected+1]
+            probs[i_power, -1] = np.sum(pn[max_detected+1:])
 
+    probs = np.nan_to_num(probs)
     probs = probs.T
 
+    probs_df = pd.DataFrame(data=probs, index=indices, columns=[f'power_{p_ind}' for p_ind in powers])
+    probs_df.to_csv(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_probs.csv'))
     '''
     Calculate F matrix, dimension (M+2)*S, where M is the max_input. 
     F_ms is the theoretical (Poissonian) probability of inputting m photons from coherent light with power s=|alpha|^2. 
@@ -106,6 +123,8 @@ for i_rep, rep_rate in enumerate(rep_vals):
         F[i_power, -1] = 1 - np.sum(F[i_power, :-1])
     F = F.T
 
+    F_df = pd.DataFrame(data=F, index=columns, columns=[f'power_{p_ind}' for p_ind in powers])
+    F_df.to_csv(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_F_matrix.csv'))
     '''
     cvxpy least squares minimization, 
     cost function as a sum of squares
@@ -132,6 +151,8 @@ for i_rep, rep_rate in enumerate(rep_vals):
     theta_df.to_csv(results_dir + rf'\{rep_rate}kHz_theta.csv')
 
     '''Calculate fidelity'''
+    if max_input != max_detected:
+        warnings.warn('Fidelity calculation is wrong for non-square theta matrix')
     for i in range(max_detected+2):
         fidelities[i, i_rep] = estimated_theta[i,i] / np.sum(estimated_theta[i, :])
         rel_fidelities[i, i_rep] = np.sum(np.sqrt(theta_ref[i, :] * estimated_theta[i, :]))**2 / (np.sum(theta_ref[i, :]) * np.sum(estimated_theta[i, :]))
@@ -140,7 +161,7 @@ for i_rep, rep_rate in enumerate(rep_vals):
     create colour plot, using same blue to yellow colours as White paper
     '''
     # fig, ax = plt.subplots()
-    ax = axs[i_rep]
+    ax = axs[rep_rate]
 
     x = np.arange(estimated_theta.shape[1])
     y = np.arange(estimated_theta.shape[0])
@@ -157,13 +178,14 @@ for i_rep, rep_rate in enumerate(rep_vals):
     ax.set_yticklabels(indices)
 
     # ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={fidelity:.3g}, final cost={optimal_value:.2g}')
-    if rep_rate==100:
-        ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz', loc='left')
-    else:
-        ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={np.mean(rel_fidelities[:, i_rep])*100:.2f}%', loc='left')
+    # if rep_rate==100:
+    #     ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz', loc='left')
+    # else:
+    #     ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={np.mean(rel_fidelities[:, i_rep])*100:.2f}%', loc='left')
+    ax.set_title(rf'({alphabet[i_rep]}) {rep_rate}kHz, fidelity={np.mean(fidelities[:, i_rep]) * 100:.2f}%', loc='left')
     # fig.savefig(DFUtils.create_filename(results_dir + rf'\{rep_rate}kHz_theta_cmap.pdf'))
 
-cbar = fig.colorbar(pc, ax=axs.ravel().tolist())
+cbar = fig.colorbar(pc, ax=list(axs.values()))
 cbar.set_label(r'$|\theta_{nm}|$')
 fig.savefig(DFUtils.create_filename(results_dir + rf'\theta_cmap.pdf'))
 
