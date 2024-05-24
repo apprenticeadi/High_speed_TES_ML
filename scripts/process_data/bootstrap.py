@@ -13,20 +13,26 @@ powers = np.arange(12)
 rep_rates = np.arange(100, 1100, 100)
 modeltype = 'IP'
 
+bootstrap_for_mean = True
+
 params_dir = rf'..\..\Results\Tomography_data_2024_04\Params\{modeltype}'
 
 for power in powers:
     results_df = pd.read_csv(params_dir + fr'\{modeltype}_results_power_{power}.csv')
-
     pn_labels = np.arange(results_df.loc[:, '0':].shape[1])
 
-    n_errors_df = pd.DataFrame(columns= ['rep_rate'] + list(pn_labels))
-    p_errors_df = pd.DataFrame(columns= ['rep_rate'] + list(pn_labels))
+    if bootstrap_for_mean:
+        means_df = pd.DataFrame(columns=['rep_rate', 'mean_pn', 'n_error', 'p_error'])
+    else:
+        n_errors_df = pd.DataFrame(columns= ['rep_rate'] + list(pn_labels))
+        p_errors_df = pd.DataFrame(columns= ['rep_rate'] + list(pn_labels))
+
     for i_reprate, rep_rate in enumerate(rep_rates):
         num_traces = results_df.loc[results_df['rep_rate']==rep_rate, 'num_traces'].iloc[0]
         pn_distrib = np.array(results_df.loc[results_df['rep_rate'] == rep_rate, '0':].iloc[0])
         pn_distrib = np.nan_to_num(pn_distrib)
 
+        mean_pn = np.sum(pn_labels * pn_distrib)
         pn_counts = np.rint(pn_distrib * num_traces).astype(int)
 
         raw_labels_mimic = np.zeros(num_traces, dtype=int)
@@ -37,22 +43,30 @@ for power in powers:
 
         np.random.shuffle(raw_labels_mimic)
 
-        n_errors = np.zeros(len(pn_labels))
-        p_errors = np.zeros(len(pn_labels))
-        for pn in pn_labels:
-            if pn_distrib[pn] == 0:
-                pass
-            else:
-                data = raw_labels_mimic == pn
-                print(f'Bootstrapping for pn={pn} at {rep_rate}kHz, power_{power}')
-                res = bootstrap((data,), np.mean, confidence_level=0.95, batch=100, method='basic')
-                n_errors[pn] = pn_distrib[pn] - res.confidence_interval.low
-                p_errors[pn] = res.confidence_interval.high - pn_distrib[pn]
+        if bootstrap_for_mean:
+            print(f'Bootstrapping for mean_pn at {rep_rate}kHz, power_{power}')
+            res = bootstrap((raw_labels_mimic,), np.mean, confidence_level=0.95, batch=100, method='basic')
+            means_df.loc[i_reprate] = [rep_rate, mean_pn, mean_pn - res.confidence_interval.low, res.confidence_interval.high - mean_pn]
 
-        n_errors_df.loc[i_reprate] = [rep_rate] + list(n_errors)
-        p_errors_df.loc[i_reprate] = [rep_rate] + list(p_errors)
+            means_df.to_csv(DFUtils.create_filename(params_dir + rf'\bootstrapped_means\{modeltype}_results_power_{power}.csv'))
 
-    n_errors_df.to_csv(DFUtils.create_filename(params_dir + rf'\bootstrapped\{modeltype}_results_power_{power}_n_error.csv'))
-    p_errors_df.to_csv(params_dir + rf'\bootstrapped\{modeltype}_results_power_{power}_p_error.csv')
+        else:
+            n_errors = np.zeros(len(pn_labels))
+            p_errors = np.zeros(len(pn_labels))
+            for pn in pn_labels:
+                if pn_distrib[pn] == 0:
+                    pass
+                else:
+                    data = raw_labels_mimic == pn
+                    print(f'Bootstrapping for pn={pn} at {rep_rate}kHz, power_{power}')
+                    res = bootstrap((data,), np.mean, confidence_level=0.95, batch=100, method='basic')
+                    n_errors[pn] = pn_distrib[pn] - res.confidence_interval.low
+                    p_errors[pn] = res.confidence_interval.high - pn_distrib[pn]
+
+            n_errors_df.loc[i_reprate] = [rep_rate] + list(n_errors)
+            p_errors_df.loc[i_reprate] = [rep_rate] + list(p_errors)
+
+            n_errors_df.to_csv(DFUtils.create_filename(params_dir + rf'\bootstrapped\{modeltype}_results_power_{power}_n_error.csv'))
+            p_errors_df.to_csv(params_dir + rf'\bootstrapped\{modeltype}_results_power_{power}_p_error.csv')
 
 
