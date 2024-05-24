@@ -90,3 +90,5 @@ ax2.plot(pm_mean_pns, myoutput.beta[0] * pm_mean_pns, ls='dashed', label='Fit')
 ax2.legend()
 
 plt.show()
+
+myoutput.pprint()
