@@ -40,8 +40,8 @@ def tomography(probs, F_matrix, guess_theta):
     t1 = time.time()
     optimal_cost = problem.solve()
     t2 = time.time()
-    msg = f'For {rep_rate}kHz, min squares routine finish after {t2 - t1}s, optimal_value = {optimal_cost}'
-    logging.info(msg)
+    # msg = f'For {rep_rate}kHz, min squares routine finish after {t2 - t1}s, optimal_value = {optimal_cost}'
+    # logging.info(msg)
 
     return theta.value, optimal_cost
 
