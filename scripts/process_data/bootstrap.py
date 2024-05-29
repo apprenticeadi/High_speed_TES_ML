@@ -11,9 +11,9 @@ from scipy.stats import bootstrap
 
 powers = np.arange(12)
 rep_rates = np.arange(100, 1100, 100)
-modeltype = 'IP'
+modeltype = 'RF'
 
-bootstrap_for_mean = True
+bootstrap_for_mean = False
 
 params_dir = rf'..\..\Results\Tomography_data_2024_04\Params\{modeltype}'
 
@@ -29,6 +29,7 @@ for power in powers:
 
     for i_reprate, rep_rate in enumerate(rep_rates):
         num_traces = results_df.loc[results_df['rep_rate']==rep_rate, 'num_traces'].iloc[0]
+        num_traces = int(num_traces)
         pn_distrib = np.array(results_df.loc[results_df['rep_rate'] == rep_rate, '0':].iloc[0])
         pn_distrib = np.nan_to_num(pn_distrib)
 

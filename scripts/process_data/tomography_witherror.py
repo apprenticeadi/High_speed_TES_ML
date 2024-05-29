@@ -1,20 +1,21 @@
 import time
-
 import numpy as np
-import matplotlib.pyplot as plt
 import datetime
 import pandas as pd
 import logging
 from scipy.special import factorial
+import string
+
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 
 from tomography import params_dir, log_df, tomography, construct_guess_theta, fidelity_by_n
 from src.utils import DFUtils, LogUtils
 
-
-modeltype = 'IP'
+modeltype = 'RF'
 powers = np.arange(11)
 rep_vals = np.arange(100, 900, 100)
-repeat = 10
+repeat = 100
 
 guess_efficiency = 0.93
 pm_error = 0.046
@@ -23,8 +24,8 @@ time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 results_dir = params_dir + rf'\..\tomography\witherror\tomography_on_{modeltype}_{time_stamp}'
 
 '''Define truncation'''
-max_input = 8
-max_detected = 8
+max_input = 16
+max_detected = 16
 assert max_input >= max_detected
 
 indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
@@ -35,6 +36,9 @@ guess_theta = construct_guess_theta(guess_efficiency, max_detected, max_input)
 guess_df = pd.DataFrame(data=guess_theta, index=indices, columns=columns)
 guess_df.to_csv(DFUtils.create_filename(results_dir + rf'\guess_theta.csv'))
 
+ideal_theta = construct_guess_theta(1., max_detected, max_input)
+ref_theta = guess_theta  # for relative fidelity calculation
+
 '''Logging'''
 LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
 logging.info(
@@ -44,8 +48,19 @@ logging.info(
     f'Tomography is repeated for {repeat} times to give errorbars. \n'
     f'For tomography, input photon number truncated at max_input={max_input}, detected photon number truncated at max_detected={max_detected}. ')
 
-fig = plt.figure(figsize=(16, 8))
+'''Figure'''
+fig = plt.figure(figsize=(18, 8))
+width = 0.4  # 3d bar plot width
+depth = 0.2  # 3d bar plot depth
+
+cmap = plt.get_cmap()
+norm = Normalize(vmin=0., vmax=1.)
+alphabet = list(string.ascii_lowercase)
+
+'''Iterate over rep rates'''
 final_costs = np.zeros((len(rep_vals), repeat))
+fidelities = np.zeros((len(rep_vals), repeat, max_detected + 2))  # fidelity with ideal POVM
+rel_fidelities = np.zeros((len(rep_vals)-1, repeat, max_detected + 2))  # fidelity with average 100kHz POVM
 for i_rep, rep_rate in enumerate(rep_vals):
 
     '''Read in input state and detected probabilities'''
@@ -85,6 +100,7 @@ for i_rep, rep_rate in enumerate(rep_vals):
     '''Repeat tomography routine for multiple times with different errors'''
     estimated_thetas = np.zeros((repeat, guess_theta.shape[0], guess_theta.shape[1]))
     optimal_costs = np.zeros(repeat)
+    t1 = time.time()
     for i_repeat in range(repeat):
 
         '''Gaussian error on input state'''
@@ -102,12 +118,23 @@ for i_rep, rep_rate in enumerate(rep_vals):
             F_matrix[-1, i_power] = 1 - np.sum(F_matrix[:-1, i_power])
 
         '''Tomography'''
-        t1 = time.time()
-        estimated_thetas[i_repeat], optimal_costs[i_repeat] = tomography(er_probs, F_matrix, guess_theta)
-        t2 = time.time()
-        logging.info(f'{i_repeat} repeat for {rep_rate}kHz, tomography finished after {t2-t1}s with optimal_cost={optimal_costs[i_repeat]}')
+        theta_rec, optimal_costs[i_repeat] = tomography(er_probs, F_matrix, guess_theta)
+        estimated_thetas[i_repeat] = theta_rec
 
+        '''Calculate fidelity'''
+        fidelities[i_rep, i_repeat, :] = fidelity_by_n(theta_rec, ideal_theta)
+        if rep_rate > 100:
+            rel_fidelities[i_rep-1, i_repeat, :] = fidelity_by_n(theta_rec, ref_theta)
+
+    t2 = time.time()
+    logging.info(f'{repeat} repeats for {rep_rate}kHz, tomography finished after {t2-t1}s with average optimal_cost={np.mean(optimal_costs)}')
+
+    # final cost
     final_costs[i_rep] = optimal_costs
+
+    # relative fidelity
+    if rep_rate == 100:
+        ref_theta = np.mean(estimated_thetas, axis=0)
 
     # save estimated thetas
     np.save(results_dir + rf'\{rep_rate}kHz_estimated_thetas.npy', estimated_thetas)
@@ -115,35 +142,87 @@ for i_rep, rep_rate in enumerate(rep_vals):
     theta_mean = np.mean(estimated_thetas, axis=0)
     theta_std = np.std(estimated_thetas, axis=0)
 
-    ax = fig.add_subplot(2, 4, i_rep+1, projection='3d')
+    '''Plot POVM'''
+    ax = fig.add_subplot(2,4, i_rep+1, projection='3d')
 
     _x = np.arange(theta_mean.shape[1])
     _y = np.arange(theta_mean.shape[0])
     _xx, _yy = np.meshgrid(_x, _y)
     x, y = _xx.ravel(), _yy.ravel()
 
-    ax.bar3d(x-0.5, y, np.zeros_like(theta_mean).ravel(), 1, 0, theta_mean.ravel(), shade=True, color='cornflowerblue', alpha=0.6)
+    colors = cmap(norm(theta_mean.ravel()))
+    ax.bar3d(x - width/2, y - depth/2, np.zeros_like(theta_mean).ravel(), width, depth, theta_mean.ravel(), shade=True, color=colors, alpha=0.8)
 
     for i, j in zip(x,y):
-        ax.plot([i,i], [j,j], [theta_mean[i,j] - theta_std[i,j], theta_mean[i,j] + theta_std[i,j]], marker='_', color='red')
+        low = np.max([theta_mean[j,i] - theta_std[j,i], 0.])
+        high = np.min([1., theta_mean[j,i] + theta_std[j,i]])
+        if high-low > 0.1:
+            ax.plot([i,i], [j,j], [low, high], marker='_', color='red')
 
     ax.set_zlim(0,1)
     ax.set_xticks(_x)
     ax.set_xticklabels(columns)
     ax.set_xlabel('Input photon')
+    ax.tick_params(axis='x', which='major', pad=-3)
+    ax.xaxis.labelpad = -5
 
     ax.set_yticks(_y)
-    ax.set_yticklabels(indices)
+    ax.set_yticklabels(indices, verticalalignment='baseline', horizontalalignment='left')
     ax.set_ylabel('Detected photon')
+
+    ax.set_title(f'({alphabet[i_rep]}) {rep_rate}kHz')
 
 fig.savefig(results_dir + rf'\theta_3d_with_errors.pdf')
 
 np.save(results_dir + rf'\final_costs.npy', final_costs)
+np.save(results_dir + rf'\abs_fidelities_by_n.npy', fidelities)  # fidelity with ideal POVM
+np.save(results_dir + rf'\rel_fidelities_by_n.npy', rel_fidelities)  # relative fidelity with 100kHz
+
+
+'''Plot absolute fidelity'''
+av_fidelities = np.mean(fidelities, axis=1)[::-1]  # average over the repeats.
+std_fidelities = np.std(fidelities, axis=1)[::-1]
+
+fig2 = plt.figure(figsize=(6,6))
+ax2 = fig2.add_subplot(111, projection='3d')
+
+_x2 = np.arange(av_fidelities.shape[1])  # number of detected photons
+_y2 = np.arange(av_fidelities.shape[0])  # number of rep rates
+_xx2, _yy2 = np.meshgrid(_x2, _y2)
+x2, y2 = _xx2.ravel(), _yy2.ravel()
+
+ax2.bar3d(x2 - width/2, y2 - depth/2, np.zeros_like(av_fidelities).ravel(), width, depth, av_fidelities.ravel(), shade=True, color=cmap(norm(av_fidelities.ravel())), alpha=0.8)
+for i, j in zip(x2, y2):
+    low = np.max([av_fidelities[j, i] - std_fidelities[j, i], 0.])
+    high = np.min([1., av_fidelities[j, i] + std_fidelities[j, i]])
+    ax2.plot([i, i], [j, j], [low, high], marker='_', color='red')
+
+ax2.set_zlim(0,1)
+ax2.set_xticks(_x2)
+ax2.set_xticklabels(columns)
+ax2.set_xlabel('Detected photon')
+
+ax2.set_yticks(_y2)
+ax2.set_yticklabels(rep_vals[::-1], verticalalignment='baseline', horizontalalignment='left')
+ax2.set_ylabel('Rep rate (kHz)')
+
+fig2.savefig(results_dir + rf'\absolute_fidelity_by_n.pdf')
+
+'''Plot relative fidelity'''
+fidelity_calculation_cutoff_n = max_detected
+av_rel_fidelities = np.mean(rel_fidelities[:, :, :fidelity_calculation_cutoff_n+1], axis=2)  # average over n
+
+av_rel_fidelity = np.mean(av_rel_fidelities, axis=1)  # average over repeats
+std_rel_fidelity = np.std(av_rel_fidelities, axis=1)
+
+fig3, ax3 = plt.subplots()
+ax3.errorbar(rep_vals[1:], av_rel_fidelity, yerr=std_rel_fidelity, fmt='.', ls='None')
+ax3.set_xticks(rep_vals[1:])
+ax3.set_xlabel('Rep rate (kHz)')
+ax3.set_ylabel('Fidelity')
+ax3.set_title('Relative fidelity')
+ax3.set_ylim(0,1)
+fig3.savefig(results_dir + rf'\relative_fidelity.pdf')
 
 plt.show()
-
-
-
-
-# TODO: sample a probs from bootstrapping result, and an F from Gaussian distribution of mean photon number (error on attenuation from repeatibility and linearity of PM, error on PM reading from calibration error). Run tomography many times and save them. Plot 3D bar plot with error bars.
 
