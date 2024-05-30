@@ -81,7 +81,7 @@ if __name__ == '__main__':
     guess_efficiency = 0.93
 
     time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-    results_dir = params_dir + rf'..\tomography\tomography_on_{modeltype}_{time_stamp}'
+    results_dir = params_dir + rf'\..\tomography\tomography_on_{modeltype}_{time_stamp}'
 
     '''Define truncation'''
     max_input = 8 # truncated input number, will keep a max_input+1+
