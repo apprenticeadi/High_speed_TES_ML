@@ -32,6 +32,10 @@ class CNNClassifier(Classifier):
 
         self.classifier = None
 
+    @property
+    def time_stamp(self):
+        return self._params['time_stamp']
+
     def train(self, trainingTraces: Traces, max_epoch = 250, checkpoint_file=None):
         # Training data
         data = trainingTraces.data
@@ -45,6 +49,9 @@ class CNNClassifier(Classifier):
         test_labels_onehot = to_categorical(test_labels, num_classes=num_classes)
 
         # create model
+        if self.classifier is not None:
+            raise Exception('I dont know what will happen if you retrain an existing CNN')
+
         model = Sequential()
 
         model.add(Conv1D(filters=16, kernel_size=20, padding='same', strides=1, input_shape=(signal_length, 1)))
@@ -70,6 +77,8 @@ class CNNClassifier(Classifier):
             checkpoint_dir = os.path.join(self.default_dir)
             os.makedirs(checkpoint_dir, exist_ok=True)
             checkpoint_file = os.path.join(checkpoint_dir, f'models_checkpoint_{config.time_stamp}.h5')
+        if checkpoint_file[:-3] != r'.h5':
+            checkpoint_file = checkpoint_file + r'.h5'
 
         model_checkpoint = ModelCheckpoint(filepath=checkpoint_file, save_best_only=True, save_weights_only=False)
 
@@ -107,7 +116,35 @@ class CNNClassifier(Classifier):
         return labels
 
     def save(self, filename=None, filedir=None):
-        pass
+        if filename is None:
+            filename = fr'CNN_{self.time_stamp}.keras'
+        elif filename[-6:] != r'.keras':
+            filename = filename + r'.keras'
+
+        if filedir is None:
+            filedir = self.default_dir
+        os.makedirs(filedir, exist_ok=True)
+
+        fullfilename = os.path.join(filedir, filename)
+        self.classifier.save(fullfilename)
+
+        # save params
+        paramsfilename = fullfilename[:-6] + '_params' + r'.pkl'
+        with open(paramsfilename, 'wb') as output_file:
+            pickle.dump(self._params, output_file)
 
     def load(self, filename, filedir=None):
-        pass
+        if filename[-6:] != r'.keras':
+            filename = filename + r'.keras'
+
+        if filedir is None:
+            filedir = self.default_dir
+
+        fullfilename = os.path.join(filedir, filename)
+        self.classifier = tf.keras.models.load_model(fullfilename)
+
+        paramsfilename = fullfilename[:-6] + '_params' + r'.pkl'
+        if os.path.isfile(paramsfilename):
+            with open(paramsfilename, 'rb') as input_file:
+                params = pickle.load(input_file)
+            self._params.update(params)

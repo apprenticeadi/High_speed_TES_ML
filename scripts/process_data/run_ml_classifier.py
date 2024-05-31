@@ -6,7 +6,7 @@ import pandas as pd
 
 from tes_resolver.ml_funcs import generate_training_traces
 from tes_resolver.traces import Traces
-from tes_resolver.classifier import InnerProductClassifier, TabularClassifier
+from tes_resolver.classifier import InnerProductClassifier, TabularClassifier, CNNClassifier
 from tes_resolver.data_chopper import DataChopper
 from src.data_reader import DataReader
 from src.utils import DFUtils
@@ -14,10 +14,10 @@ import tes_resolver.config as config
 
 '''Parameters'''
 cal_rep_rate = 100  # the rep rate to generate training
-high_rep_rates = [100] # np.arange(200, 1100, 100)  # the higher rep rates to predict
+high_rep_rates = np.arange(100, 1100, 100)  # the higher rep rates to predict
 
 # ML parameters
-modeltype='RF'
+modeltype='SVM'
 test_size=0.1
 
 # read data
@@ -60,6 +60,10 @@ for data_group in data_groups:
     '''ML for higher rep rates'''
     for i_rep, high_rep_rate in enumerate(high_rep_rates):
         print('')
+
+        filedir = results_dir + r'\saved_classifiers'
+        filename = rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz'
+
         if high_rep_rate == cal_rep_rate:
             # use half the 100kHz data to train classifier, classifier to predict the rest
             training_data = calTraces.data[:calTraces.num_traces // 2]
@@ -97,11 +101,14 @@ for data_group in data_groups:
             print(f'Generate training traces took {tf-ti}s')
 
         '''ML Classifier'''
-        t1 = time.time()
-        mlClassifier = TabularClassifier(modeltype, test_size=test_size)
-
         print(f'Training ml classifier for {high_rep_rate}kHz')
-        mlClassifier.train(trainingTraces)
+        t1 = time.time()
+        if modeltype == 'CNN':
+            mlClassifier = CNNClassifier(test_size=test_size)
+            mlClassifier.train(trainingTraces, checkpoint_file=os.path.join(filedir, filename))
+        else:
+            mlClassifier = TabularClassifier(modeltype, test_size=test_size)
+            mlClassifier.train(trainingTraces)
         t2 = time.time()
 
         accuracy = mlClassifier.accuracy_score
@@ -122,5 +129,5 @@ for data_group in data_groups:
         results_df.loc[i_rep] = [high_rep_rate, actualTraces.num_traces, accuracy, t2-t1, t4-t3] + list(yvals)
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
-        mlClassifier.save(filename=rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz', filedir=results_dir + r'\saved_classifiers')
+        mlClassifier.save(filename=filename, filedir=filedir)
 
