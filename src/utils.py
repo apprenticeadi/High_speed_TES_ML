@@ -33,6 +33,13 @@ class DFUtils:
 
         return filename
 
+    @staticmethod
+    def return_filename_from_head(directory, filename_head, idx=0):
+        files = os.listdir(directory)
+
+        filtered_files = [file_ for file_ in files if file_.startswith(filename_head)]
+        file_to_read = os.path.join(directory, filtered_files[idx])
+        return file_to_read
 
 
 def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=1550 * 1e-9, pm_error=0.,
