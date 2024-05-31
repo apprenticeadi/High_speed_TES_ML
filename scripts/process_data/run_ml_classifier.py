@@ -23,7 +23,7 @@ test_size=0.1
 # read data
 sampling_rate = 5e4
 dataReader = DataReader('Data/Tomography_data_2024_04')
-powers =  np.arange(1, 12)
+powers =  [1, 6, 10] # np.arange(1, 12)
 data_groups = np.array([f'power_{p}' for p in powers])
 
 for data_group in data_groups:
@@ -61,6 +61,7 @@ for data_group in data_groups:
     for i_rep, high_rep_rate in enumerate(high_rep_rates):
         print('')
 
+        # file to save classifier
         filedir = results_dir + r'\saved_classifiers'
         filename = rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz'
 
