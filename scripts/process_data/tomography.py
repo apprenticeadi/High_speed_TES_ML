@@ -69,7 +69,7 @@ def fidelity_by_n(theta_rec, theta_ref):
 
 if __name__ == '__main__':
 
-    modeltype = 'IP'
+    modeltype = 'RF'
 
     alphabet = list(string.ascii_lowercase)
 
@@ -80,16 +80,17 @@ if __name__ == '__main__':
     compare_with_pm = True  # if true, compare with power meter estimated state, else compare with 100kHz IP state
     guess_efficiency = 0.93
 
-    time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-    results_dir = params_dir + rf'\..\tomography\tomography_on_{modeltype}_{time_stamp}'
-
     '''Define truncation'''
-    max_input = 8 # truncated input number, will keep a max_input+1+
-    max_detected = 8 # truncated detected number, will keep a max_detected+1+
+    max_input = 16 # truncated input number, will keep a max_input+1+
+    max_detected = 16 # truncated detected number, will keep a max_detected+1+
     assert max_input >= max_detected
 
     indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
     columns = [f'{i}' for i in range(max_input + 1)] + [f'{max_input + 1}+']
+
+    '''Results directory'''
+    time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
+    results_dir = params_dir + rf'\..\tomography\tomography_on_{modeltype}_{max_input}x{max_detected}_{time_stamp}'
 
     '''
     Theta is the POVM elements that we wish to find, dimension N+2 * M+2, N=max_detect, M=max_input
@@ -100,7 +101,6 @@ if __name__ == '__main__':
     guess_theta = construct_guess_theta(guess_efficiency, max_detected, max_input)
     guess_df = pd.DataFrame(data=guess_theta, index=indices, columns=columns)
     guess_df.to_csv(DFUtils.create_filename(results_dir + rf'\guess_theta.csv'))
-
 
     '''Logging'''
     LogUtils.log_config(time_stamp='', dir=results_dir, filehead='log', module_name='', level=logging.INFO)
