@@ -12,7 +12,7 @@ from matplotlib.colors import Normalize
 from tomography import params_dir, log_df, tomography, construct_guess_theta, fidelity_by_n
 from src.utils import DFUtils, LogUtils
 
-modeltype = 'RF'
+modeltype = 'IP'
 powers = np.arange(11)
 rep_vals = np.arange(100, 900, 100)
 repeat = 100
@@ -21,8 +21,8 @@ guess_efficiency = 0.93
 pm_error = 0.046
 
 '''Define truncation'''
-max_input = 8
-max_detected = 8
+max_input = 16
+max_detected = 16
 assert max_input >= max_detected
 
 indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
