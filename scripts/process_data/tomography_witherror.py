@@ -20,16 +20,17 @@ repeat = 100
 guess_efficiency = 0.93
 pm_error = 0.046
 
-time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
-results_dir = params_dir + rf'\..\tomography\witherror\tomography_on_{modeltype}_{time_stamp}'
-
 '''Define truncation'''
-max_input = 16
-max_detected = 16
+max_input = 8
+max_detected = 8
 assert max_input >= max_detected
 
 indices = [f'{i}' for i in range(max_detected + 1)] + [f'{max_detected + 1}+']
 columns = [f'{i}' for i in range(max_input + 1)] + [f'{max_input + 1}+']
+
+'''Results directory'''
+time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
+results_dir = params_dir + rf'\..\tomography\witherror\tomography_on_{modeltype}_{max_input}x{max_detected}_{time_stamp}'
 
 ''' Define guess values '''
 guess_theta = construct_guess_theta(guess_efficiency, max_detected, max_input)
@@ -156,7 +157,7 @@ for i_rep, rep_rate in enumerate(rep_vals):
     for i, j in zip(x,y):
         low = np.max([theta_mean[j,i] - theta_std[j,i], 0.])
         high = np.min([1., theta_mean[j,i] + theta_std[j,i]])
-        if high-low > 0.1:
+        if high-low > 0.01:
             ax.plot([i,i], [j,j], [low, high], marker='_', color='red')
 
     ax.set_zlim(0,1)
