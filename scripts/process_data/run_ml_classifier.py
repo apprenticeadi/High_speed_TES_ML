@@ -22,10 +22,16 @@ test_size=0.1
 
 # read data
 sampling_rate = 5e4
-dataReader = DataReader('Data/Tomography_data_2024_04')
+data_name = r'Tomography_data_2024_04'
+dataReader = DataReader(f'Data/{data_name}')
 powers = np.arange(0, 12)
 data_groups = np.array([f'power_{p}' for p in powers])
 
+update_params = False
+if update_params:
+    params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
+
+'''Iterate over data groups'''
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
 
@@ -47,8 +53,7 @@ for data_group in data_groups:
     print(f'PN distribution is {cal_distrib}')
 
     '''Result file'''
-    results_dir = os.path.join(config.home_dir, '..', 'Results', 'Tomography_data_2024_04', f'{modeltype}', f'{data_group}_{config.time_stamp}')
-    # results_dir = rf'..\..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
+    results_dir = os.path.join(config.home_dir, '..', 'Results', data_name, modeltype, f'{data_group}_{config.time_stamp}')
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     # results_df.loc[0] = [cal_rep_rate, calTraces.num_traces, np.nan, t2-t1, t3-t2] + list(cal_distrib)
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
@@ -131,4 +136,8 @@ for data_group in data_groups:
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
         mlClassifier.save(filename=filename, filedir=filedir)
+
+    # update params folder
+    if update_params:
+        results_df.to_csv(DFUtils.create_filename(params_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
