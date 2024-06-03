@@ -17,13 +17,13 @@ cal_rep_rate = 100  # the rep rate to generate training
 high_rep_rates = np.arange(100, 1100, 100)  # the higher rep rates to predict
 
 # ML parameters
-modeltype='SVM'
+modeltype='CNN'
 test_size=0.1
 
 # read data
 sampling_rate = 5e4
 dataReader = DataReader('Data/Tomography_data_2024_04')
-powers =  [1, 6, 10] # np.arange(1, 12)
+powers = np.arange(0, 12)
 data_groups = np.array([f'power_{p}' for p in powers])
 
 for data_group in data_groups:
@@ -106,7 +106,7 @@ for data_group in data_groups:
         t1 = time.time()
         if modeltype == 'CNN':
             mlClassifier = CNNClassifier(test_size=test_size)
-            mlClassifier.train(trainingTraces, checkpoint_file=os.path.join(filedir, filename))
+            mlClassifier.train(trainingTraces, checkpoint_file=os.path.join(filedir, filename+'_checkpoint'))
         else:
             mlClassifier = TabularClassifier(modeltype, test_size=test_size)
             mlClassifier.train(trainingTraces)
