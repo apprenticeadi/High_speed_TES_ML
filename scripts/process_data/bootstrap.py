@@ -8,14 +8,17 @@ import tes_resolver.config as config
 import numpy as np
 import pandas as pd
 from scipy.stats import bootstrap
+import os
 
 powers = np.arange(12)
 rep_rates = np.arange(100, 1100, 100)
 modeltype = 'RF'
+data_name = 'Tomography_data_2024_04'
 
-bootstrap_for_mean = False
+bootstrap_for_mean = False  # if true, bootstrap for the mean photon number, if false, bootstrap for errors on each pn probability
 
-params_dir = rf'..\..\Results\Tomography_data_2024_04\Params\{modeltype}'
+# params_dir = rf'..\..\Results\Tomography_data_2024_04\Params\{modeltype}'
+params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
 
 for power in powers:
     results_df = pd.read_csv(params_dir + fr'\{modeltype}_results_power_{power}.csv')

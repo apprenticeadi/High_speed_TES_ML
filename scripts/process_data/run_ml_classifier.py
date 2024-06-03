@@ -6,7 +6,7 @@ import pandas as pd
 
 from tes_resolver.ml_funcs import generate_training_traces
 from tes_resolver.traces import Traces
-from tes_resolver.classifier import InnerProductClassifier, TabularClassifier
+from tes_resolver.classifier import InnerProductClassifier, TabularClassifier, CNNClassifier
 from tes_resolver.data_chopper import DataChopper
 from src.data_reader import DataReader
 from src.utils import DFUtils
@@ -14,18 +14,24 @@ import tes_resolver.config as config
 
 '''Parameters'''
 cal_rep_rate = 100  # the rep rate to generate training
-high_rep_rates = [100] # np.arange(200, 1100, 100)  # the higher rep rates to predict
+high_rep_rates = np.arange(100, 1100, 100)  # the higher rep rates to predict
 
 # ML parameters
-modeltype='RF'
+modeltype='CNN'
 test_size=0.1
 
 # read data
 sampling_rate = 5e4
-dataReader = DataReader('Data/Tomography_data_2024_04')
-powers =  np.arange(1, 12)
+data_name = r'Tomography_data_2024_04'
+dataReader = DataReader(f'Data/{data_name}')
+powers = np.arange(0, 12)
 data_groups = np.array([f'power_{p}' for p in powers])
 
+update_params = False
+if update_params:
+    params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
+
+'''Iterate over data groups'''
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
 
@@ -47,8 +53,7 @@ for data_group in data_groups:
     print(f'PN distribution is {cal_distrib}')
 
     '''Result file'''
-    results_dir = os.path.join(config.home_dir, '..', 'Results', 'Tomography_data_2024_04', f'{modeltype}', f'{data_group}_{config.time_stamp}')
-    # results_dir = rf'..\..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
+    results_dir = os.path.join(config.home_dir, '..', 'Results', data_name, modeltype, f'{data_group}_{config.time_stamp}')
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     # results_df.loc[0] = [cal_rep_rate, calTraces.num_traces, np.nan, t2-t1, t3-t2] + list(cal_distrib)
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
@@ -60,6 +65,11 @@ for data_group in data_groups:
     '''ML for higher rep rates'''
     for i_rep, high_rep_rate in enumerate(high_rep_rates):
         print('')
+
+        # file to save classifier
+        filedir = results_dir + r'\saved_classifiers'
+        filename = rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz'
+
         if high_rep_rate == cal_rep_rate:
             # use half the 100kHz data to train classifier, classifier to predict the rest
             training_data = calTraces.data[:calTraces.num_traces // 2]
@@ -97,11 +107,14 @@ for data_group in data_groups:
             print(f'Generate training traces took {tf-ti}s')
 
         '''ML Classifier'''
-        t1 = time.time()
-        mlClassifier = TabularClassifier(modeltype, test_size=test_size)
-
         print(f'Training ml classifier for {high_rep_rate}kHz')
-        mlClassifier.train(trainingTraces)
+        t1 = time.time()
+        if modeltype == 'CNN':
+            mlClassifier = CNNClassifier(test_size=test_size)
+            mlClassifier.train(trainingTraces, checkpoint_file=os.path.join(filedir, filename+'_checkpoint'))
+        else:
+            mlClassifier = TabularClassifier(modeltype, test_size=test_size)
+            mlClassifier.train(trainingTraces)
         t2 = time.time()
 
         accuracy = mlClassifier.accuracy_score
@@ -122,5 +135,9 @@ for data_group in data_groups:
         results_df.loc[i_rep] = [high_rep_rate, actualTraces.num_traces, accuracy, t2-t1, t4-t3] + list(yvals)
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
-        mlClassifier.save(filename=rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz', filedir=results_dir + r'\saved_classifiers')
+        mlClassifier.save(filename=filename, filedir=filedir)
+
+    # update params folder
+    if update_params:
+        results_df.to_csv(DFUtils.create_filename(params_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 

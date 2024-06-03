@@ -20,14 +20,16 @@ class TabularClassifier(Classifier):
     def __init__(self, modeltype='RF', test_size=0.25, **classifier_kwargs):
         """A wrapper class for tabular classifiers. """
 
+        super().__init__(modeltype)
+
         self.test_size = test_size
         self.default_dir = os.path.join(config.home_dir, 'saved_classifiers', f'{modeltype}Classifier')
 
-        self._params = {
-            'modeltype': modeltype,
+        self._params.update( {
+            # 'modeltype': modeltype,
             'accuracy_score': 0. ,
-            'time_stamp': config.time_stamp,
-        }
+            # 'time_stamp': config.time_stamp,
+        })
 
         if self.modeltype == 'RF':
             c_params = {'n_estimators': 400}
@@ -49,17 +51,17 @@ class TabularClassifier(Classifier):
             raise ValueError('modeltype must be "RF", "SVM", "BDT" or "KNN" (Random forest, support vector machines, '
                              'boosted decision tree and K-nearest neighbors)')
 
-    @property
-    def time_stamp(self):
-        return self._params['time_stamp']
+    # @property
+    # def time_stamp(self):
+    #     return self._params['time_stamp']
 
-    @property
-    def accuracy_score(self):
-        return self._params['accuracy_score']
+    # @property
+    # def accuracy_score(self):
+    #     return self._params['accuracy_score']
 
-    @property
-    def modeltype(self):
-        return self._params['modeltype']
+    # @property
+    # def modeltype(self):
+    #     return self._params['modeltype']
 
     def train(self, trainingTraces: Traces):
         """Train model with given training Traces and update accuracy score with test data."""

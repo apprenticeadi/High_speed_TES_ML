@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 
 import pandas as pd
 
@@ -13,25 +14,27 @@ from src.utils import DFUtils
 import tes_resolver.config as config
 
 '''Run inner product classifier to classify all the data in a certain folder. '''
-
 # data parameters
+modeltype = 'IP'
+
 sampling_rate = 5e4
-dataReader = DataReader('Data/Tomography_data_2024_04')
+data_name = 'Tomography_data_2024_04'
+dataReader = DataReader(f'Data/{data_name}')
 powers = np.arange(0, 12)
 data_groups = np.array([f'power_{p}' for p in powers])  # different groups of coherent states
 
-config.time_stamp = r'2024-05-15(19-27-44.036789)'
-
 rep_rates = np.arange(100, 1100, 100)  # the higher rep rates to predict
-
 mosaic = rep_rates.reshape(2,5)
 
-modeltype = 'IP'
+update_params = False
+if update_params:
+    params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
 
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
     # save data
-    results_dir = rf'..\..\Results\Tomography_data_2024_04\{modeltype}\{data_group}_{config.time_stamp}'
+    # results_dir = rf'..\..\Results\{data_name}\{modeltype}\{data_group}_{config.time_stamp}'
+    results_dir = os.path.join(config.home_dir, '..', 'Results', data_name, modeltype, f'{data_group}_{config.time_stamp}')
 
     # Result file
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'])
@@ -85,7 +88,6 @@ for data_group in data_groups:
                 results_df[label] = i_rep * [0.] + [predicted_distrib[i_label]]
 
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
-
         np.save(results_dir + rf'\{modeltype}_{data_group}_{rep_rate}kHz_raw_labels.npy', raw_labels)
 
         # Plot stegosaurus
@@ -99,3 +101,6 @@ for data_group in data_groups:
         ax.set_title(f'{rep_rate}kHz', loc='left')
 
     fig.savefig(results_dir + rf'\{modeltype}_stegosauruses.pdf')
+
+    if update_params:
+        results_df.to_csv(DFUtils.create_filename(params_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
