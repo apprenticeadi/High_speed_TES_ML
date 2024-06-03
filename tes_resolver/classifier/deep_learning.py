@@ -17,28 +17,30 @@ import tes_resolver.config as config
 
 class CNNClassifier(Classifier):
 
-    def __init__(self, test_size=0.25):
+    def __init__(self, modeltype='CNN', test_size=0.25):
+
+        super().__init__(modeltype)
 
         self.test_size = test_size
         self.default_dir = os.path.join(config.home_dir, 'saved_classifiers', f'CNNClassifier')
 
-        self._params = {
+        self._params.update({
             'accuracy_score': 0.,
             'precision': 0.,
             'recall': 0.,
             'f1-score': 0.,
-            'time_stamp': config.time_stamp,
-        }
+            # 'time_stamp': config.time_stamp,
+        })
 
         self.classifier = None
 
-    @property
-    def time_stamp(self):
-        return self._params['time_stamp']
-
-    @property
-    def accuracy_score(self):
-        return self._params['accuracy_score']
+    # @property
+    # def time_stamp(self):
+    #     return self._params['time_stamp']
+    #
+    # @property
+    # def accuracy_score(self):
+    #     return self._params['accuracy_score']
 
     def train(self, trainingTraces: Traces, max_epoch = 250, checkpoint_file=None):
         # Training data

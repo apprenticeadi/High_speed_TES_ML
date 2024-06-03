@@ -11,25 +11,27 @@ import tes_resolver.config as config
 
 class InnerProductClassifier(Classifier):
 
-    def __init__(self, multiplier=1., num_bins=1000, target_trace=None, inner_prod_bins=None):
+    def __init__(self, modeltype='IP', multiplier=1., num_bins=1000, target_trace=None, inner_prod_bins=None):
         """Classifier that classifies traces according to their inner product with the average trace. """
 
         if multiplier > 1 :
             raise ValueError(f'Multiplier {multiplier} is larger than 1')
 
-        self._params = {
+        super().__init__(modeltype)
+
+        self._params.update({
             'multiplier': multiplier,
             'num_bins': num_bins,
             'target_trace': target_trace,
             'inner_prod_bins': inner_prod_bins,
-            'time_stamp': config.time_stamp,
-        }
+            # 'time_stamp': config.time_stamp,
+        })
 
         self.default_dir = os.path.join(config.home_dir, 'saved_classifiers', 'InnerProductClassifier')
 
-    @property
-    def time_stamp(self):
-        return self._params['time_stamp']
+    # @property
+    # def time_stamp(self):
+    #     return self._params['time_stamp']
 
     @property
     def target_trace(self):
