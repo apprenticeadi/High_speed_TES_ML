@@ -5,11 +5,14 @@ from scipy.special import factorial
 
 from src.utils import DFUtils, poisson_norm, tvd
 
-powers = [1, 6, 10]
+ref_model = 'RF'
+ml_model = 'CNN'
+
+powers = [1, 3, 5]
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-special_power = 6
+special_power = 5
 special_rep_rates = [500, 800]
 special_colors = ['gray', 'saddlebrown']
 
@@ -34,42 +37,42 @@ ref_mean_photons = {}
 for i_power, power in enumerate(powers):
     color = colors[i_power]
 
-    # IP and RF data
-    df_ip = pd.read_csv(params_dir + rf'\IP\IP_results_power_{power}.csv')
-    df_rf = pd.read_csv(params_dir + rf'\RF\RF_results_power_{power}.csv')
-    tvds = np.zeros((2, len(rep_rates)))  # first row ip, second row rf
+    # ref and ML data
+    df_ref = pd.read_csv(params_dir + rf'\{ref_model}\{ref_model}_results_power_{power}.csv')
+    df_ml = pd.read_csv(params_dir + rf'\{ml_model}\{ml_model}_results_power_{power}.csv')
+    tvds = np.zeros((2, len(rep_rates)))  # first row ref, second row ml
 
     # Calculate TVD for each rep rate
-    ref_mu = 1.
+    ref_mu = np.nan
     for i_rep, rep_rate in enumerate(rep_rates):
-        # get IP distribution
-        ip_distrib = np.array(df_ip.loc[df_ip['rep_rate'] == int(rep_rate), '0':].iloc[0])
-        ip_distrib = np.nan_to_num(ip_distrib)  # nan to 0s.
-        ip_labels = np.arange(len(ip_distrib))
+        # get reference distribution
+        ref_distrib = np.array(df_ref.loc[df_ref['rep_rate'] == int(rep_rate), '0':].iloc[0])
+        ref_distrib = np.nan_to_num(ref_distrib)  # nan to 0s.
+        ref_labels = np.arange(len(ref_distrib))
 
         # update reference mean photon number from 100kHz ip distribution
         # power meter mean photon number/ or maybe the 100kHz mean photon for that power
         # ref_mu = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == rep_rate), 'pm_estimated_av_pn'].iloc[0]
         # ref_mu = log_df.loc[(log_df['power_group'] == f'power_{power}') & (log_df['rep_rate/kHz'] == 100), 'ip_classifier_av_pn'].iloc[0]
         if rep_rate == 100:
-            ref_mu = np.sum(ip_distrib * ip_labels)
+            ref_mu = np.sum(ref_distrib * ref_labels)
 
-        # get RF distribution
-        rf_distrib = np.array(df_rf.loc[df_rf['rep_rate'] == int(rep_rate), '0':].iloc[0])
-        rf_distrib = np.nan_to_num(rf_distrib)
-        rf_labels = np.arange(len(rf_distrib))
+        # get ML distribution
+        ml_distrib = np.array(df_ml.loc[df_ml['rep_rate'] == int(rep_rate), '0':].iloc[0])
+        ml_distrib = np.nan_to_num(ml_distrib)
+        ml_labels = np.arange(len(ml_distrib))
 
         # calculate tvd
-        tvds[0, i_rep] = tvd(ip_distrib, poisson_norm(ip_labels, ref_mu))
-        tvds[1, i_rep] = tvd(rf_distrib, poisson_norm(rf_labels, ref_mu))
+        tvds[0, i_rep] = tvd(ref_distrib, poisson_norm(ref_labels, ref_mu))
+        tvds[1, i_rep] = tvd(ml_distrib, poisson_norm(ml_labels, ref_mu))
 
         # special power
         if power == special_power:
-            special_distribs['ref'] = poisson_norm(ip_labels, ref_mu)
+            special_distribs['ref'] = poisson_norm(ref_labels, ref_mu)
             if rep_rate == 100:
-                special_distribs['ip_100'] = ip_distrib
+                special_distribs['ref_100'] = ref_distrib
             if rep_rate in special_rep_rates:
-                special_distribs[f'rf_{rep_rate}'] = rf_distrib
+                special_distribs[f'ml_{rep_rate}'] = ml_distrib
 
     ref_mean_photons[power] = ref_mu
 
@@ -94,15 +97,15 @@ ax1.tick_params(labelsize=fontsize - 2)
 '''Plot special '''
 width=0.3
 
-ip_100 = special_distribs['ip_100']
+ref_100 = special_distribs['ref_100']
 ref_poisson = special_distribs['ref']
 
-ax2.bar(np.arange(len(ip_100)) - width, ip_100, width=width, align='center', alpha=0.8, label='100kHz', color='black')
+ax2.bar(np.arange(len(ref_100)) - width, ref_100, width=width, align='center', alpha=0.8, label='100kHz', color='black')
 for i_special, special_rep_rate in enumerate(special_rep_rates):
-    rf_high = special_distribs[f'rf_{special_rep_rate}']
-    ax2.bar(np.arange(len(rf_high)) + width * i_special, rf_high, width=width, align='center', alpha=0.8,
+    ml_high = special_distribs[f'ml_{special_rep_rate}']
+    ax2.bar(np.arange(len(ml_high)) + width * i_special, ml_high, width=width, align='center', alpha=0.8,
             label=f'{special_rep_rate}kHz', color=special_colors[i_special])
-ax2.plot(np.arange(len(ip_100)), ref_poisson, 'x--', color='red', alpha=0.5)
+ax2.plot(np.arange(len(ref_100)), ref_poisson, 'x--', color='red', alpha=0.5)
 
 ax2.set_ylim(bottom=0)
 ax2.set_ylabel('Probability', fontsize=fontsize)
