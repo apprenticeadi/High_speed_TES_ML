@@ -8,8 +8,8 @@ from tensorflow.keras.layers import Conv1D, BatchNormalization, ReLU, GlobalAver
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
-from sklearn.model_selection import train_test_split, precision_recall_fscore_support
-from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 from tes_resolver.classifier import Classifier
 from tes_resolver.traces import Traces
@@ -35,6 +35,10 @@ class CNNClassifier(Classifier):
     @property
     def time_stamp(self):
         return self._params['time_stamp']
+
+    @property
+    def accuracy_score(self):
+        return self._params['accuracy_score']
 
     def train(self, trainingTraces: Traces, max_epoch = 250, checkpoint_file=None):
         # Training data
@@ -76,9 +80,9 @@ class CNNClassifier(Classifier):
         if checkpoint_file is None:
             checkpoint_dir = os.path.join(self.default_dir)
             os.makedirs(checkpoint_dir, exist_ok=True)
-            checkpoint_file = os.path.join(checkpoint_dir, f'models_checkpoint_{config.time_stamp}.h5')
-        if checkpoint_file[:-3] != r'.h5':
-            checkpoint_file = checkpoint_file + r'.h5'
+            checkpoint_file = os.path.join(checkpoint_dir, f'training_best_model_{config.time_stamp}.keras')
+        if checkpoint_file[:-6] != r'.keras':
+            checkpoint_file = checkpoint_file + r'.keras'
 
         model_checkpoint = ModelCheckpoint(filepath=checkpoint_file, save_best_only=True, save_weights_only=False)
 
