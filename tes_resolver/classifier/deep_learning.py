@@ -68,6 +68,11 @@ class CNNClassifier(Classifier):
         model.add(BatchNormalization())
         model.add(ReLU())
 
+        # https://paperswithcode.com/method/global-average-pooling
+        # Global Average Pooling is a pooling operation designed to replace fully connected layers in classical CNNs.
+        # The idea is to generate one feature map for each corresponding category of the classification task in the
+        # last mlpconv layer. Instead of adding fully connected layers on top of the feature maps,
+        # we take the average of each feature map, and the resulting vector is fed directly into the softmax layer.
         model.add(GlobalAveragePooling1D())
         model.add(Dense(1024, activation='relu'))
         model.add(Dense(units=num_classes, activation='softmax'))
@@ -154,3 +159,6 @@ class CNNClassifier(Classifier):
             with open(paramsfilename, 'rb') as input_file:
                 params = pickle.load(input_file)
             self._params.update(params)
+
+
+
