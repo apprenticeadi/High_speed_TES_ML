@@ -11,10 +11,10 @@ from tes_resolver.classifier import InnerProductClassifier
 
 '''Which data to use'''
 dataReader = DataReader(r'\Data\Tomography_data_2024_04')
-data_group = 'power_10'
+data_group = 'power_6'
 save_dir = r'../../Plots/Tomography_data_2024_04/trace_plots'
 
-rep_rates = [100, 500, 1000]
+rep_rates = [100, 800, 1000]
 
 '''Parameters'''
 sampling_rate = 5e4

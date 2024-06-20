@@ -6,9 +6,9 @@ from scipy.special import factorial
 from src.utils import DFUtils, poisson_norm, tvd
 
 ref_model = 'IP'
-models = ['IP', 'RF', 'BDT', 'SVM', 'CNN']
+models = ['IP', 'RF', 'BDT', 'SVM', 'KNN', 'CNN']
 
-power =  9 #  np.arange(10)
+power =  6 #  np.arange(10)
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
