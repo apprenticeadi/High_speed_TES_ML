@@ -17,6 +17,7 @@ bar_width= 0.8
 rep_rate = 100
 
 pm_mean_error = 0.046
+font_size = 14
 
 alphabet = list(string.ascii_lowercase)
 
@@ -24,7 +25,7 @@ params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 
 '''Plot every single power distribution compared with PM Poissonian distribution'''
-fig1, axs1 = plt.subplot_mosaic(powers.reshape((4, 3)), sharex=True, sharey=True, figsize=(15, 10), layout='constrained')  # plot 100kHz pn distribution
+fig1, axs1 = plt.subplot_mosaic(powers.reshape((4, 3)), sharex=True, sharey=True, figsize=(10,8), layout='constrained')  # plot 100kHz pn distribution
 
 pm_mean_pns = np.zeros(len(powers))
 tes_mean_pns = np.zeros((len(powers), 3))  # with negative and postive errors
@@ -32,7 +33,7 @@ for i_power, power in enumerate(powers):
 
     # Set up plot
     ax1 = axs1[power]
-    ax1.set_title(f'({alphabet[i_power]}) power_{power}', loc='left')
+    ax1.set_title(f'({alphabet[i_power]}) power_{power}', loc='left', fontsize=font_size-2)
 
     # TES result with errors
     distrib_df = pd.read_csv(params_dir + rf'\{modeltype}\{modeltype}_results_power_{power}.csv')
@@ -63,20 +64,24 @@ for i_power, power in enumerate(powers):
             color='blue', alpha=0.7)
     ax1.errorbar(labels, pm_distrib, yerr=pm_distrib_errors, fmt='.--', label='Input', color='red')
 
-    if i_power == 0 :
-        ax1.legend()
-
-    ax1.set_xlabel('Photon number')
-    ax1.set_ylabel('Probability')
+    if i_power == 0:
+        ax1.legend(fontsize=font_size-2)
+    if i_power % 3 == 0:
+        ax1.set_ylabel('Probability', fontsize=font_size-2)
+    if i_power // 3 == 3:
+        ax1.set_xlabel('Photon number', fontsize=font_size-2)
     ax1.set_xticks(labels[::3])
+    ax1.tick_params(labelsize=font_size-4)
 
-fig2, ax2 = plt.subplots()  # plot input vs measured mean photon number
 
-ax2.set_title('Detector efficiency')
+fig2, ax2 = plt.subplots(figsize=(10, 3), layout='constrained')  # plot input vs measured mean photon number
+
+# ax2.set_title('Detector efficiency')
 pm_errors = pm_mean_pns * pm_mean_error
 ax2.errorbar(pm_mean_pns, tes_mean_pns[:, 0], xerr=pm_errors, yerr=tes_mean_pns[:, 1:].T, fmt= '.', ls='None', label='Data')
-ax2.set_xlabel('Input average photon number (power meter)')
-ax2.set_ylabel(f'Measured average photon number (TES {rep_rate}kHz)')
+ax2.set_xlabel('Input average photon number', fontsize=font_size)
+ax2.set_ylabel(f'Measured average photon number', fontsize=font_size)
+ax2.tick_params(labelsize=font_size-2)
 
 def fit(B, x):
     return B[0] * x
@@ -86,8 +91,8 @@ mydata = odr.Data(pm_mean_pns, tes_mean_pns[:, 0], wd=pm_errors, we=np.mean(tes_
 myodr = odr.ODR(mydata, linear, beta0=[0.93])
 myoutput = myodr.run()
 
-ax2.plot(pm_mean_pns, myoutput.beta[0] * pm_mean_pns, ls='dashed', label='Fit')
-ax2.legend()
+ax2.plot(pm_mean_pns, myoutput.beta[0] * pm_mean_pns, ls='dashed', label=f'{myoutput.beta[0]*100:.3g} efficiency')
+ax2.legend(fontsize=font_size-2, loc='upper left')
 
 plt.show()
 

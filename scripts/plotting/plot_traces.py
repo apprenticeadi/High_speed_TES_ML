@@ -11,10 +11,10 @@ from tes_resolver.classifier import InnerProductClassifier
 
 '''Which data to use'''
 dataReader = DataReader(r'\Data\Tomography_data_2024_04')
-data_group = 'power_6'
+data_group = 'power_10'
 save_dir = r'../../Plots/Tomography_data_2024_04/trace_plots'
 
-rep_rates = [100, 500, 800]
+rep_rates = [100, 500, 1000]
 
 '''Parameters'''
 sampling_rate = 5e4
@@ -50,7 +50,7 @@ for i_rep, rep_rate in enumerate(rep_rates):
     ax = axs[0, i_rep]
     ax.set_title(f'({alphabet[i_rep]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
     for i in range(num_traces):
-        ax.plot(np.arange(data_to_plot.shape[1]) / sampling_rate * 1000, data_to_plot[i] * voltage_precision / 1000,
+        ax.plot(np.arange(data_to_plot.shape[1]) / sampling_rate * 1000, data_to_plot[i] / 4 * voltage_precision * 1000,
                 alpha=0.05)
 
     if i_rep == 0:
@@ -61,7 +61,7 @@ for i_rep, rep_rate in enumerate(rep_rates):
 
     '''Plot Stegosaurus'''
     ax = axs[1, i_rep]
-    ax.set_title(f'({alphabet[i_rep + len(rep_rates)]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
+    # ax.set_title(f'({alphabet[i_rep + len(rep_rates)]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
 
     # plot histogram
     overlaps = ipClassifier.calc_inner_prod(curTraces)
@@ -69,25 +69,26 @@ for i_rep, rep_rate in enumerate(rep_rates):
     hist_object = ax.hist(overlaps, bins=ipClassifier.num_bins, color='darkgrey')
 
     # label peaks
-    for pn in inner_prod_bins.keys():
-        overlap_upper_lim = inner_prod_bins[pn]
-        if hist_object[1][-1] == overlap_upper_lim:
-            upper_bin = -1
-        else:
-            upper_bin = np.argmax(hist_object[1] > overlap_upper_lim)
-        if pn == 0:
-            lower_bin = 0
+    if rep_rate == 100:
+        for pn in inner_prod_bins.keys():
+            overlap_upper_lim = inner_prod_bins[pn]
+            if hist_object[1][-1] == overlap_upper_lim:
+                upper_bin = -1
+            else:
+                upper_bin = np.argmax(hist_object[1] > overlap_upper_lim)
+            if pn == 0:
+                lower_bin = 0
 
-            # central_overlap = np.mean([np.min(overlaps), inner_prod_bins[pn]])
-        else:
-            overlap_lower_lim = inner_prod_bins[pn-1]
-            lower_bin = np.argmax(hist_object[1] > overlap_lower_lim)
+                # central_overlap = np.mean([np.min(overlaps), inner_prod_bins[pn]])
+            else:
+                overlap_lower_lim = inner_prod_bins[pn-1]
+                lower_bin = np.argmax(hist_object[1] > overlap_lower_lim)
 
-            # central_overlap = np.mean([inner_prod_bins[pn-1], inner_prod_bins[pn]])
-        # position = np.argmax(hist_object[1] > central_overlap)
-        position = np.argmax(hist_object[0][lower_bin:upper_bin]) + lower_bin  # position of the highest peak in the pn bin
+                # central_overlap = np.mean([inner_prod_bins[pn-1], inner_prod_bins[pn]])
+            # position = np.argmax(hist_object[1] > central_overlap)
+            position = np.argmax(hist_object[0][lower_bin:upper_bin]) + lower_bin  # position of the highest peak in the pn bin
 
-        ax.text(hist_object[1][position], hist_object[0][position]*1.1, pn)
+            ax.text(hist_object[1][position], hist_object[0][position]*1.1, pn)
 
     ax.set_xlabel('Inner product', fontsize=fontsize)
     if i_rep == 0:
@@ -99,7 +100,7 @@ plt.show()
 
 ax.set_yscale('symlog', linthresh=1)
 ax.set_ylim(0, 5000)
-fig.savefig(DFUtils.create_filename(save_dir + rf'\{data_group}_trace_stegosaurus_log.pdf'))
+# fig.savefig(DFUtils.create_filename(save_dir + rf'\{data_group}_trace_stegosaurus_log.pdf'))
 
 #
 # data100_raw = dataReader.read_raw_data(data_group, rep_rate=100)

@@ -5,14 +5,14 @@ from scipy.special import factorial
 
 from src.utils import DFUtils, poisson_norm, tvd
 
-ref_model = 'RF'
-ml_model = 'CNN'
+ref_model = 'IP'
+ml_model = 'RF'
 
-powers = [1, 3, 5]
+powers =  [0, 6, 9] #  np.arange(10)
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-special_power = 5
+special_power = 6
 special_rep_rates = [500, 800]
 special_colors = ['gray', 'saddlebrown']
 
@@ -25,8 +25,8 @@ params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 
 fontsize = 12
 fig, axs = plt.subplot_mosaic([['(a)', '(b)']], figsize=(12, 4), layout='constrained')
-for label, ax in axs.items():
-    ax.set_title(label, fontfamily='serif', loc='left', fontsize=fontsize + 2)
+# for label, ax in axs.items():
+#     ax.set_title(label, fontfamily='serif', loc='left', fontsize=fontsize + 2)
 
 ax1 = axs['(a)']
 ax2 = axs['(b)']
@@ -77,8 +77,8 @@ for i_power, power in enumerate(powers):
     ref_mean_photons[power] = ref_mu
 
     # Plot TVD
-    ax1.plot(rep_rates, tvds[0], 'o--', alpha=0.5, markersize=6, color=color)
-    ax1.plot(rep_rates, tvds[1], 'o-', label=f'{ref_mu:.2f}', alpha=0.8, markersize=6, color=color)
+    ax1.plot(rep_rates, tvds[0], 'o--', alpha=0.5, markersize=6, color=color, label=fr'$\mu$={ref_mu:.2f}',)
+    ax1.plot(rep_rates, tvds[1], 'o-',  alpha=0.8, markersize=6, color=color)
 
     # highlight the special rep rate
     if power == special_power:
@@ -99,20 +99,23 @@ width=0.3
 
 ref_100 = special_distribs['ref_100']
 ref_poisson = special_distribs['ref']
-
+ax2.plot(np.arange(len(ref_100)) - width, ref_poisson, 'x--', color='red', alpha=0.5, label='Poisson')
 ax2.bar(np.arange(len(ref_100)) - width, ref_100, width=width, align='center', alpha=0.8, label='100kHz', color='black')
 for i_special, special_rep_rate in enumerate(special_rep_rates):
     ml_high = special_distribs[f'ml_{special_rep_rate}']
     ax2.bar(np.arange(len(ml_high)) + width * i_special, ml_high, width=width, align='center', alpha=0.8,
             label=f'{special_rep_rate}kHz', color=special_colors[i_special])
-ax2.plot(np.arange(len(ref_100)), ref_poisson, 'x--', color='red', alpha=0.5)
 
-ax2.set_ylim(bottom=0)
+
+ax2.set_ylim(bottom=0, top=0.25)
 ax2.set_ylabel('Probability', fontsize=fontsize)
 ax2.set_xlabel('Photon number', fontsize=fontsize)
 ax2.tick_params(labelsize=fontsize-2)
 ax2.set_xlim(-1, 15)
 ax2.legend(loc='upper right', fontsize=fontsize-2)
+
+ax1.set_title('(a) TVD comparison', fontsize=fontsize+2, fontfamily='serif', loc='left',)
+ax2.set_title('(b) Photon number distribution', fontsize=fontsize+2, fontfamily='serif', loc='left',)
 
 # # fig2, ax2 = plt.subplots(figsize=(12, 6))
 #
