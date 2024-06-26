@@ -13,7 +13,7 @@ from matplotlib.colors import Normalize
 from src.utils import DFUtils, LogUtils
 from scripts.process_data.tomography import fidelity_by_n
 
-ml_model = 'BDT'
+ml_model = 'KNN'
 
 max_input = 16  # number of columns
 max_detected = 16  # number of rows

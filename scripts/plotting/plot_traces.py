@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 import string
@@ -14,7 +16,7 @@ dataReader = DataReader(r'\Data\Tomography_data_2024_04')
 data_group = 'power_6'
 save_dir = r'../../Plots/Tomography_data_2024_04/trace_plots'
 
-rep_rates = [100, 800, 1000]
+rep_rates = [100, 500, 800]
 
 '''Parameters'''
 sampling_rate = 5e4
@@ -28,7 +30,6 @@ alphabet = list(string.ascii_lowercase)
 fig, axs = plt.subplots(2, len(rep_rates), sharey='row', layout='constrained', figsize=(16, 6))
 traces_dict = {}
 for i_rep, rep_rate in enumerate(rep_rates):
-
     '''Read traces'''
     data_raw = dataReader.read_raw_data(data_group, rep_rate=rep_rate)
     if rep_rate <= 300:
@@ -43,14 +44,18 @@ for i_rep, rep_rate in enumerate(rep_rates):
     ipClassifier.train(curTraces)
     ipClassifier.predict(curTraces, update=True)
 
-    '''Plot traces'''
+    '''Save the data as txt'''
     data_parsed = curTraces.data
     data_to_plot = data_parsed[:2*num_traces].reshape((num_traces, 2 * curTraces.period))
+    data_to_plot = data_to_plot /  4 * voltage_precision * 1000
+    np.savetxt(DFUtils.create_filename(save_dir + rf'\{data_group}_{rep_rate}kHz_first_{num_traces}traces.txt'),
+               data_to_plot, delimiter=',')
 
+    '''Plotting'''
     ax = axs[0, i_rep]
     ax.set_title(f'({alphabet[i_rep]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
     for i in range(num_traces):
-        ax.plot(np.arange(data_to_plot.shape[1]) / sampling_rate * 1000, data_to_plot[i] / 4 * voltage_precision * 1000,
+        ax.plot(np.arange(data_to_plot.shape[1]) / sampling_rate * 1000, data_to_plot[i],
                 alpha=0.05)
 
     if i_rep == 0:
@@ -67,6 +72,12 @@ for i_rep, rep_rate in enumerate(rep_rates):
     overlaps = ipClassifier.calc_inner_prod(curTraces)
     inner_prod_bins = ipClassifier.inner_prod_bins
     hist_object = ax.hist(overlaps, bins=ipClassifier.num_bins, color='darkgrey')
+
+    # save data
+    heights = hist_object[0]
+    bin_edges = hist_object[1]
+    np.savetxt(save_dir + rf'\{data_group}_{rep_rate}kHz_stegosaurus_heights.txt', heights, delimiter=',')
+    np.savetxt(save_dir + rf'\{data_group}_{rep_rate}kHz_stegosaurus_bin_edges.txt', bin_edges, delimiter=',')
 
     # label peaks
     if rep_rate == 100:
@@ -87,7 +98,6 @@ for i_rep, rep_rate in enumerate(rep_rates):
                 # central_overlap = np.mean([inner_prod_bins[pn-1], inner_prod_bins[pn]])
             # position = np.argmax(hist_object[1] > central_overlap)
             position = np.argmax(hist_object[0][lower_bin:upper_bin]) + lower_bin  # position of the highest peak in the pn bin
-
             ax.text(hist_object[1][position], hist_object[0][position]*1.1, pn)
 
     ax.set_xlabel('Inner product', fontsize=fontsize)
@@ -100,7 +110,7 @@ plt.show()
 
 ax.set_yscale('symlog', linthresh=1)
 ax.set_ylim(0, 5000)
-# fig.savefig(DFUtils.create_filename(save_dir + rf'\{data_group}_trace_stegosaurus_log.pdf'))
+fig.savefig(DFUtils.create_filename(save_dir + rf'\{data_group}_trace_stegosaurus_log.pdf'))
 
 #
 # data100_raw = dataReader.read_raw_data(data_group, rep_rate=100)
