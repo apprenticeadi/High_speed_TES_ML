@@ -13,7 +13,7 @@ from matplotlib.colors import Normalize
 from src.utils import DFUtils, LogUtils
 from scripts.process_data.tomography import fidelity_by_n
 
-ml_model = 'BDT'
+ml_model = 'KNN'
 
 max_input = 16  # number of columns
 max_detected = 16  # number of rows
@@ -38,7 +38,7 @@ fontsize = 14
 
 '''Plot POVM'''
 # fig = plt.figure(figsize=(20, 8))
-fig, axs = plt.subplots(2, 3, height_ratios=[3, 1], sharex='all', sharey='row', layout='constrained', figsize=(10, 4))
+fig, axs = plt.subplots(2, 3, height_ratios=[3, 1], sharex='row', sharey='row', layout='constrained', figsize=(10, 4))
 
 gs = gridspec.GridSpec(4, 18)
 width = 0.4  # 3d bar plot width
