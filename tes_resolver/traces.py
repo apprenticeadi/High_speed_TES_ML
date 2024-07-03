@@ -7,10 +7,9 @@ from math import ceil, floor
 
 from tes_resolver.data_chopper import DataChopper
 
+
 # No classifying algorithms here.
 
-
-#TODO: 1. Logically, sampling_rate should not be here. 2. Data should always be 2d array.
 class Traces(object):
 
     def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4, parse_data=True, **data_parsing_kwargs):
@@ -24,7 +23,7 @@ class Traces(object):
         leave data as is.
         """
 
-        #TODO: what if only collect the trace partially?
+        # TODO: what if only collect the trace partially?
         self.rep_rate = rep_rate
         self.freq_str = f'{rep_rate}kHz'
 
@@ -42,18 +41,21 @@ class Traces(object):
                 warnings.warn(f'Input data array length <= period={self.period}, no parsing performed. ')
             elif labels is not None:
                 # Input labels is not None, labels and data will only be chopped to dimension. There will be no parsing
-                data, labels = DataChopper.chop_labelled_traces(data, labels, samples_per_trace=self.period, trigger_delay=parse_args['trigger_delay'])
+                data, labels = DataChopper.chop_labelled_traces(data, labels, samples_per_trace=self.period,
+                                                                trigger_delay=parse_args['trigger_delay'])
             else:
                 # When ideal_samples != period, e.g. 600kHz, ideally some traces should have 84 samples, while others 83
                 # samples. What parsing does is remove the extra sample from every 84-long traces, while making sure
                 # that every trace still starts roughly at the same relative position.
-                data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate, **parse_args)
+                data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate,
+                                             **parse_args)
 
         self._data = data
         if labels is None:
-            self._labels = np.full((len(self.data), ), -1)
+            self._labels = np.full((len(self.data),), -1)
         else:
             self._labels = labels
+
     @property
     def data(self):
         return copy.deepcopy(self._data)
@@ -195,15 +197,17 @@ class TraceUtils:
             # intp_samples is a numpy array of indices, where each row corresponds to a trace, and in each row,
             # integer indices mark the original data from data_raw, whereas decimal ones are the interpolated datapoints.
             # Number of rows in intp_samples is the number of traces per row in data_raw
-            intp_samples = DataChopper.chop_traces(extended_samples, samples_per_trace=500, trigger_delay=0)  # no triggering, because these are just indices.
+            intp_samples = DataChopper.chop_traces(extended_samples, samples_per_trace=500,
+                                                   trigger_delay=0)  # no triggering, because these are just indices.
             num_traces_per_row = len(intp_samples)
 
             data_to_chop = np.zeros((num_rows, period * num_traces_per_row))
             for i, s in enumerate(intp_samples):
-                integer_s = np.arange(ceil(s[0]), floor(s[-1] + 1))  # the integer indices, which correspond to original data from data_raw
+                integer_s = np.arange(ceil(s[0]), floor(
+                    s[-1] + 1))  # the integer indices, which correspond to original data from data_raw
                 integer_s = integer_s[:period]  # trim to the same length
 
-                data_to_chop[:, i* period: (i+1) * period] = data_raw[:, integer_s]
+                data_to_chop[:, i * period: (i + 1) * period] = data_raw[:, integer_s]
 
             samples_per_trace = period
 
@@ -218,7 +222,7 @@ class TraceUtils:
         #         trigger = 'troughs'
         #     trigger = DataChopper.find_trigger(data_to_chop, samples_per_trace=samples_per_trace, method=trigger)
 
-        data_traces = DataChopper.chop_traces(data_to_chop, samples_per_trace=samples_per_trace, trigger_delay=trigger_delay)
+        data_traces = DataChopper.chop_traces(data_to_chop, samples_per_trace=samples_per_trace,
+                                              trigger_delay=trigger_delay)
 
         return data_traces
-

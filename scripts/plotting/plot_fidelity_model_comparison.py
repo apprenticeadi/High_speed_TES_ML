@@ -17,8 +17,10 @@ models = ['IP', 'KNN', 'BDT', 'RF']
 
 max_input = 16  # number of columns
 max_detected = 16  # number of rows
-trunc = max_detected
+trunc = 8
 fontsize = 14
+
+save_dir = rf'..\..\Plots\Tomography_data_2024_04\tomography_results\{trunc}x{trunc}'
 
 '''Load reference theta'''
 ip_dir = DFUtils.return_filename_from_head(r'..\..\Results\Tomography_data_2024_04\tomography\witherror',
@@ -27,6 +29,9 @@ ip_dir = DFUtils.return_filename_from_head(r'..\..\Results\Tomography_data_2024_
 ref_ip_rep_rate = 100  # reference inner product rep rate, to plot and to calculate fidelity against
 ref_thetas = np.load(ip_dir + rf'\{ref_ip_rep_rate}kHz_estimated_thetas.npy')[:trunc+1, :trunc+1]
 ref_theta = np.mean(ref_thetas, axis=0)
+
+np.savetxt(DFUtils.create_filename(save_dir + rf'\reference_theta_IP_{ref_ip_rep_rate}kHz.txt'),
+           ref_theta, delimiter=',')
 
 '''Plot Fidelities'''
 rep_vals = np.arange(100, 900, 100)
@@ -44,6 +49,12 @@ for i_model, ml_model in enumerate(models):
 
         # rf thetas
         rf_thetas = np.load(rf_dir + rf'\{rep_rate}kHz_estimated_thetas.npy')[:trunc+1, :trunc+1]
+        theta_mean = np.mean(rf_thetas, axis=0)
+        theta_std = np.std(rf_thetas, axis=0)
+        np.savetxt(DFUtils.create_filename(save_dir + rf'\{ml_model}_thetas\{rep_rate}kHz_mean_theta.txt'), theta_mean, delimiter=',')
+        np.savetxt(DFUtils.create_filename(save_dir + rf'\{ml_model}_thetas\{rep_rate}kHz_std_theta.txt'), theta_std, delimiter=',')
+
+        # calculate fidelities
         for i_repeat, theta_rec in enumerate(rf_thetas):
             rf_fids[i_rep, i_repeat, :] = fidelity_by_n(theta_rec, ref_theta)
 
@@ -63,6 +74,9 @@ for i_model, ml_model in enumerate(models):
 
     ax2.errorbar(rep_vals, fid_means, yerr=yerrs, fmt='.', ls=result['ls'], alpha=result['alpha'], label=ml_model)
 
+    np.savetxt(save_dir + rf'\{ml_model}_fidelity_mean.txt', fid_means, delimiter=',')
+    np.savetxt(save_dir + rf'\{ml_model}_fidelity_error_bar.txt', yerrs, delimiter=',')
+
 ax2.set_ylim(0,1)
 ax2.set_ylabel('Fidelity', fontsize=fontsize)
 ax2.set_xlabel('Rep rate/kHz', fontsize=fontsize)
@@ -71,7 +85,5 @@ ax2.legend(fontsize=fontsize, loc='lower left')
 ax2.set_title('Tomography fidelity')
 plt.show()
 
+fig2.savefig(save_dir+rf'\fidelities_model_comparison.pdf')
 
-# plot_dir = rf'..\..\Plots\Tomography_data_2024_04\tomography\{max_input}x{max_detected}'
-# fig.savefig(DFUtils.create_filename(plot_dir + rf'\{max_detected}x{max_input}_POVM_reconstruction.pdf'))
-# fig2.savefig(plot_dir+rf'\{trunc}x{trunc}_av_fidelities.pdf')

@@ -12,7 +12,7 @@ from matplotlib.colors import Normalize
 from tomography import params_dir, log_df, tomography, construct_guess_theta, fidelity_by_n
 from src.utils import DFUtils, LogUtils
 
-modeltype = 'IP'
+modeltype = 'KNN'
 powers = np.arange(11)
 rep_vals = np.arange(100, 900, 100)
 repeat = 100

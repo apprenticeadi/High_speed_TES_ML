@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -6,9 +8,9 @@ from scipy.special import factorial
 from src.utils import DFUtils, poisson_norm, tvd
 
 ref_model = 'IP'
-ml_model = 'RF'
+ml_model = 'BDT'
 
-powers =  [0, 6, 9] #  np.arange(10)
+powers = [0, 6, 9]  # np.arange(10)
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
@@ -22,6 +24,7 @@ params_dir = rf'..\..\Results\Tomography_data_2024_04\Params'
 # log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 # compare_with_pm = False
 
+save_dir = rf'..\..\Plots\Tomography_data_2024_04\tvd_plots'
 
 fontsize = 12
 fig, axs = plt.subplot_mosaic([['(a)', '(b)']], figsize=(12, 4), layout='constrained')
@@ -80,6 +83,11 @@ for i_power, power in enumerate(powers):
     ax1.plot(rep_rates, tvds[0], 'o--', alpha=0.5, markersize=6, color=color, label=fr'$\mu$={ref_mu:.2f}',)
     ax1.plot(rep_rates, tvds[1], 'o-',  alpha=0.8, markersize=6, color=color)
 
+    np.savetxt(DFUtils.create_filename(save_dir + rf'\power_{power}\{ref_model}_tvds.txt'),
+               tvds[0], delimiter=',')
+    np.savetxt(DFUtils.create_filename(save_dir + rf'\power_{power}\{ml_model}_tvds.txt'),
+               tvds[1], delimiter=',')
+
     # highlight the special rep rate
     if power == special_power:
         id_100 = np.argmax(rep_rates == 100)
@@ -98,7 +106,11 @@ ax1.tick_params(labelsize=fontsize - 2)
 width=0.3
 
 ref_100 = special_distribs['ref_100']
+np.savetxt(DFUtils.create_filename(save_dir + rf'\power_{special_power}\{ref_model}_100kHz_distrib.txt'), ref_100, delimiter=',')
+
 ref_poisson = special_distribs['ref']
+np.savetxt(DFUtils.create_filename(save_dir + rf'\power_{special_power}\{ref_model}_100kHz_poisson_fit.txt'), ref_poisson, delimiter=',')
+
 ax2.plot(np.arange(len(ref_100)) - width, ref_poisson, 'x--', color='red', alpha=0.5, label='Poisson')
 ax2.bar(np.arange(len(ref_100)) - width, ref_100, width=width, align='center', alpha=0.8, label='100kHz', color='black')
 for i_special, special_rep_rate in enumerate(special_rep_rates):
@@ -106,6 +118,8 @@ for i_special, special_rep_rate in enumerate(special_rep_rates):
     ax2.bar(np.arange(len(ml_high)) + width * i_special, ml_high, width=width, align='center', alpha=0.8,
             label=f'{special_rep_rate}kHz', color=special_colors[i_special])
 
+    np.savetxt(DFUtils.create_filename(save_dir + rf'\power_{special_power}\{ml_model}_{special_rep_rate}kHz_distrib.txt'),
+               ml_high, delimiter=',')
 
 ax2.set_ylim(bottom=0, top=0.25)
 ax2.set_ylabel('Probability', fontsize=fontsize)
@@ -116,6 +130,8 @@ ax2.legend(loc='upper right', fontsize=fontsize-2)
 
 ax1.set_title('(a) TVD comparison', fontsize=fontsize+2, fontfamily='serif', loc='left',)
 ax2.set_title('(b) Photon number distribution', fontsize=fontsize+2, fontfamily='serif', loc='left',)
+
+fig.savefig(save_dir + rf'\{ref_model}vs{ml_model}_tvd.pdf')
 
 # # fig2, ax2 = plt.subplots(figsize=(12, 6))
 #
