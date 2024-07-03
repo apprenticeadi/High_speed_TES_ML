@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from src.data_reader import DataReader
 from tes_resolver.data_chopper import DataChopper
-from tes_resolver.traces import Traces, TraceUtils
+from tes_resolver.traces import Traces
 from tes_resolver.classifier import InnerProductClassifier
 from tes_resolver.ml_funcs import generate_training_traces
 

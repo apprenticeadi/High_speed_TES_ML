@@ -6,9 +6,10 @@ from math import ceil, floor
 import warnings
 import matplotlib.pyplot as plt
 
+
 class DataReader(object):
 
-    def __init__(self, parent_dir= r'RawData'):
+    def __init__(self, parent_dir=r'RawData'):
         while parent_dir.startswith('\\'):
             parent_dir = parent_dir[1:]
 
@@ -97,4 +98,3 @@ class DataReader(object):
     #         traces = traces.reshape((num_rows * num_traces_per_row, samples_per_trace))
     #
     #         return traces
-

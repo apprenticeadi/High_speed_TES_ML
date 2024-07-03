@@ -7,11 +7,6 @@ import warnings
 import matplotlib.pyplot as plt
 
 
-
-# TODO: still needs a data reader class. Given an array of data, where each row may contain many traces, this class
-#  offers functions to chop it to the right homogoneous np array, such that each row is a single trace. THis function
-#  doesn't need to read file. It just needs to take in data array and outputs data array
-
 class DataChopper(object):
 
     @staticmethod
@@ -68,7 +63,7 @@ class DataChopper(object):
 
         if data.shape[0] != labels.shape[0]:
             raise ValueError(f'Data and labels array should have the same number of rows. ')
-        if data.shape[1]//samples_per_trace != labels.shape[1]:
+        if data.shape[1] // samples_per_trace != labels.shape[1]:
             raise ValueError(f'Number of traces in data do not match number of labels. ')
 
         # trigger the data
@@ -102,14 +97,15 @@ class DataChopper(object):
 
         if method == 'troughs':
             if samples_per_trace >= 250:
-                warnings.warn(f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via troughs method')
+                warnings.warn(
+                    f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via troughs method')
 
             else:
                 # TODO: there might be a small error here when running on non-interpolated data.
                 data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
                 for i in range(len(data)):
                     troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
-                    triggers[i] = int(np.median(troughs[1:n_troughs+1] % samples_per_trace))
+                    triggers[i] = int(np.median(troughs[1:n_troughs + 1] % samples_per_trace))
 
         else:
             raise ValueError(rf'method {method} not supported yet.')
@@ -128,7 +124,7 @@ class DataChopper(object):
 
         num_traces, period = traces_array.shape
 
-        if num_traces == 1 :
+        if num_traces == 1:
             raise ValueError('Input data array only contains a single row/trace, cannot do overlap. ')
         if period <= new_period:
             raise ValueError(f'New period of {new_period} samples is more than that of given data')
@@ -138,11 +134,11 @@ class DataChopper(object):
         if visualise:
             plt.figure('Visualise overlap traces', figsize=(5, 3))
             plt.plot(data_overlapped, alpha=0.5)
-            plt.xlim(0, 20*new_period)
+            plt.xlim(0, 20 * new_period)
 
         for i in range(num_traces):
-            data_overlapped[i*new_period: i*new_period + period] += traces_array[i, :]
-            if visualise and i <=20:
+            data_overlapped[i * new_period: i * new_period + period] += traces_array[i, :]
+            if visualise and i <= 20:
                 plt.plot(data_overlapped, alpha=0.5)
 
         final_data = data_overlapped[: new_period * num_traces]
@@ -151,6 +147,3 @@ class DataChopper(object):
             return final_data.reshape((num_traces, new_period))
         else:
             return final_data
-
-
-
