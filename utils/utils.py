@@ -2,7 +2,6 @@ import numpy as np
 import os
 import logging
 import sys
-import warnings
 from scipy.constants import h, c
 from scipy.special import factorial
 

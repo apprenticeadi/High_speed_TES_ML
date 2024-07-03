@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 import time
 
 from tes_resolver.classifier.inner_product import InnerProductClassifier
-from tes_resolver.traces import Traces
-from src.data_reader import DataReader
-import tes_resolver.config as config
+from tes_resolver import Traces, config
+from utils.data_reader import DataReader
 
 '''Compare between different data groups, and test out cross-classification, which means training the ip classifier with
  one group of data with higher photon number, and use it to predict another group of data with lower photon number. '''

@@ -1,16 +1,12 @@
-import time
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import string
-from scipy.optimize import curve_fit
-from src.utils import poisson_norm
+from utils.utils import poisson_norm
 
 import scipy.odr as odr
 
 '''Compares the power meter calibrated photon number distribution with what the TES reports at 100kHz '''
-
 powers = np.arange(12)
 modeltype='IP'
 bar_width= 0.8

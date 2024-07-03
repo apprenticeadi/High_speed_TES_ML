@@ -2,15 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-from tes_resolver.ml_funcs import generate_training_traces
-from tes_resolver.traces import Traces
+from tes_resolver import generate_training_traces, Traces, DataChopper
 from tes_resolver.classifier import InnerProductClassifier
-from tes_resolver.data_chopper import DataChopper
-from src.data_reader import DataReader
-
-# overlap the 100kHz data, and compare the average trace with the actual high rep_rate data. How big is the vertical shift?
-
-# maybe also try plotting the raw traces and see how they cluster (training data vs actual data)
+from utils import DataReader
 
 '''Parameters'''
 cal_rep_rate = 100

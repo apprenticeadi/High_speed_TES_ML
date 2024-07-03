@@ -1,13 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 import scipy.signal as signal
 
-from tes_resolver.ml_funcs import generate_training_traces
-from tes_resolver.traces import Traces
-from tes_resolver.classifier import InnerProductClassifier
-from tes_resolver.data_chopper import DataChopper
-from src.data_reader import DataReader
+from tes_resolver.ml_funcs import generate_training_traces, Traces
+from utils import DataReader
 
 
 dataReader = DataReader('Data/Tomography_data_2024_04')
