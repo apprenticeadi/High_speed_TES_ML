@@ -4,7 +4,7 @@ This package provides the code for discriminating TES voltage signals. The main 
 and a machine learning tabular classifier (e.g. Random Forest). The methods are based on [insert paper]
 
 ### Installation
-**Branch protection is not enabled for this repository. If you plan to make changes, please create a new branch.**
+**Branch protection is enabled for the main branch. If you plan to make changes, please create a new branch.**
 
 The package can be installed by cloning the repository: 
 ```sh
