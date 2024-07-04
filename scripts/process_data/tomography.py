@@ -14,20 +14,10 @@ import datetime
 import string
 import os
 
-from src.utils import LogUtils, DFUtils
+from utils import LogUtils, DFUtils
 import tes_resolver.config as config
 
 #TODO: for higher rep rates, the convergence by cvxpy is just bad, but this makes the final thetas look ok. How to account for this? Read Humphreys again.
-
-
-'''
-script to perform a tomography routine on the probabilities, using the cvxpy package
-'''
-data_name = 'Tomography_data_2024_04'
-params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params')  # rf'..\..\Results\{data_name}\Params'
-
-
-log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 
 def tomography(probs, F_matrix, guess_theta):
     """
@@ -72,6 +62,14 @@ def fidelity_by_n(theta_rec, theta_ref):
     return fidelity
 
 if __name__ == '__main__':
+    '''
+    script to perform a tomography routine on the probabilities, using the cvxpy package
+    '''
+    data_name = 'Tomography_data_2024_04'
+    params_dir = os.path.join(config.home_dir, '..', 'Results', data_name,
+                              'Params')  # rf'..\..\Results\{data_name}\Params'
+
+    log_df = pd.read_csv(params_dir + r'\log_2024_04_22.csv')
 
     modeltype = 'RF'
 

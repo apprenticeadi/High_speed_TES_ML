@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.data_reader import DataReader
-from tes_resolver.traces import Traces, TraceUtils
-from tes_resolver.data_chopper import DataChopper
+from utils.data_reader import DataReader
+from tes_resolver import Traces, TraceUtils,  DataChopper
 
 '''Script that reads raw traces and plots them'''
 

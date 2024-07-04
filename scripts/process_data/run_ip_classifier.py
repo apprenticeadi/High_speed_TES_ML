@@ -5,13 +5,10 @@ import os
 
 import pandas as pd
 
-from tes_resolver.ml_funcs import generate_training_traces
-from tes_resolver.traces import Traces
+from tes_resolver import Traces, DataChopper, config
 from tes_resolver.classifier import InnerProductClassifier
-from tes_resolver.data_chopper import DataChopper
-from src.data_reader import DataReader
-from src.utils import DFUtils
-import tes_resolver.config as config
+
+from utils import DFUtils, DataReader
 
 '''Run inner product classifier to classify all the data in a certain folder. '''
 # data parameters
@@ -26,19 +23,17 @@ data_groups = np.array([f'power_{p}' for p in powers])  # different groups of co
 rep_rates = np.arange(100, 1100, 100)  # the higher rep rates to predict
 mosaic = rep_rates.reshape(2,5)
 
-update_params = False
+update_params = False  # whether to store the results in a params folder
 if update_params:
     params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
 
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
     # save data
-    # results_dir = rf'..\..\Results\{data_name}\{modeltype}\{data_group}_{config.time_stamp}'
     results_dir = os.path.join(config.home_dir, '..', 'Results', data_name, modeltype, f'{data_group}_{config.time_stamp}')
 
     # Result file
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'])
-    # results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
     # Plotting
     fig, axs = plt.subplot_mosaic(mosaic, sharex=True, sharey=True, figsize=(20, 8), layout='constrained')

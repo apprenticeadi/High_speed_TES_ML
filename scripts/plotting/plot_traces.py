@@ -1,12 +1,11 @@
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-import matplotlib.transforms as mtransforms
 import string
 
-from src.data_reader import DataReader
-from src.utils import DFUtils
-from tes_resolver.traces import Traces
-from tes_resolver.data_chopper import DataChopper
+from utils import DataReader, DFUtils
+from tes_resolver import Traces, DataChopper
 from tes_resolver.classifier import InnerProductClassifier
 
 '''Which data to use'''
@@ -28,7 +27,6 @@ alphabet = list(string.ascii_lowercase)
 fig, axs = plt.subplots(2, len(rep_rates), sharey='row', layout='constrained', figsize=(16, 6))
 traces_dict = {}
 for i_rep, rep_rate in enumerate(rep_rates):
-
     '''Read traces'''
     data_raw = dataReader.read_raw_data(data_group, rep_rate=rep_rate)
     if rep_rate <= 300:
@@ -43,14 +41,18 @@ for i_rep, rep_rate in enumerate(rep_rates):
     ipClassifier.train(curTraces)
     ipClassifier.predict(curTraces, update=True)
 
-    '''Plot traces'''
+    '''Save the data as txt'''
     data_parsed = curTraces.data
     data_to_plot = data_parsed[:2*num_traces].reshape((num_traces, 2 * curTraces.period))
+    data_to_plot = data_to_plot /  4 * voltage_precision * 1000
+    np.savetxt(DFUtils.create_filename(save_dir + rf'\{data_group}_{rep_rate}kHz_first_{num_traces}traces.txt'),
+               data_to_plot, delimiter=',')
 
+    '''Plotting'''
     ax = axs[0, i_rep]
     ax.set_title(f'({alphabet[i_rep]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
     for i in range(num_traces):
-        ax.plot(np.arange(data_to_plot.shape[1]) / sampling_rate * 1000, data_to_plot[i] * voltage_precision / 1000,
+        ax.plot(np.arange(data_to_plot.shape[1]) / sampling_rate * 1000, data_to_plot[i],
                 alpha=0.05)
 
     if i_rep == 0:
@@ -61,33 +63,39 @@ for i_rep, rep_rate in enumerate(rep_rates):
 
     '''Plot Stegosaurus'''
     ax = axs[1, i_rep]
-    ax.set_title(f'({alphabet[i_rep + len(rep_rates)]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
+    # ax.set_title(f'({alphabet[i_rep + len(rep_rates)]}) {rep_rate}kHz', fontfamily='serif', loc='left', fontsize=fontsize + 2)
 
     # plot histogram
     overlaps = ipClassifier.calc_inner_prod(curTraces)
     inner_prod_bins = ipClassifier.inner_prod_bins
     hist_object = ax.hist(overlaps, bins=ipClassifier.num_bins, color='darkgrey')
 
+    # save data
+    heights = hist_object[0]
+    bin_edges = hist_object[1]
+    np.savetxt(save_dir + rf'\{data_group}_{rep_rate}kHz_stegosaurus_heights.txt', heights, delimiter=',')
+    np.savetxt(save_dir + rf'\{data_group}_{rep_rate}kHz_stegosaurus_bin_edges.txt', bin_edges, delimiter=',')
+
     # label peaks
-    for pn in inner_prod_bins.keys():
-        overlap_upper_lim = inner_prod_bins[pn]
-        if hist_object[1][-1] == overlap_upper_lim:
-            upper_bin = -1
-        else:
-            upper_bin = np.argmax(hist_object[1] > overlap_upper_lim)
-        if pn == 0:
-            lower_bin = 0
+    if rep_rate == 100:
+        for pn in inner_prod_bins.keys():
+            overlap_upper_lim = inner_prod_bins[pn]
+            if hist_object[1][-1] == overlap_upper_lim:
+                upper_bin = -1
+            else:
+                upper_bin = np.argmax(hist_object[1] > overlap_upper_lim)
+            if pn == 0:
+                lower_bin = 0
 
-            # central_overlap = np.mean([np.min(overlaps), inner_prod_bins[pn]])
-        else:
-            overlap_lower_lim = inner_prod_bins[pn-1]
-            lower_bin = np.argmax(hist_object[1] > overlap_lower_lim)
+                # central_overlap = np.mean([np.min(overlaps), inner_prod_bins[pn]])
+            else:
+                overlap_lower_lim = inner_prod_bins[pn-1]
+                lower_bin = np.argmax(hist_object[1] > overlap_lower_lim)
 
-            # central_overlap = np.mean([inner_prod_bins[pn-1], inner_prod_bins[pn]])
-        # position = np.argmax(hist_object[1] > central_overlap)
-        position = np.argmax(hist_object[0][lower_bin:upper_bin]) + lower_bin  # position of the highest peak in the pn bin
-
-        ax.text(hist_object[1][position], hist_object[0][position]*1.1, pn)
+                # central_overlap = np.mean([inner_prod_bins[pn-1], inner_prod_bins[pn]])
+            # position = np.argmax(hist_object[1] > central_overlap)
+            position = np.argmax(hist_object[0][lower_bin:upper_bin]) + lower_bin  # position of the highest peak in the pn bin
+            ax.text(hist_object[1][position], hist_object[0][position]*1.1, pn)
 
     ax.set_xlabel('Inner product', fontsize=fontsize)
     if i_rep == 0:
