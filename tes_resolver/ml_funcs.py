@@ -4,7 +4,7 @@ from tes_resolver.traces import Traces
 from tes_resolver.data_chopper import DataChopper
 
 
-def generate_training_traces(calTraces: Traces, target_rep_rate, trigger_delay=0):
+def generate_training_traces(calTraces: Traces, target_rep_rate, trigger_delay='automatic'):
     """Overlap calibration traces to emulate high freuqency data """
     labels = calTraces.labels
     new_period = int(calTraces.sampling_rate / target_rep_rate)

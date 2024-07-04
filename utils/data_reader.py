@@ -26,7 +26,7 @@ class DataReader(object):
         return os.path.join(self.parent_dir, data_group)
 
     def read_raw_data(self, data_group, rep_rate, file_num=0):
-        """Reads the raw data file for given frequency. No processing. Sampling rate is 20ns. """
+        """Reads the raw data file for given frequency. No processing. """
         data_dir = self.data_dir(data_group)
         data_files = os.listdir(data_dir)
 
@@ -41,6 +41,6 @@ class DataReader(object):
 
         file_name = correct_files[file_num]
         data_raw = np.loadtxt(data_dir + rf'\{file_name}', delimiter=',', unpack=True)
-        data_raw = data_raw.T
+        data_raw = data_raw.T  # the matlab code stores the data in columns, so we transpose it
 
         return data_raw

@@ -1,4 +1,5 @@
 import warnings
+from typing import Union
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,7 +13,8 @@ from tes_resolver.data_chopper import DataChopper
 
 class Traces(object):
 
-    def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4, parse_data=True, **data_parsing_kwargs):
+    def __init__(self, rep_rate, data, labels=None, sampling_rate=5e4, parse_data=True,
+                 trigger_delay: Union[str, int] = 'automatic'):
         """
         Object to handle tes voltage traces. No plotting functionality.
         :param rep_rate: repetition rate, unit: kHz.
@@ -21,9 +23,11 @@ class Traces(object):
         corresponds to 500 datapoints per period for 100kHz data.
         :param parse_data: If True, parse the data such that each row is a trace and with same length. If False, then
         leave data as is.
+        :param trigger_delay: Relevant when parse_data is True. Find the number of samples to delay the trigger,
+         such that each trace starts with its rising edge. If 'automatic', then trigger delay is found automatically by
+         finding the troughs of the data, which only works for data above 300kHz with significant overlap.
+         Otherwise, trigger_delay is an integer value.
         """
-
-        # TODO: what if only collect the trace partially?
         self.rep_rate = rep_rate
         self.freq_str = f'{rep_rate}kHz'
 
@@ -31,24 +35,29 @@ class Traces(object):
         self.ideal_samples = sampling_rate / rep_rate  # the ideal number of sampling data points per trace
         self.period = int(self.ideal_samples)  # integer number of sampling data points per trace (i.e. period of trace)
 
-        # TODO: doesn't work on 150kHz data.
         # parse data if necessary
         data = np.atleast_2d(data)
-        parse_args = {'interpolated': False, 'trigger_delay': 0}
-        parse_args.update(data_parsing_kwargs)
+
+        # if automatic trigger delay
+        if trigger_delay == 'automatic':
+            if rep_rate <= 300:
+                trigger_delay = 0
+            else:
+                trigger_delay = DataChopper.find_trigger(data, samples_per_trace=int(sampling_rate / rep_rate))
+
         if parse_data:
             if data.shape[1] <= self.period:
                 warnings.warn(f'Input data array length <= period={self.period}, no parsing performed. ')
             elif labels is not None:
                 # Input labels is not None, labels and data will only be chopped to dimension. There will be no parsing
                 data, labels = DataChopper.chop_labelled_traces(data, labels, samples_per_trace=self.period,
-                                                                trigger_delay=parse_args['trigger_delay'])
+                                                                trigger_delay=trigger_delay)
             else:
                 # When ideal_samples != period, e.g. 600kHz, ideally some traces should have 84 samples, while others 83
                 # samples. What parsing does is remove the extra sample from every 84-long traces, while making sure
                 # that every trace still starts roughly at the same relative position.
                 data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate,
-                                             **parse_args)
+                                             trigger_delay=trigger_delay)
 
         self._data = data
         if labels is None:

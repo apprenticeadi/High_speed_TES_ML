@@ -89,25 +89,21 @@ class DataChopper(object):
         return new_data, labels
 
     @staticmethod
-    def find_trigger(data, samples_per_trace, method='troughs', n_troughs=10):
+    def find_trigger(data, samples_per_trace, n_troughs=10):
         """Find the appropriate trigger delay time, such that the data is triggered at the rising edge of a trace. """
         data = np.atleast_2d(data)
         triggers = np.zeros(len(data), dtype=int)
 
-        if method == 'troughs':
-            if samples_per_trace >= 250:
-                warnings.warn(
-                    f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via troughs method')
-
-            else:
-                # TODO: there might be a small error here when running on non-interpolated data.
-                data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
-                for i in range(len(data)):
-                    troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
-                    triggers[i] = int(np.median(troughs[1:n_troughs + 1] % samples_per_trace))
+        if samples_per_trace >= 250:
+            warnings.warn(
+                f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via current method')
 
         else:
-            raise ValueError(rf'method {method} not supported yet.')
+            # TODO: there might be a small error here when running on non-interpolated data.
+            data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
+            for i in range(len(data)):
+                troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
+                triggers[i] = int(np.median(troughs[1:n_troughs + 1] % samples_per_trace))
 
         trigger_delay = int(np.median(triggers))
 
