@@ -15,7 +15,7 @@ high_rep_rate = 600  # the higher rep rates to predict
 
 modeltype = 'KNN'  # machine learning model
 test_size = 0.1  # machine learning test-train split ratio
-plot_training = True  # whether to plot the calibration data and how training traces is generated
+plot_training = False  # whether to plot the calibration data and how training traces is generated
 
 # read data
 sampling_rate = 5e4
@@ -37,7 +37,6 @@ cal_baseline = calTraces.find_offset()
 
 # Load actual traces
 actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
-
 actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay='automatic')
 
 # Generate training
