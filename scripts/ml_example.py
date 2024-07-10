@@ -11,11 +11,11 @@ from utils import DFUtils, DataReader, tvd
 '''Run ml classifier to classify all the data in a certain folder. '''
 # parameters
 cal_rep_rate = 200  # the rep rate to generate training
-high_rep_rate = 600  # the higher rep rates to predict
+high_rep_rate = 800  # the higher rep rates to predict
 
 modeltype = 'KNN'  # machine learning model
 test_size = 0.1  # machine learning test-train split ratio
-plot_training = False  # whether to plot the calibration data and how training traces is generated
+plot_training = True  # whether to plot the calibration data and how training traces is generated
 
 # read data
 sampling_rate = 5e4
@@ -33,18 +33,18 @@ ipClassifier.predict(calTraces, update=True)
 
 # Remove the baseline for calibration traces
 cal_baseline = calTraces.find_offset()
-# calTraces.data = calTraces.data - cal_baseline  # remove the baseline
+calTraces.data = calTraces.data - cal_baseline  # remove the baseline
 
 # Load actual traces
 actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
 actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay='automatic')
 
 # Generate training
-trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay='automatic')
+trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay= actualTraces.trigger_delay)
 
 # correct for the vertical shift
 offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
-# trainingTraces.data = trainingTraces.data - offset
+trainingTraces.data = trainingTraces.data - offset
 
 # Train ML Classifier
 print(f'Training ml classifier for {high_rep_rate}kHz')
@@ -86,7 +86,7 @@ if plot_training:
         ax.plot(calTraces.data[trace], alpha=0.05)
     char_traces_dict = calTraces.characteristic_traces()
     for pn in char_traces_dict.keys():
-        ax.plot(char_traces_dict[pn], color='red', alpha=0.5)
+        ax.plot(char_traces_dict[pn], color='blue', alpha=0.5)
 
     ax.axhline(cal_baseline, color='black', linestyle='--', label='Baseline')
     ax.text(calTraces.period-10, cal_baseline*2, f'{cal_baseline:.2f}', color='black')
@@ -128,4 +128,6 @@ if plot_training:
         ax.plot(predicted_char_traces[pn], color='blue', alpha=0.5)
 
     ax.plot(actualTraces.data[np.argmin(actualTraces.data) // actualTraces.period], color='green')
+
+plt.show()
 
