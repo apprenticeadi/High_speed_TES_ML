@@ -52,8 +52,7 @@ for data_group in data_groups:
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
-    # Remove the baseline for calibration traces- this step no longer needed, because in
-    # DataChopper.overlap_to_high_freq, the first sample of each trace is zeroed before overlapping.
+    # Remove the baseline for calibration traces
     cal_baseline = calTraces.find_offset()
     calTraces.data = calTraces.data - cal_baseline  # remove the baseline
 

@@ -59,6 +59,7 @@ class Traces(object):
                 data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate,
                                              trigger_delay=trigger_delay)
 
+        self.trigger_delay = trigger_delay
         self._data = data
         if labels is None:
             self._labels = np.full((len(self.data),), -1)

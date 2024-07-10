@@ -110,7 +110,8 @@ class DataChopper(object):
         return trigger_delay
 
     @staticmethod
-    def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False, reshape=True):
+    def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False, reshape=True,
+                             zero_edge=False):
         """ Overlap an array of traces (each row is a trace) with itself to mimic high frequency data"""
         traces_array = np.atleast_2d(traces_array)
 
@@ -132,7 +133,9 @@ class DataChopper(object):
             plt.xlim(0, 20 * new_period)
 
         for i in range(num_traces):
-            next_trace = traces_array[i, :] - traces_array[i, 0]  # zero the first voltage value of each trace
+            next_trace = traces_array[i, :]
+            if zero_edge:
+                next_trace = next_trace - next_trace[0] # zero the first voltage value of each trace
             data_overlapped[i * new_period: i * new_period + period] += next_trace
             if visualise and i <= 20:
                 plt.plot(data_overlapped, alpha=0.5)
