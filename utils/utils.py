@@ -60,6 +60,10 @@ def poisson_norm(x, mu):
 
 
 def tvd(a, b):
-    a = np.asarray(a)
-    b = np.asarray(b)
-    return 0.5 * np.sum(np.absolute(a - b))
+    n = max(len(a), len(b))
+    _a = np.zeros(n)
+    _a[:len(a)] = a
+
+    _b = np.zeros(n)
+    _b[:len(b)] = b
+    return 0.5 * np.sum(np.absolute(_a - _b))

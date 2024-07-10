@@ -52,7 +52,8 @@ for data_group in data_groups:
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
-    # Remove the baseline for calibration traces
+    # Remove the baseline for calibration traces- this step no longer needed, because in
+    # DataChopper.overlap_to_high_freq, the first sample of each trace is zeroed before overlapping.
     cal_baseline = calTraces.find_offset()
     calTraces.data = calTraces.data - cal_baseline  # remove the baseline
 
@@ -80,21 +81,13 @@ for data_group in data_groups:
             # Load actual traces
             ti = time.time()
             actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
-
-            # set suitable trigger delay
-            if high_rep_rate <= 300:
-                trigger_delay = 0
-            else:
-                trigger_delay = DataChopper.find_trigger(actual_data,
-                                                         samples_per_trace=int(sampling_rate / high_rep_rate))
-
-            actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay=trigger_delay)
+            actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay='automatic')
             tf = time.time()
             print(f'Load high rep rate data into traces took {tf - ti}s')
 
             # Generate training
             ti = time.time()
-            trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay=trigger_delay)
+            trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay='automatic')
 
             # correct for the vertical shift
             offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())

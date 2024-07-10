@@ -125,14 +125,15 @@ class DataChopper(object):
             raise ValueError(f'New period of {new_period} samples is more than that of given data')
 
         data_overlapped = np.zeros(new_period * (num_traces - 1) + period)
-
+        # visualise=True
         if visualise:
             plt.figure('Visualise overlap traces', figsize=(5, 3))
             plt.plot(data_overlapped, alpha=0.5)
             plt.xlim(0, 20 * new_period)
 
         for i in range(num_traces):
-            data_overlapped[i * new_period: i * new_period + period] += traces_array[i, :]
+            next_trace = traces_array[i, :] - traces_array[i, 0]  # zero the first voltage value of each trace
+            data_overlapped[i * new_period: i * new_period + period] += next_trace
             if visualise and i <= 20:
                 plt.plot(data_overlapped, alpha=0.5)
 
