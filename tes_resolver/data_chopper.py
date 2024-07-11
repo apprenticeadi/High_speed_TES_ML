@@ -110,20 +110,25 @@ class DataChopper(object):
         return trigger_delay
 
     @staticmethod
-    def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False, reshape=True,
-                             zero_edge=False):
+    def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False,
+                             zero_edge=False, trigger_delay: int =0):
         """ Overlap an array of traces (each row is a trace) with itself to mimic high frequency data"""
         traces_array = np.atleast_2d(traces_array)
 
         if selected_traces is not None:
             traces_array = traces_array[selected_traces]
 
-        num_traces, period = traces_array.shape
-
-        if num_traces == 1:
-            raise ValueError('Input data array only contains a single row/trace, cannot do overlap. ')
+        _, period = traces_array.shape
         if period <= new_period:
             raise ValueError(f'New period of {new_period} samples is more than that of given data')
+
+        if trigger_delay == 0:
+            old_data= traces_array.flatten()
+        else:
+            old_data = traces_array.flatten()[trigger_delay:- (trigger_delay % period)]
+        num_traces = len(old_data) // period
+        if num_traces <= 1:
+            raise ValueError('Input data array only contains one or fewer rows/traces, cannot do overlap. ')
 
         data_overlapped = np.zeros(new_period * (num_traces - 1) + period)
         # visualise=True
@@ -133,16 +138,13 @@ class DataChopper(object):
             plt.xlim(0, 20 * new_period)
 
         for i in range(num_traces):
-            next_trace = traces_array[i, :]
+            next_trace = old_data[i * period: (i + 1) * period]
             if zero_edge:
-                next_trace = next_trace - next_trace[0] # zero the first voltage value of each trace
+                next_trace = next_trace # - next_trace[0] # zero the first voltage value of each trace
             data_overlapped[i * new_period: i * new_period + period] += next_trace
             if visualise and i <= 20:
                 plt.plot(data_overlapped, alpha=0.5)
 
         final_data = data_overlapped[: new_period * num_traces]
 
-        if reshape:
-            return final_data.reshape((num_traces, new_period))
-        else:
-            return final_data
+        return final_data  # not reshaped
