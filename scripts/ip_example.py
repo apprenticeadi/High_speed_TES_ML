@@ -11,10 +11,10 @@ from utils import DataReader, DFUtils, poisson_norm, estimate_av_pn
 distribution'''
 
 '''Data'''
-dataReader = DataReader('Data/Tomography_data_2024_04')
+# dataReader = DataReader('Data/Tomography_data_2024_04')
 
-data_group = 'power_0'
-rep_rate = 500
+# data_group = 'power_0'
+rep_rate = 800
 file_num = 0
 raw_traces_to_plot = 1000
 
@@ -29,14 +29,14 @@ est_mean_ph, est_error = estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs
 print(rf'Estimated mean photon number = {est_mean_ph} with error= {est_error}')
 
 '''Read data '''
-data_raw = dataReader.read_raw_data(data_group, rep_rate, file_num=file_num)
+data_raw = np.loadtxt(r'F:\Data\Squeezed_test_2024_07_11\ch2\2024-07-11-1136_800kHz_1.2nmPump_1570nmBPF_600uWpump_Raw_Traces_Chan[2]_1542.txt').T  # dataReader.read_raw_data(data_group, rep_rate, file_num=file_num)
 
-if rep_rate <= 300:
-    trigger_delay = 0
-else:
-    trigger_delay = DataChopper.find_trigger(data_raw, samples_per_trace=int(5e4 / rep_rate))
+# if rep_rate <= 300:
+#     trigger_delay = 0
+# else:
+#     trigger_delay = DataChopper.find_trigger(data_raw, samples_per_trace=int(5e4 / rep_rate))
 
-targetTraces = Traces(rep_rate, data_raw, parse_data=True, trigger_delay=0)
+targetTraces = Traces(rep_rate, data_raw, parse_data=True, trigger_delay='automatic')
 
 '''Run the inner product classifier'''
 ipClassifier = InnerProductClassifier(multiplier=1., num_bins=1000)
@@ -64,11 +64,11 @@ ax.set_xlabel('Inner product')
 ax.set_ylabel('Counts')
 
 ax = axs[1]
-# for i in range(raw_traces_to_plot):
-#     ax.plot(targetTraces.data[i], alpha=0.1)
-# characeristic_traces = targetTraces.characteristic_traces()
-# for pn in characeristic_traces.keys():
-#     ax.plot(characeristic_traces[pn], color='red', alpha=1., label='Characteristic traces')
+for i in range(raw_traces_to_plot):
+    ax.plot(targetTraces.data[i], alpha=0.1)
+characeristic_traces = targetTraces.characteristic_traces()
+for pn in characeristic_traces.keys():
+    ax.plot(characeristic_traces[pn], color='blue', alpha=0.5, label='Characteristic traces')
 ax.set_xlabel('Samples')
 ax.set_title(f'First {raw_traces_to_plot} raw traces')
 
@@ -77,8 +77,8 @@ ax.set_title('PN distribution')
 ax.bar(pns, freq)
 ax.set_xlabel('Photon number')
 
-ax.plot(pns, poisson_norm(pns, mean_photon_number), '-o', color='red', label=f'mean={mean_photon_number}')
-ax.plot(pns, poisson_norm(pns, est_mean_ph), '-o', color='orange', label=f'mean={est_mean_ph}')
+# ax.plot(pns, poisson_norm(pns, mean_photon_number), '-o', color='red', label=f'mean={mean_photon_number}')
+# ax.plot(pns, poisson_norm(pns, est_mean_ph), '-o', color='orange', label=f'mean={est_mean_ph}')
 ax.legend()
 #
 # ave_trace = targetTraces.average_trace()

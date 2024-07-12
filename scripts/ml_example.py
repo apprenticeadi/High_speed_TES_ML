@@ -4,13 +4,17 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 from tes_resolver import Traces, DataChopper, config, generate_training_traces
 from tes_resolver.classifier import InnerProductClassifier, TabularClassifier, CNNClassifier
 from utils import DFUtils, DataReader, tvd
 
 '''Run ml classifier to classify all the data in a certain folder. '''
 # parameters
-cal_rep_rate = 200  # the rep rate to generate training
+cal_rep_rate = 100  # the rep rate to generate training
 high_rep_rate = 800  # the higher rep rates to predict
 
 modeltype = 'KNN'  # machine learning model
@@ -19,11 +23,11 @@ plot_training = True  # whether to plot the calibration data and how training tr
 
 # read data
 sampling_rate = 5e4
-dataReader = DataReader('Data/Tomography_data_2024_04')
-data_group = 'power_6'
+# dataReader = DataReader('Data/Tomography_data_2024_04')
+# data_group = 'power_6'
 
 # read calibration data
-cal_data = dataReader.read_raw_data(data_group, cal_rep_rate)
+cal_data = np.loadtxt(r'F:\Data\TES-ML_2024\Squeezed states July 2024\squeezed states 2024_07_11\2024-07-11-2011_100kHz_2nmPump_1570nmBPF_120uWpump_Raw_Traces_Chan[1]_9.txt').T #  dataReader.read_raw_data(data_group, cal_rep_rate)
 calTraces = Traces(cal_rep_rate, cal_data, parse_data=True, trigger_delay=0)
 
 # Train an ip classifier, and use it to label the calibration data
@@ -36,8 +40,8 @@ cal_baseline = calTraces.find_offset()
 calTraces.data = calTraces.data - cal_baseline  # remove the baseline
 
 # Load actual traces
-actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
-actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay='automatic')
+actual_data =  np.loadtxt(r'F:\Data\TES-ML_2024\Squeezed states July 2024\squeezed states 2024_07_11\2024-07-11-1958_800kHz_2nmPump_1570nmBPF_950uWpump_Raw_Traces_Chan[1]_6.txt').T #  dataReader.read_raw_data(data_group, high_rep_rate)
+actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay= 'automatic')
 
 # Generate training
 trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay= actualTraces.trigger_delay)
