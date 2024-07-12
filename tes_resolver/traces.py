@@ -37,18 +37,19 @@ class Traces(object):
 
         # parse data if necessary
         data = np.atleast_2d(data)
-
-        # if automatic trigger delay
-        if trigger_delay == 'automatic':
-            if rep_rate <= 300:
-                trigger_delay = 0
-            else:
-                trigger_delay = DataChopper.find_trigger(data, samples_per_trace=int(sampling_rate / rep_rate))
+        if data.shape[1] <= self.period:
+            warnings.warn(f'Input data array length <= period={self.period}, no parsing performed. ')
+            parse_data=False
 
         if parse_data:
-            if data.shape[1] <= self.period:
-                warnings.warn(f'Input data array length <= period={self.period}, no parsing performed. ')
-            elif labels is not None:
+            # if automatic trigger delay
+            if trigger_delay == 'automatic':
+                if rep_rate <= 300:
+                    trigger_delay = 0
+                else:
+                    trigger_delay = DataChopper.find_trigger(data, samples_per_trace=int(sampling_rate / rep_rate))
+
+            if labels is not None:
                 # Input labels is not None, labels and data will only be chopped to dimension. There will be no parsing
                 data, labels = DataChopper.chop_labelled_traces(data, labels, samples_per_trace=self.period,
                                                                 trigger_delay=trigger_delay)
@@ -58,8 +59,10 @@ class Traces(object):
                 # that every trace still starts roughly at the same relative position.
                 data = TraceUtils.parse_data(self.rep_rate, data_raw=data, sampling_rate=self.sampling_rate,
                                              trigger_delay=trigger_delay)
+            self.trigger_delay = trigger_delay
+        else:
+            self.trigger_delay = 0
 
-        self.trigger_delay = trigger_delay
         self._data = data
         if labels is None:
             self._labels = np.full((len(self.data),), -1)
