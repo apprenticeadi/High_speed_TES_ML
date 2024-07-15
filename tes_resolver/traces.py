@@ -37,7 +37,7 @@ class Traces(object):
 
         # parse data if necessary
         data = np.atleast_2d(data)
-        if data.shape[1] <= self.period:
+        if data.shape[1] <= self.period and parse_data:
             warnings.warn(f'Input data array length <= period={self.period}, no parsing performed. ')
             parse_data=False
 
