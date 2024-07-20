@@ -26,14 +26,14 @@ def project_point_onto_line(m, x, y):
 
 
 # Read data
-dataReader = DataReader('Data/Tomography_data_2024_04')
-data_group = 'power_9'
 target_rep_rate = 100
 sampling_rate = 5e4
-traces_to_plot = 10000
 
 # load actual data
-actual_data = dataReader.read_raw_data(data_group, target_rep_rate)
+# dataReader = DataReader('Data/Tomography_data_2024_04')
+# data_group = 'power_9'
+# actual_data = dataReader.read_raw_data(data_group, target_rep_rate)
+actual_data = np.loadtxt(r'..\..\Data\squeezed states 2024_07_11\2024-07-11-2053_100kHz_2nmPump_1570nmBPF_116uWpump_Raw_Traces_Chan[1]_1.txt').T
 if target_rep_rate <= 300:
     trigger_delay = 0
 else:
@@ -62,7 +62,6 @@ data_zeroed = data - col_means
 # Singular value decomposition to find factor scores and loading matrix
 P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
 F = P * Delta  # Factor scores
-f_data = F[:traces_to_plot, :5]
 
 # plt.figure('Principle components')
 # for i in range(5):
