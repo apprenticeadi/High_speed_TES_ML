@@ -10,6 +10,7 @@ import threading
 
 from utils import DataReader
 from tes_resolver import DataChopper, Traces
+from tes_resolver.classifier import InnerProductClassifier
 
 from sklearn.cluster import AgglomerativeClustering, KMeans
 
