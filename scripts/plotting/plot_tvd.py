@@ -3,9 +3,8 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.special import factorial
 
-from src.utils import DFUtils, poisson_norm, tvd
+from utils.utils import DFUtils, poisson_norm, tvd
 
 ref_model = 'IP'
 ml_model = 'BDT'

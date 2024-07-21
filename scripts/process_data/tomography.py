@@ -14,7 +14,7 @@ import datetime
 import string
 import os
 
-from src.utils import LogUtils, DFUtils
+from utils import LogUtils, DFUtils
 import tes_resolver.config as config
 
 #TODO: for higher rep rates, the convergence by cvxpy is just bad, but this makes the final thetas look ok. How to account for this? Read Humphreys again.

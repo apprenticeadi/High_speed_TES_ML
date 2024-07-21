@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.special import factorial
 
-from src.utils import DFUtils, poisson_norm, tvd
+from utils import poisson_norm, tvd
 
 ref_model = 'IP'
 models = ['IP', 'RF', 'BDT', 'SVM', 'KNN', 'CNN']
@@ -67,6 +66,8 @@ plt.show()
 processing_ts = processing_ts / len(rep_rates)
 fig2, ax2 = plt.subplots(figsize=(8, 4), layout='constrained')
 ax2.bar(np.arange(len(models)), processing_ts, width=0.5, align='center')
+for i in range(len(models)):
+    ax2.text(i, processing_ts[i], f'{processing_ts[i]:.2f}', ha='center', va='bottom', fontsize=fontsize - 2)
 ax2.set_xticks(np.arange(len(models)))
 ax2.set_xticklabels(models)
 ax2.set_ylabel('Processing time/s', fontsize=fontsize)

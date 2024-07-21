@@ -1,19 +1,11 @@
-import time
 import numpy as np
-import datetime
-import pandas as pd
-import logging
-from scipy.special import factorial
-import string
 
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
-from matplotlib.colors import Normalize
 
-from src.utils import DFUtils, LogUtils
+from utils import DFUtils
 from scripts.process_data.tomography import fidelity_by_n
 
-models = ['IP', 'BDT', 'RF', 'KNN']
+models = ['IP', 'KNN', 'BDT', 'RF']
 
 max_input = 16  # number of columns
 max_detected = 16  # number of rows
@@ -36,7 +28,7 @@ np.savetxt(DFUtils.create_filename(save_dir + rf'\reference_theta_IP_{ref_ip_rep
 '''Plot Fidelities'''
 rep_vals = np.arange(100, 900, 100)
 
-fig2, ax2 = plt.subplots(figsize=(10, 4), layout='constrained')
+fig2, ax2 = plt.subplots(figsize=(10, 2), layout='constrained')
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 

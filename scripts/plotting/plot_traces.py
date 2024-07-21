@@ -2,13 +2,10 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-import matplotlib.transforms as mtransforms
 import string
 
-from src.data_reader import DataReader
-from src.utils import DFUtils
-from tes_resolver.traces import Traces
-from tes_resolver.data_chopper import DataChopper
+from utils import DataReader, DFUtils
+from tes_resolver import Traces, DataChopper
 from tes_resolver.classifier import InnerProductClassifier
 
 '''Which data to use'''

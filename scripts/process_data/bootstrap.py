@@ -1,8 +1,4 @@
-from tes_resolver.traces import Traces
-from tes_resolver.classifier import InnerProductClassifier
-from tes_resolver.data_chopper import DataChopper
-from src.data_reader import DataReader
-from src.utils import DFUtils
+from utils.utils import DFUtils
 import tes_resolver.config as config
 
 import numpy as np
@@ -10,6 +6,7 @@ import pandas as pd
 from scipy.stats import bootstrap
 import os
 
+'''Bootstrap to produce errorbars for identified photon number distribution'''
 powers = np.arange(12)
 rep_rates = np.arange(100, 1100, 100)
 modeltype = 'RF'
@@ -17,7 +14,6 @@ data_name = 'Tomography_data_2024_04'
 
 bootstrap_for_mean = False  # if true, bootstrap for the mean photon number, if false, bootstrap for errors on each pn probability
 
-# params_dir = rf'..\..\Results\Tomography_data_2024_04\Params\{modeltype}'
 params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
 
 for power in powers:
@@ -31,6 +27,7 @@ for power in powers:
         p_errors_df = pd.DataFrame(columns= ['rep_rate'] + list(pn_labels))
 
     for i_reprate, rep_rate in enumerate(rep_rates):
+        # Load the signal processing results
         num_traces = results_df.loc[results_df['rep_rate']==rep_rate, 'num_traces'].iloc[0]
         num_traces = int(num_traces)
         pn_distrib = np.array(results_df.loc[results_df['rep_rate'] == rep_rate, '0':].iloc[0])
@@ -39,6 +36,7 @@ for power in powers:
         mean_pn = np.sum(pn_labels * pn_distrib)
         pn_counts = np.rint(pn_distrib * num_traces).astype(int)
 
+        # Create a mimic of the raw labels
         raw_labels_mimic = np.zeros(num_traces, dtype=int)
         start_id = 0
         for pn, pn_count in enumerate(pn_counts):
@@ -47,6 +45,7 @@ for power in powers:
 
         np.random.shuffle(raw_labels_mimic)
 
+        # bootstrap for mean photon number
         if bootstrap_for_mean:
             print(f'Bootstrapping for mean_pn at {rep_rate}kHz, power_{power}')
             res = bootstrap((raw_labels_mimic,), np.mean, confidence_level=0.95, batch=100, method='basic')
@@ -54,6 +53,7 @@ for power in powers:
 
             means_df.to_csv(DFUtils.create_filename(params_dir + rf'\bootstrapped_means\{modeltype}_results_power_{power}.csv'))
 
+        # bootstrap for the probability and errors of the probability of each photon number
         else:
             n_errors = np.zeros(len(pn_labels))
             p_errors = np.zeros(len(pn_labels))

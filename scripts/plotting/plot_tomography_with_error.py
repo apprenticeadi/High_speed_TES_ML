@@ -2,15 +2,12 @@ import time
 import numpy as np
 import datetime
 import pandas as pd
-import logging
-from scipy.special import factorial
 import string
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.colors import Normalize
 
-from src.utils import DFUtils, LogUtils
+from utils import DFUtils
 from scripts.process_data.tomography import fidelity_by_n
 
 ml_model = 'KNN'
@@ -38,7 +35,7 @@ fontsize = 14
 
 '''Plot POVM'''
 # fig = plt.figure(figsize=(20, 8))
-fig, axs = plt.subplots(2, 3, height_ratios=[3, 1], sharex='all', sharey='row', layout='constrained', figsize=(10, 4))
+fig, axs = plt.subplots(2, 3, height_ratios=[3, 1], sharex='row', sharey='row', layout='constrained', figsize=(10, 4))
 
 gs = gridspec.GridSpec(4, 18)
 width = 0.4  # 3d bar plot width

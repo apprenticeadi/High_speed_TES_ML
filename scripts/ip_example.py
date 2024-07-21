@@ -2,15 +2,10 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.special import factorial
-from scipy.constants import h, c
 
 from tes_resolver.classifier.inner_product import InnerProductClassifier
-from tes_resolver.traces import Traces
-from tes_resolver.data_chopper import DataChopper
-from src.data_reader import DataReader
-import tes_resolver.config as config
-from src.utils import DFUtils, poisson_norm, estimate_av_pn
+from tes_resolver import Traces, DataChopper
+from utils import DataReader, DFUtils, poisson_norm, estimate_av_pn
 
 '''Script that runs inner product classifier on given data. Plots raw traces, stegosaurus, and photon number 
 distribution'''

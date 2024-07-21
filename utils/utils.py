@@ -2,9 +2,9 @@ import numpy as np
 import os
 import logging
 import sys
-import warnings
 from scipy.constants import h, c
 from scipy.special import factorial
+
 
 class LogUtils:
 
@@ -58,7 +58,12 @@ def estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, wavelength=15
 def poisson_norm(x, mu):
     return (mu ** x) * np.exp(-mu) / factorial(x)
 
+
 def tvd(a, b):
-    a = np.asarray(a)
-    b = np.asarray(b)
-    return 0.5 * np.sum(np.absolute(a-b))
+    n = max(len(a), len(b))
+    _a = np.zeros(n)
+    _a[:len(a)] = a
+
+    _b = np.zeros(n)
+    _b[:len(b)] = b
+    return 0.5 * np.sum(np.absolute(_a - _b))

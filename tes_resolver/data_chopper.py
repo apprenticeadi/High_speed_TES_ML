@@ -2,15 +2,9 @@ import numpy as np
 import os
 from scipy.signal import find_peaks
 from scipy.interpolate import CubicSpline
-from math import ceil, floor
 import warnings
 import matplotlib.pyplot as plt
 
-
-
-# TODO: still needs a data reader class. Given an array of data, where each row may contain many traces, this class
-#  offers functions to chop it to the right homogoneous np array, such that each row is a single trace. THis function
-#  doesn't need to read file. It just needs to take in data array and outputs data array
 
 class DataChopper(object):
 
@@ -68,7 +62,7 @@ class DataChopper(object):
 
         if data.shape[0] != labels.shape[0]:
             raise ValueError(f'Data and labels array should have the same number of rows. ')
-        if data.shape[1]//samples_per_trace != labels.shape[1]:
+        if data.shape[1] // samples_per_trace != labels.shape[1]:
             raise ValueError(f'Number of traces in data do not match number of labels. ')
 
         # trigger the data
@@ -95,62 +89,62 @@ class DataChopper(object):
         return new_data, labels
 
     @staticmethod
-    def find_trigger(data, samples_per_trace, method='troughs', n_troughs=10):
+    def find_trigger(data, samples_per_trace, n_troughs=10):
         """Find the appropriate trigger delay time, such that the data is triggered at the rising edge of a trace. """
         data = np.atleast_2d(data)
         triggers = np.zeros(len(data), dtype=int)
 
-        if method == 'troughs':
-            if samples_per_trace >= 250:
-                warnings.warn(f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via troughs method')
-
-            else:
-                # TODO: there might be a small error here when running on non-interpolated data.
-                data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
-                for i in range(len(data)):
-                    troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
-                    triggers[i] = int(np.median(troughs[1:n_troughs+1] % samples_per_trace))
+        if samples_per_trace >= 250:
+            warnings.warn(
+                f'Traces do not overlap at {samples_per_trace} samples per trace. Cannot find trigger via current method')
 
         else:
-            raise ValueError(rf'method {method} not supported yet.')
+            # TODO: there might be a small error here when running on non-interpolated data.
+            data = data[:, : 5 * n_troughs * samples_per_trace]  # no need to treat the entire data
+            for i in range(len(data)):
+                troughs, _ = find_peaks(- data[i], distance=samples_per_trace - samples_per_trace // 10)
+                triggers[i] = int(np.median(troughs[1:n_troughs + 1] % samples_per_trace))
 
         trigger_delay = int(np.median(triggers))
 
         return trigger_delay
 
     @staticmethod
-    def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False, reshape=True):
+    def overlap_to_high_freq(traces_array, new_period, selected_traces=None, visualise=False,
+                             zero_edge=False, trigger_delay: int =0):
         """ Overlap an array of traces (each row is a trace) with itself to mimic high frequency data"""
         traces_array = np.atleast_2d(traces_array)
 
         if selected_traces is not None:
             traces_array = traces_array[selected_traces]
 
-        num_traces, period = traces_array.shape
-
-        if num_traces == 1 :
-            raise ValueError('Input data array only contains a single row/trace, cannot do overlap. ')
+        _, period = traces_array.shape
         if period <= new_period:
             raise ValueError(f'New period of {new_period} samples is more than that of given data')
 
-        data_overlapped = np.zeros(new_period * (num_traces - 1) + period)
+        if trigger_delay == 0:
+            old_data= traces_array.flatten()
+        else:
+            old_data = traces_array.flatten()[trigger_delay:- (trigger_delay % period)]
+        num_traces = len(old_data) // period
+        if num_traces <= 1:
+            raise ValueError('Input data array only contains one or fewer rows/traces, cannot do overlap. ')
 
+        data_overlapped = np.zeros(new_period * (num_traces - 1) + period)
+        # visualise=True
         if visualise:
             plt.figure('Visualise overlap traces', figsize=(5, 3))
             plt.plot(data_overlapped, alpha=0.5)
-            plt.xlim(0, 20*new_period)
+            plt.xlim(0, 20 * new_period)
 
         for i in range(num_traces):
-            data_overlapped[i*new_period: i*new_period + period] += traces_array[i, :]
-            if visualise and i <=20:
+            next_trace = old_data[i * period: (i + 1) * period]
+            if zero_edge:
+                next_trace = next_trace # - next_trace[0] # zero the first voltage value of each trace
+            data_overlapped[i * new_period: i * new_period + period] += next_trace
+            if visualise and i <= 20:
                 plt.plot(data_overlapped, alpha=0.5)
 
         final_data = data_overlapped[: new_period * num_traces]
 
-        if reshape:
-            return final_data.reshape((num_traces, new_period))
-        else:
-            return final_data
-
-
-
+        return final_data  # not reshaped

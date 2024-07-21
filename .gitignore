@@ -55,9 +55,3 @@ docs/_build/
 /.idea/
 .DS_Store
 
-/Plots/
-/Data/
-/dev_Scripts/models2/
-/Results/
-/drafts/
-/Params/

@@ -3,7 +3,7 @@ import matplotlib.colors as mcolors
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 
-from src.utils import DFUtils
+from utils import DFUtils
 
 sub_dir = r'\raw_[5, 8, 7]_2024-02-19(00-08-36.563517)'
 
