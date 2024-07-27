@@ -8,63 +8,12 @@ from matplotlib.colors import LinearSegmentedColormap
 from scipy.optimize import minimize
 import threading
 
-from utils import DataReader
-from tes_resolver import DataChopper, Traces
-from tes_resolver.classifier import InnerProductClassifier
+from utils import DataReader, RuquReader, DFUtils
+from tes_resolver import DataChopper, generate_training_traces
+from tes_resolver.classifier import InnerProductClassifier, TabularClassifier
+from tes_resolver.traces import Traces, PCATraces
 
 from sklearn.cluster import AgglomerativeClustering, KMeans
-
-
-def project_point_onto_line(m, x, y):
-    """
-    Project a point (x, y) onto a line defined by y = mx.
-    Returns the distance from origin to the projected point.
-    """
-    return (x+m*y) / np.sqrt(m**2+1)
-
-
-# Read data
-target_rep_rate = 100
-sampling_rate = 5e4
-
-# load actual data
-# dataReader = DataReader('Data/Tomography_data_2024_04')
-# data_group = 'power_9'
-# actual_data = dataReader.read_raw_data(data_group, target_rep_rate)
-actual_data = np.loadtxt(r'..\..\Data\squeezed states 2024_07_11\2024-07-11-2053_100kHz_2nmPump_1570nmBPF_116uWpump_Raw_Traces_Chan[1]_1.txt').T
-if target_rep_rate <= 300:
-    trigger_delay = 0
-else:
-    trigger_delay = DataChopper.find_trigger(actual_data, samples_per_trace=int(sampling_rate / target_rep_rate))
-targetTraces = Traces(target_rep_rate, actual_data, parse_data=True, trigger_delay=trigger_delay)
-data = targetTraces.data
-
-# try process with inner product classifier
-ipClassifier = InnerProductClassifier(num_bins=1000, multiplier=1.)
-ipClassifier.train(targetTraces)
-ips = ipClassifier.calc_inner_prod(targetTraces)
-fig, ax = plt.subplots(num='Inner products', layout='constrained')
-ax.hist(ips, bins=ipClassifier.num_bins)
-ax.set_title('Inner product Stegosaurus')
-ax.set_xlabel('Inner product')
-ax.set_ylabel('Occurrence')
-
-# To perform PCA, first zero the mean along each column
-col_means = np.mean(data, axis=0)
-data_zeroed = data - col_means
-
-# plt.figure('zeroed data')
-# for i in range(traces_to_plot):
-#     plt.plot(data_zeroed[i], alpha=0.1)
-
-# Singular value decomposition to find factor scores and loading matrix
-P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
-F = P * Delta  # Factor scores
-
-# plt.figure('Principle components')
-# for i in range(5):
-#     plt.plot(QT[i], label=f'{i}')
-# plt.legend()
 
 # plot scatter plot with density color
 # "Viridis-like" colormap with white background
@@ -78,50 +27,133 @@ white_viridis = LinearSegmentedColormap.from_list('white_viridis', [
     (1, '#fde624'),
 ], N=256)
 
-fig2 = plt.figure(layout='constrained')
-ax2 = fig2.add_subplot(1, 1, 1, projection='scatter_density')
-density = ax2.scatter_density(F[:, 0], F[:, 1], cmap=white_viridis)
-fig2.colorbar(density, label='Number of points per pixel')
-ax2.set_xlabel(r'$F_1$')
-ax2.set_ylabel(r'$F_2$')
 
-# ask input from user for the cut, plt.pause until user enters input
-if target_rep_rate == 100:
-    m_opt = 0
-else:
-    plt.show(block=False)
+# Parameters
+cal_rep_rate = 100
+cal_keywords = ['2nmPump', '112uW', '2024-07-17-1954_']
+caltraces = []  # calibration traces
+trainingtraces = []  # training traces, from overlapping caltraces
 
-    # Define a function to ask for user input
-    def get_user_input(prompt, result_list):
-        result_list[0] = input(prompt)
+high_rep_rate = 800
+high_keywords = ['2nmPump', '900uW', '2024-07-17-2010_']
+hightraces = []  # high rep rate traces
 
-    # Create a list to store the user input
-    user_input = [None]
+channels = ['Chan[1]', 'Chan[2]']
 
-    # Create a thread to ask for user input
-    input_thread = threading.Thread(target=get_user_input, args=("Enter the gradient of the line to cut the data:", user_input))
+sampling_rate = 5e4
+chop=True
+trace_to_plot = 1000
 
-    # Start the thread
-    input_thread.start()
+sqReader = RuquReader(r'Data\squeezed states 2024_07_17')
+ipClassifier = InnerProductClassifier(num_bins=1000, multiplier=1.)
+mlClassifier = TabularClassifier('SVM', test_size=0.1)
 
-    # Display the plot and wait for the user input
-    while input_thread.is_alive():
-        plt.pause(1)
+# read raw data and process with inner product
+for i_ch, channel in enumerate(channels):
+    # read calibration data
+    cal_data = sqReader.read_raw_data(f'{cal_rep_rate}kHz', channel, *cal_keywords, concatenate=True, return_file_names=False)
+    if chop:
+        cal_data = cal_data[:, :int(cal_data.shape[1]/2)]
+        effective_rep_rate = 2*cal_rep_rate
+    else:
+        effective_rep_rate = cal_rep_rate
+    calTraces = Traces(effective_rep_rate, cal_data, parse_data=False)
+    # predict with inner product
+    ipClassifier.train(calTraces)
+    ipClassifier.predict(calTraces, update=True)
+    # remove baseline
+    baseline = calTraces.find_offset()
+    calTraces.data = calTraces.data - baseline
+    caltraces.append(calTraces)
 
-    # Get the user input from the list
-    m_opt = float(user_input[0])
+    # read high rep rate data
+    high_data = sqReader.read_raw_data(f'{high_rep_rate}kHz', channel, *high_keywords, concatenate=True, return_file_names=False)
+    highTraces = Traces(high_rep_rate, high_data, parse_data=True, trigger_delay='automatic')
+    trigger_delay = highTraces.trigger_delay
+    hightraces.append(highTraces)
 
-# plot the cut and histogram
-xs = np.linspace(np.min(F[:, 0]), np.max(F[:, 0]), 100)
-ax2.plot(xs, m_opt*xs, 'r--', label=f'{m_opt:.2f}x')
+    # generate training traces
+    trainingTraces = generate_training_traces(calTraces, 800, trigger_delay=trigger_delay)
+    trainingtraces.append(trainingTraces)
 
-projected_F = [project_point_onto_line(m_opt, x, y) for x, y in F[:, :2]]
-fig3, ax3 = plt.subplots(num='Projected factor scores', layout='constrained')
-ax3.hist(projected_F, bins=1000)
-ax3.set_title('PCA stegosaurus')
-ax3.set_xlabel('Projected factor scores')
-ax3.set_ylabel('Occurrence')
-ax3.invert_xaxis()
+# find principal components of high rep rate data
+qts = []
+high_pcatraces = []
+training_pcatraces = []
+fig, axs = plt.subplots(3, 2, layout='constrained', figsize=(12, 8), sharex='all', sharey='row')  # raw traces and principle components
+fig2 = plt.figure(layout='constrained', figsize=(12, 6))  # factor scores
+for i_ch, channel in enumerate(channels):
+    # high rep rate data
+    high_data = hightraces[i_ch].data
+    high_zeroed = high_data - np.mean(high_data, axis=0)
+    # Perform PCA
+    # Singular value decomposition to find factor scores and loading matrix
+    P, Delta, QT = np.linalg.svd(high_zeroed, full_matrices=False)
+    F_high = P * Delta  # Factor scores
+
+    high_pcatraces.append(PCATraces(high_rep_rate, F_high[:, :5], labels=None))  # PCA trace with the first 5 pincipal components
+    qts.append(QT)
+
+    # training data
+    training_data = trainingtraces[i_ch].data
+    training_zeroed = training_data - np.mean(training_data, axis=0)
+    # Perform PCA with existing qt
+    QT_inv = np.linalg.inv(QT)
+    F_training = training_zeroed @ QT_inv
+    training_pcatraces.append(PCATraces(high_rep_rate, F_training[:, :5], labels=trainingtraces[i_ch].labels))
+
+    # # plot traces and principal components
+    # ax0 = axs[0, i_ch]
+    # for i in range(trace_to_plot):
+    #     ax0.plot(high_zeroed[i], alpha=0.05)
+    # ax0.set_title(f'{channel} zeroed {high_rep_rate}kHz traces')
+    # ylims = [np.min(high_zeroed), np.max(high_zeroed)]
+    # ax0.set_ylim(ylims)
+    #
+    # ax1 = axs[1, i_ch]
+    # for i in range(trace_to_plot):
+    #     ax1.plot(training_zeroed[i], alpha=0.05)
+    # ax1.set_title(f'{channel} zeroed training traces')
+    # ax1.set_ylim(ylims)
+    #
+    # ax2 = axs[2, i_ch]
+    # for i in range(5):
+    #     ax2.plot(QT[i], label=f'{i}', alpha=0.7)
+    # ax2.set_title(f'{channel} principal components')
+    # ax2.set_xlabel('Samples')
+    # ax2.legend()
+
+    # plot factor scores
+    ax3 = fig2.add_subplot(2, 2, 1+i_ch, projection='scatter_density')
+    density = ax3.scatter_density(F_high[:, 0], F_high[:, 1], cmap=white_viridis)
+    ax3.set_title(f'{channel} {high_rep_rate}kHz factor scores')
+    ax3.set_xlabel(r'$F_1$')
+    ax3.set_ylabel(r'$F_2$')
+
+    xlims = [np.min(F_high[:, 0]), np.max(F_high[:, 0])]
+    ylims = [np.min(F_high[:, 1]), np.max(F_high[:, 1])]
+    ax3.set_xlim(xlims)
+    ax3.set_ylim(ylims)
+
+    ax4 = fig2.add_subplot(2, 2, 3+i_ch, projection='scatter_density')
+    density = ax4.scatter_density(F_training[:, 0], F_training[:, 1], cmap=white_viridis)
+    ax4.set_title(f'{channel} training factor scores')
+    ax4.set_xlabel(r'$F_1$')
+    ax4.set_ylabel(r'$F_2$')
+    ax4.set_xlim(xlims)
+    ax4.set_ylim(ylims)
+
+fig.suptitle(f'Traces and principal components')
+
+fig2.colorbar(density, ax=[ax3, ax4], label='Number of points per pixel')
+fig2.suptitle('Principal component factor scores')
+
+
+# run supervised tabular classifier
+t0 = time.time()
+
+
+
 
 # # plot factor scores
 # xrange = np.max(F[:, 0]) - np.min(F[:, 0])
