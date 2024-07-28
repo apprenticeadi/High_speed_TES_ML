@@ -14,22 +14,22 @@ from utils import DFUtils, tvd, DataReader, RuquReader
 
 '''Run ml classifier to classify all the data in a certain folder. '''
 # parameters
-cal_rep_rate = 800  # the rep rate to generate training
+cal_rep_rate = 100  # the rep rate to generate training
 
-data_keywords = ['1.75nmPump', '900uW']
+data_keywords = ['2nmPump', '112uW', '-1954_']
 channels = ['Chan[1]', 'Chan[2]']
 
 fig_titles = f'{cal_rep_rate}kHz_' + '_'.join(data_keywords)
 # read data
 sampling_rate = 5e4
-sqReader = RuquReader(r'Data\TES data backup 20240711\squeezed states 2024_07_11')
+sqReader = RuquReader(r'Data\squeezed states 2024_07_17')
 
 # read data from the two channels
-data_1 = sqReader.read_raw_data(f'{cal_rep_rate}kHz', channels[0], *data_keywords, concatenate=False, return_file_names=False)[0]
-ch1Traces = Traces(cal_rep_rate, data_1, parse_data=True, trigger_delay='automatic')
+data_1 = sqReader.read_raw_data(f'{cal_rep_rate}kHz', channels[0], *data_keywords, concatenate=True, return_file_names=False)
+ch1Traces = Traces(cal_rep_rate, data_1, parse_data=False, trigger_delay='automatic')
 
-data_2 = sqReader.read_raw_data(f'{cal_rep_rate}kHz', channels[1], *data_keywords, concatenate=False, return_file_names=False)[0]
-ch2Traces = Traces(cal_rep_rate, data_2, parse_data=True, trigger_delay='automatic')
+data_2 = sqReader.read_raw_data(f'{cal_rep_rate}kHz', channels[1], *data_keywords, concatenate=True, return_file_names=False)
+ch2Traces = Traces(cal_rep_rate, data_2, parse_data=False, trigger_delay='automatic')
 
 trace_objects = [ch1Traces, ch2Traces]
 
