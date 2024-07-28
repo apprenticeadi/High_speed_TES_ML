@@ -7,13 +7,16 @@ import mpl_scatter_density # adds projection='scatter_density'
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.optimize import minimize
 import threading
+import datetime
+import os
 
 from utils import DataReader, RuquReader, DFUtils
 from tes_resolver import DataChopper, generate_training_traces
 from tes_resolver.classifier import InnerProductClassifier, TabularClassifier
 from tes_resolver.traces import Traces, PCATraces
 
-from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.cluster import AgglomerativeClustering, KMeans, Birch, DBSCAN, SpectralClustering, OPTICS, HDBSCAN
+from sklearn.mixture import GaussianMixture
 
 # plot scatter plot with density color
 # "Viridis-like" colormap with white background
@@ -67,13 +70,17 @@ for i_ch, channel in enumerate(channels):
     caltraces.append(calTraces)
 
     # read high rep rate data
-    high_data = sqReader.read_raw_data(f'{high_rep_rate}kHz', channel, *high_keywords, concatenate=True, return_file_names=False)
+    high_data = sqReader.read_raw_data(f'{high_rep_rate}kHz', channel, *high_keywords, concatenate=False, return_file_names=False)[0]
     highTraces = Traces(high_rep_rate, high_data, parse_data=True, trigger_delay='automatic')
     trigger_delay = highTraces.trigger_delay
     hightraces.append(highTraces)
 
     # generate training traces
     trainingTraces = generate_training_traces(calTraces, 800, trigger_delay=trigger_delay)
+    # adjust vertical offset
+    offset = np.max(trainingTraces.average_trace()) - np.max(highTraces.average_trace())
+    trainingTraces.data = trainingTraces.data - offset
+
     trainingtraces.append(trainingTraces)
 
 # find principal components of high rep rate data
@@ -101,7 +108,7 @@ for i_ch, channel in enumerate(channels):
     QT_inv = np.linalg.inv(QT)
     F_training = training_zeroed @ QT_inv
     training_pcatraces.append(PCATraces(high_rep_rate, F_training[:, :5], labels=trainingtraces[i_ch].labels))
-
+    #
     # # plot traces and principal components
     # ax0 = axs[0, i_ch]
     # for i in range(trace_to_plot):
@@ -148,9 +155,142 @@ fig.suptitle(f'Traces and principal components')
 fig2.colorbar(density, ax=[ax3, ax4], label='Number of points per pixel')
 fig2.suptitle('Principal component factor scores')
 
+# # run supervised tabular classifier
+# modeltype = 'KNN'
+#
+# for i_ch, channel in enumerate(channels):
+#     print(f'Training tabular classifier {modeltype} for {channel}...')
+#     t0 = time.time()
+#     mlClassifier = TabularClassifier(modeltype, test_size=0.1)
+#     mlClassifier.train(training_pcatraces[i_ch])
+#     print(f'Training finished after {time.time()-t0}s')
+#
+#     t1 = time.time()
+#     mlClassifier.predict(high_pcatraces[i_ch], update=True)
+#     print(f'Prediction finished after {time.time()-t1}s')
+# #
+# # # plot results
+# fig3 = plt.figure(layout='constrained', figsize=(10, 16))  # plot first two factor scores for up to 5 photon number
+# fig4, axs4 = plt.subplots(1,2, layout='constrained', figsize=(12, 6), sharex='all', sharey='all')  # plot pn distribution
+# for i_ch, channel in enumerate(channels):
+#     pcaTraces = high_pcatraces[i_ch]
+#     indices_dict = pcaTraces.bin_traces()
+#     ax = fig3.add_subplot(7, 2, i_ch+1, projection='scatter_density')
+#     ax.scatter_density(pcaTraces.data[:, 0], pcaTraces.data[:, 1], cmap=white_viridis)
+#     xlims = [np.min(pcaTraces.data[:, 0]), np.max(pcaTraces.data[:, 0])]
+#     ylims = [np.min(pcaTraces.data[:, 1]), np.max(pcaTraces.data[:, 1])]
+#     ax.set_xlim(xlims)
+#     ax.set_ylim(ylims)
+#     ax.set_title(f'{channel} factor scores')
+#     if i_ch == 0:
+#         ax.set_ylabel(r'$F_2$')
+#
+#     for pn in range(6):
+#         ax = fig3.add_subplot(7, 2, 2*pn+3+i_ch, projection='scatter_density')
+#         ax.scatter_density(pcaTraces.data[indices_dict[pn]][:, 0], pcaTraces.data[indices_dict[pn]][:, 1], cmap=white_viridis)
+#         ax.set_title(f'factor scores for {pn} photons')
+#         ax.set_xlim(xlims)
+#         ax.set_ylim(ylims)
+#         if pn == 5:
+#             ax.set_xlabel(r'$F_1$')
+#         if i_ch == 0:
+#             ax.set_ylabel(r'$F_2$')
+#
+#     # plot pn distribution, compare with caltraces
+#     ax = axs4[i_ch]
+#     cal_labels, cal_distrib = caltraces[i_ch].pn_distribution(normalised=True)
+#     pn_labels, distrib = pcaTraces.pn_distribution(normalised=True)
+#     ax.bar(cal_labels-0.2, cal_distrib, width=0.4, label=f'{cal_rep_rate}kHz')
+#     ax.bar(pn_labels+0.2, distrib, width=0.4, label=f'{high_rep_rate}kHz')
+#     ax.legend()
+#     ax.set_title(f'{channel} PN distribution')
+#     ax.set_xlabel('Photon number')
+#     ax.set_ylabel('Probability')
+#
+# fig3.suptitle(f'Scatter density plot for {high_rep_rate}kHz actual traces')
 
-# run supervised tabular classifier
-t0 = time.time()
+# clustering
+f_data = high_pcatraces[0].data[:10000, :2]
+fig5 = plt.figure('f data', layout='constrained')
+ax = fig5.add_subplot(111, projection='scatter_density')
+density = ax.scatter_density(f_data[:, 0], f_data[:, 1], cmap=white_viridis)
+ax.set_title(f'{len(f_data)} factor scores')
+ax.set_xlabel(r'$F_1$')
+ax.set_ylabel(r'$F_2$')
+fig5.colorbar(density, label='Number of points per pixel')
+
+guess_clusters = 14
+timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+# cache_dir = rf'..\..\Results\cache\OPTICS_{timestamp}'
+# os.makedirs(cache_dir, exist_ok=True)
+
+
+t1 = time.time()
+# cluster_results = KMeans(n_clusters=guess_clusters).fit(f_data)
+# cluster_model = AgglomerativeClustering(n_clusters=guess_clusters).fit(f_data)
+# cluster_model = Birch(threshold=0.8, n_clusters=guess_clusters).fit(f_data)
+# cluster_model = GaussianMixture(n_components=guess_clusters).fit(f_data)
+# cluster_model = OPTICS(min_samples=100, memory=cache_dir).fit(f_data)
+cluster_model = HDBSCAN(min_cluster_size=50, min_samples=5, cluster_selection_epsilon=700, store_centers='medoid').fit(f_data)
+print(f'Time to cluster {len(f_data)} traces is {time.time()-t1}s')
+
+t2 = time.time()
+# cluster_labels = DBSCAN(eps=0.2, min_samples=5).fit_predict(f_data[:10000])
+# cluster_labels = SpectralClustering(n_clusters=guess_clusters).fit_predict(f_data[:10000])
+# cluster_labels = cluster_model.predict(f_data)
+cluster_labels = cluster_model.labels_
+print(f'Time to predict {len(f_data)} traces is {time.time()-t2}s. The labels are {set(cluster_labels)}')
+
+medoids = cluster_model.medoids_
+clustered_dict = {}
+color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+fig6, axs6 = plt.subplots(1, 2, layout='constrained', figsize=(12, 6), sharex='all', sharey='all')
+for i in set(cluster_labels):
+    indices = np.argwhere(cluster_labels == i).ravel()
+
+    ax = axs6[0]
+    if i != -1:
+        ax.plot(f_data[indices[:500], 0], f_data[indices[:500], 1], '.', ls='None', alpha=0.1,
+                label=f'{i}', color=color_cycle[i % len(color_cycle)])
+
+        ax.plot(medoids[i, 0], medoids[i, 1], 'x', color=color_cycle[i % len(color_cycle)], alpha=1.0, markersize=10)
+
+    ax.set_title(r'pn$\geq0$')
+    ax.set_xlabel(r'$F_1$')
+    ax.set_ylabel(r'$F_2$')
+    ax.legend()
+    clustered_dict[i] = f_data[indices]
+
+ax = axs6[1]
+undecided = clustered_dict[-1]
+ax.plot(undecided[:, 0], undecided[:, 1], '.', ls='None', alpha=0.1, label=f'{len(undecided)} undecided')
+ax.legend()
+ax.set_title(r'pn$=-1$')
+ax.set_xlabel(r'$F_1$')
+fig6.suptitle(f'Clustered factor scores for {len(f_data)} traces')
+
+# # sort the labels by mean voltage value of trace
+# mean_v = np.zeros(len(clustered_dict.keys()))
+# for i in clustered_dict.keys():
+#     if len(clustered_dict[i])>=1:
+#         mean_v[i] = np.mean(clustered_dict[i])
+#     else:
+#         mean_v[i] = np.nan
+#
+# # get pn distribution predicted by pca clustering
+# pn_distrib = np.zeros(len(mean_v))
+# for pn, cl_label in enumerate(np.argsort(mean_v)):
+#     pn_distrib[pn] = len(clustered_dict[cl_label])
+# pn_distrib = pn_distrib / np.sum(pn_distrib)
+#
+# # plot pn distribution
+# plt.figure('PN distribution')
+# ref_pns, ref_distrib = refTraces.pn_distribution(normalised=True)
+# plt.bar(ref_pns-0.2, ref_distrib, width=0.4, label='inner product')
+# plt.bar(np.arange(len(pn_distrib))+0.2, pn_distrib, width=0.4, label='pca clustering')
+#
+# plt.show()
+
 
 
 
@@ -197,49 +337,4 @@ t0 = time.time()
 # m_opt = result.x[0]
 
 
-# # clustering
-# load ref data to know the number of clusters
-# ref_data = dataReader.read_raw_data(data_group, 100)
-# refTraces = Traces(100, ref_data, parse_data=True, trigger_delay=0)
-# ipClassifier = InnerProductClassifier()
-# ipClassifier.train(refTraces)
-# ipClassifier.predict(refTraces, update=True)
-
-# t1 = time.time()
-# cluster_results = KMeans(n_clusters=len(set(refTraces.labels))).fit(f_data)
-# t2 = time.time()
-# print(f'Time to cluster {len(f_data)} traces is {t2-t1}s')
-#
-# cluster_labels = cluster_results.labels_
-#
-# clustered_dict = {}
-# plt.figure('Clustered')
-# for i in range(len(set(refTraces.labels))):
-#     indices = np.argwhere(cluster_labels == i).ravel()
-#
-#     plt.plot(f_data[indices, 0], f_data[indices, 1], '.', ls='None', alpha=0.1, label=f'{i}')
-#
-#     clustered_dict[i] = data[:traces_to_plot][indices]
-#
-# # sort the labels by mean voltage value of trace
-# mean_v = np.zeros(len(clustered_dict.keys()))
-# for i in clustered_dict.keys():
-#     if len(clustered_dict[i])>=1:
-#         mean_v[i] = np.mean(clustered_dict[i])
-#     else:
-#         mean_v[i] = np.nan
-#
-# # get pn distribution predicted by pca clustering
-# pn_distrib = np.zeros(len(mean_v))
-# for pn, cl_label in enumerate(np.argsort(mean_v)):
-#     pn_distrib[pn] = len(clustered_dict[cl_label])
-# pn_distrib = pn_distrib / np.sum(pn_distrib)
-#
-# # plot pn distribution
-# plt.figure('PN distribution')
-# ref_pns, ref_distrib = refTraces.pn_distribution(normalised=True)
-# plt.bar(ref_pns-0.2, ref_distrib, width=0.4, label='inner product')
-# plt.bar(np.arange(len(pn_distrib))+0.2, pn_distrib, width=0.4, label='pca clustering')
-#
-# plt.show()
 
