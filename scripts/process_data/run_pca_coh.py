@@ -20,7 +20,7 @@ time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 
 '''Which data to use'''
 dataReader = DataReader(r'\Data\Tomography_data_2024_04')
-data_group = 'power_6'
+data_group = 'power_9'
 rep_rate = 800
 num_traces = 10000  # number of traces to process
 
@@ -39,9 +39,12 @@ f_data = F[:num_traces, :2]  # first two factor scores for each trace
 qt_data = QT[:2, :]  # first two principal components
 # make qt positive
 for i in range(2):
-    sign = np.sign(max(qt_data[i], key=abs))
-    qt_data[i] = qt_data[i] * sign
-    f_data[:, i] = f_data[:, i] * sign
+    if rep_rate == 100 and i == 1:
+        pass
+    else:
+        sign = np.sign(max(qt_data[i], key=abs))
+        qt_data[i] = qt_data[i] * sign
+        f_data[:, i] = f_data[:, i] * sign
 
 # save f and qt
 f_df = pd.DataFrame(f_data, columns=[f'F{i+1}' for i in range(f_data.shape[1])])
@@ -84,6 +87,10 @@ ax.set_xlabel(r'$F_1$')
 ax.set_ylabel(r'$F_2$')
 fig.savefig(results_dir + rf'\pca_results.pdf')
 
+plt.show()
+plt.pause(5)
+plt.close('all')
+
 '''Clustering'''
 logging.info('Clustering with HDBSCAN ...')
 t0 = time.time()
@@ -108,14 +115,12 @@ ax = axs2[0]
 
 for i in set(cluster_labels):
     indices = np.argwhere(cluster_labels == i).ravel()
-    indices = indices[:200]
     if i == -1:
-        ax.scatter(f_data[indices, 0], f_data[indices, 1], alpha=0.5, label=f'{i}', s=5, color='black')
+        ax.scatter(f_data[indices, 0], f_data[indices, 1], alpha=0.5, label=f'{i}', s=0.5, color='black')
     else:
+        indices = indices[:200]
         ax.scatter(f_data[indices, 0], f_data[indices, 1], alpha=0.2, label=f'{i}', s=5,
                    color=color_cycle[i % len(color_cycle)])
-        ax.plot(medoids[i, 0], medoids[i, 1], marker='x', alpha=1.0, color= color_cycle[i % len(color_cycle)],
-                markersize=20)
 
 ax.set_xlabel(r'$F_1$')
 ax.set_ylabel(r'$F_2$')
@@ -126,8 +131,6 @@ plt.pause(10)
 
 
 '''Post process the clusters'''
-fake_pns = [1]  # the clusters that should not be a cluster
-
 sort_args = np.argsort(medoids[:,0])
 sorted_medoids = medoids[sort_args]
 all_cluster_labels = list(set(cluster_labels))
@@ -136,22 +139,23 @@ all_cluster_labels.sort()
 df = pd.DataFrame(columns=['pn', 'cluster_label', 'medoid', 'num_traces', 'probability'])
 df.loc[0] = [-1, -1, [], np.sum(cluster_labels == -1), np.sum(cluster_labels == -1) / len(cluster_labels)]
 
-pn_correction = 0
-for raw_pn, medoid in enumerate(sorted_medoids):
+for idx, medoid in enumerate(sorted_medoids):
     cluster_label = np.argmax(medoids[:,0] == medoid[0])
-    if raw_pn in fake_pns:
-        pn_correction = pn_correction - 1
+    ax.plot(medoid[0], medoid[1], marker='x', alpha=1.0, color=color_cycle[cluster_label % len(color_cycle)],
+            markersize=20)
+    plt.pause(1)
 
-    pn = raw_pn + pn_correction
+    pn = int(input(f'Enter the photon number for medoid {medoid}:'))
+
     num_traces = np.sum(cluster_labels == cluster_label)
-    df.loc[raw_pn+1] = [pn, cluster_label, medoid, num_traces, num_traces / len(cluster_labels)]
+    df.loc[idx+1] = [pn, cluster_label, medoid, num_traces, num_traces / len(cluster_labels)]
 
 df.to_csv(results_dir + rf'\clustered_pn_distribution.csv', index=False)
 
 # Plot bar plot
 ax = axs2[1]
 total_traces = np.sum(df['num_traces'])
-bottoms = np.zeros(len(df))
+bottoms = np.zeros(np.max(df['pn']) + 2)  # first one is for -1
 for idx in range(len(df)):
     pn = df.loc[idx, 'pn']
     if pn == -1:
@@ -190,5 +194,3 @@ ax.set_xticks(np.arange(largest_pn+2)-1)
 plt.pause(5)
 
 fig2.savefig(results_dir + rf'\clustering_results.pdf')
-
-
