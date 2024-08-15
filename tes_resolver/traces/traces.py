@@ -159,6 +159,18 @@ class Traces(object):
 
         self.data = data_cleaned
 
+    def pca(self):
+        data = self.data
+        # To perform PCA, first zero the mean along each column
+        col_means = np.mean(data, axis=0)
+        data_zeroed = data - col_means
+
+        # Singular value decomposition to find factor scores and loading matrix
+        P, Delta, QT = np.linalg.svd(data_zeroed, full_matrices=False)
+        F = P * Delta  # Factor scores
+
+        return F, QT
+
     def find_offset(self):
         '''Find the median voltage value of the zero-photon traces'''
         zero_traces = self.pn_traces(0)
