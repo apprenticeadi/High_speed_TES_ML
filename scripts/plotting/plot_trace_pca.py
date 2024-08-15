@@ -7,7 +7,7 @@ import string
 
 matplotlib.use('TkAgg')
 
-'''Plot the pca data from tabular classification'''
+'''Plot raw traces and their pca'''
 data_group = 'power_6'
 save_dir = rf'../../Plots/Tomography_data_2024_04/trace_pca_plots/{data_group}'
 
@@ -82,6 +82,8 @@ for i_rep, rep_rate in enumerate(rep_rates):
     image = ax.scatter(f1, f2, c=z, s=5, cmap='viridis')
     cbar = fig.colorbar(image, ax=ax, location='right', pad=0.01)
     cbar.ax.set_ylabel('Number of points', fontsize=fontsize-2)
+    ax.set_xlim(-70000, 120000)
+    ax.set_ylim(-35000, 35000)
     ax.set_xlabel(r'$F_1$', fontsize=fontsize)
     ax.set_ylabel(r'$F_2$', fontsize=fontsize)
     ax.tick_params(labelsize=fontsize - 2)
