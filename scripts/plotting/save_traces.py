@@ -12,7 +12,7 @@ from tes_resolver.classifier import InnerProductClassifier
 dataReader = DataReader(r'\Data\Tomography_data_2024_04')
 data_group = 'power_6'
 
-rep_rate = 500
+rep_rate = 800
 
 save_dir = rf'../../Plots/Tomography_data_2024_04/trace_pca_plots/{data_group}/{rep_rate}kHz'
 os.makedirs(save_dir, exist_ok=True)
