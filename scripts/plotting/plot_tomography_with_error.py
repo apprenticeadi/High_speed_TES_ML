@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 import string
 import os
-
+from math import comb
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
@@ -21,8 +21,10 @@ ip_dir = DFUtils.return_filename_from_head(r'..\..\Results\Tomography_data_2024_
 rf_dir = DFUtils.return_filename_from_head(r'..\..\Results\Tomography_data_2024_04\tomography\witherror',
                                            rf'tomography_on_{ml_model}_{max_input}x{max_detected}')
 
+time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
+
 plot_dir = rf'../../Plots/Tomography_data_2024_04/old_tomography\{max_input}x{max_detected}'
-save_dir = rf'..\..\Plots\Tomography_data_2024_04\tvd_test'
+save_dir = rf'..\..\Plots\Tomography_data_2024_04\tvd_and_tomography_{time_stamp}'
 os.makedirs(save_dir, exist_ok=True)
 
 ref_ip_rep_rate = 100  # reference inner product rep rate, to plot and to calculate fidelity against
@@ -118,20 +120,31 @@ colors = prop_cycle.by_key()['color']
 
 trunc = max_detected
 
-ref_thetas = thetas_to_plot[0][:trunc+1, :trunc+1]
+
+ref_thetas = thetas_to_plot[0][:, :trunc+1, :trunc+1]
 ref_theta = np.mean(ref_thetas, axis=0)
+
+# def construct_guess_theta(guess_efficiency, max_detected, max_input):
+#     guess_theta = np.zeros((max_detected + 1, max_input + 1))
+#     for i in range(guess_theta.shape[0]):
+#         guess_theta[i, i:] = [comb(j, i) * ((1 - guess_efficiency) ** (j - i)) * (guess_efficiency ** i) for j in
+#                               range(i, max_input + 1)]
+#
+#     return guess_theta
+#
+# ref_theta = construct_guess_theta(0.933, trunc, trunc)
 
 ip_fids = np.zeros((len(rep_vals), len(ref_thetas), trunc+1))
 rf_fids = np.zeros_like(ip_fids)
 for i_rep, rep_rate in enumerate(rep_vals):
 
     # inner product thetas
-    ip_thetas = np.load(ip_dir + rf'\{rep_rate}kHz_estimated_thetas.npy')[:trunc+1, :trunc+1]
+    ip_thetas = np.load(ip_dir + rf'\{rep_rate}kHz_estimated_thetas.npy')[:, :trunc+1, :trunc+1]
     for i_repeat, theta_rec in enumerate(ip_thetas):
         ip_fids[i_rep, i_repeat, :] = fidelity_by_n(theta_rec, ref_theta)
 
     # rf thetas
-    rf_thetas = np.load(rf_dir + rf'\{rep_rate}kHz_estimated_thetas.npy')[:trunc+1, :trunc+1]
+    rf_thetas = np.load(rf_dir + rf'\{rep_rate}kHz_estimated_thetas.npy')[:, :trunc+1, :trunc+1]
     for i_repeat, theta_rec in enumerate(rf_thetas):
         rf_fids[i_rep, i_repeat, :] = fidelity_by_n(theta_rec, ref_theta)
 
