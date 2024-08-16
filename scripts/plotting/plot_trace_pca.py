@@ -18,7 +18,7 @@ fontsize = 14
 alphabet = list(string.ascii_lowercase)
 title_params = {'fontfamily': 'serif', 'loc': 'left', 'fontsize': fontsize + 2}
 
-fig, axs = plt.subplots(4, len(rep_rates), sharey='row', layout='constrained', figsize=(15, 12))
+fig, axs = plt.subplots(4, len(rep_rates), sharey='row', layout='constrained', figsize=(21, 10))
 
 for i_rep, rep_rate in enumerate(rep_rates):
     rep_dir = save_dir + rf'\{rep_rate}kHz'
@@ -52,7 +52,9 @@ for i_rep, rep_rate in enumerate(rep_rates):
     if i_rep == 0:
         ax.set_ylabel(r'Counts', fontsize=fontsize)
     ax.set_xlabel(r'Inner product', fontsize=fontsize)
+    ax.set_xlim(-1e9, 1.3e10)
     ax.tick_params(labelsize=fontsize - 2)
+    ax.xaxis.get_offset_text().set_fontsize(fontsize-2)
 
     '''Plot principal components'''
     ax = axs[2, i_rep]
@@ -80,13 +82,20 @@ for i_rep, rep_rate in enumerate(rep_rates):
     z = f_df['interpn_num_points']
 
     image = ax.scatter(f1, f2, c=z, s=5, cmap='viridis')
-    cbar = fig.colorbar(image, ax=ax, location='right', pad=0.01)
-    cbar.ax.set_ylabel('Number of points', fontsize=fontsize-2)
+    # cbar = fig.colorbar(image, ax=ax, location='right', pad=0.01)
+    # cbar.ax.tick_params(labelsize=fontsize - 2)
+    # cbar.ax.set_ylabel('Number of points', fontsize=fontsize-2)
     ax.set_xlim(-70000, 120000)
     ax.set_ylim(-35000, 35000)
+    ax.set_xticks([-5e4, 0, 5e4, 1e5])
+    ax.set_yticks([-2e4, 0, 2e4])
     ax.set_xlabel(r'$F_1$', fontsize=fontsize)
-    ax.set_ylabel(r'$F_2$', fontsize=fontsize)
     ax.tick_params(labelsize=fontsize - 2)
+    ax.ticklabel_format(style='sci', axis='both', scilimits=(0, 0))
+    ax.xaxis.get_offset_text().set_fontsize(fontsize - 2)
+    if i_rep == 0:
+        ax.set_ylabel(r'$F_2$', fontsize=fontsize)
+        ax.yaxis.get_offset_text().set_fontsize(fontsize - 2)
 
 
 plt.show()
