@@ -15,7 +15,7 @@ from tes_resolver import DataChopper, Traces, config
 
 from sklearn.cluster import HDBSCAN
 
-modeltype='PCA'
+modeltype='HDBSCAN'
 time_stamp = datetime.datetime.now().strftime("%Y-%m-%d(%H-%M-%S.%f)")
 
 '''Which data to use'''
