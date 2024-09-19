@@ -93,3 +93,18 @@ ax2.legend(fontsize=font_size-2, loc='upper left')
 plt.show()
 
 myoutput.pprint()
+
+results_df = pd.DataFrame({
+    'power_meter_mu': pm_mean_pns,
+    'power_meter_error': pm_errors,
+    'tes_100kHz_mu': tes_mean_pns[:, 0],
+    'tes_n_error': tes_mean_pns[:, 1],
+    'tes_p_error': tes_mean_pns[:, 2],
+    'fit_slope': [myoutput.beta[0]] + [np.nan] * (len(pm_mean_pns)-1),
+    'fit_std_err': [myoutput.sd_beta[0]] + [np.nan] * (len(pm_mean_pns)-1),
+    'fit_cov': [myoutput.cov_beta[0,0]] + [np.nan] * (len(pm_mean_pns)-1),
+    'fit_res_var': [myoutput.res_var] + [np.nan] * (len(pm_mean_pns)-1)
+})
+
+results_df.to_csv(r'C:\Users\zl4821\PycharmProjects\TES_python\Plots\Tomography_data_2024_04\tvd_and_tomography' +
+                  rf'\detector_efficiency.csv')
