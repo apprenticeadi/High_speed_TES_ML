@@ -78,8 +78,14 @@ for i_ch, channel in enumerate(channels):
     ax.set_ylabel('Probability')
 
     # save histogram and pn distribution
-    np.savetxt(results_dir + rf'\{channel}_stegosaurus.txt', np.stack((bin_edges, heights)))
-    np.savetxt(results_dir + rf'\{channel}_pn_distribution.txt', np.stack((pn_labels, distrib)))
+    steg_df = pd.DataFrame(np.stack((bin_edges, heights)).T, columns=['bin_edges', 'heights'])
+    steg_df.to_csv(results_dir + rf'\{channel}_stegosaurus.csv', index=False)
+
+    distrib_df = pd.DataFrame(np.stack((pn_labels, distrib)).T, columns=['pn', 'probability'])
+    distrib_df.to_csv(results_dir + rf'\{channel}_pn_distribution.csv', index=False)
+
+    # save raw traces
+    np.savetxt(results_dir + rf'\{channel}_raw_traces.txt', traces.data)
 
 fig1.suptitle(fig_titles)
 fig1.savefig(DFUtils.create_filename(results_dir + rf'\{modeltype}_stegosaurus.pdf'))
