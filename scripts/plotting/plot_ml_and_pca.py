@@ -63,7 +63,7 @@ for i_rep, rep_rate in enumerate(rep_rates):
                    color=color_cycle[pn % len(color_cycle)])
 
     '''Plot KNN pn distribution'''
-    idx = alphabet[i_rep*5+3]
+    idx = alphabet[i_rep*5+2]
     ax = axs[i_rep*2+1, 1]  # axs[idx]
     ax.set_title(f'({idx})', **title_params)
 
@@ -81,7 +81,7 @@ for i_rep, rep_rate in enumerate(rep_rates):
                 color='red', label='Calibration')
 
     '''Scatter plot HDBSCAN cluster results'''
-    idx = alphabet[i_rep * 5 + 2]
+    idx = alphabet[i_rep * 5 + 3]
     ax = axs[i_rep*2, 2]  # axs[idx]
     ax.set_title(f'({idx}) HDBSCAN', **title_params)
 
