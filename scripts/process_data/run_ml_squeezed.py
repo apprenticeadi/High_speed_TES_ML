@@ -2,43 +2,43 @@ import numpy as np
 import time
 import os
 import pandas as pd
+import logging
 
 from tes_resolver import Traces, DataChopper, config, generate_training_traces
 from tes_resolver.classifier import InnerProductClassifier, TabularClassifier, CNNClassifier
-from utils import DFUtils, DataReader, RuquReader
+from utils import DFUtils, DataReader, RuquReader, LogUtils
 
 '''Run ml classifier to classify all the data in a certain folder. '''
 # parameters
 cal_rep_rate = 100  # the rep rate to generate training
-high_rep_rates = [800] # np.arange(100, 1100, 100)  # the higher rep rates to predict
+cal_date = '2024-07-17-1954'
+
+high_rep_rate = 800 # np.arange(100, 1100, 100)  # the higher rep rates to predict
+high_date = '2024-07-17-2010'
+
+sampling_rate = 5e4
+data_name = r'squeezed states 2024_07_17'
+dataReader = RuquReader(rf'Data\{data_name}')
+data_groups = ['Chan[1]', 'Chan[2]']
 
 modeltype = 'KNN'  # machine learning model
 test_size = 0.1  # machine learning test-train split ratio
 
-# read data
-sampling_rate = 5e4
-data_name = r'squeezed states 2024_07_17'
-cal_name = 'squeezed states 2024_07_17'
-# dataReader = DataReader(f'Data/{data_name}')
-# powers = np.arange(0, 12)
-# data_groups = np.array([f'power_{p}' for p in powers])
+results_dir = os.path.join(config.home_dir, '..', 'Results', data_name, modeltype,
+                               f'sq_data_{config.time_stamp}')
 
-dataReader = RuquReader(rf'Data\{data_name}')
-calReader = RuquReader(rf'Data\{cal_name}')
-data_groups = ['Chan[1]', 'Chan[2]']
-date_keywords = ['2024-07-17-2010']
-cal_keyword = '2024-07-17-1954'
-
-update_params = False  # whether to save the results in a params folder
-if update_params:
-    params_dir = os.path.join(config.home_dir, '..', 'Results', data_name, 'Params', modeltype)
+# logging
+LogUtils.log_config(config.time_stamp, results_dir, 'log')
+logging.info(f'Processing squeezed data. Calibration data at {cal_rep_rate}kHz collected on {cal_date}. '
+             f'Traget data at {high_rep_rate}kHz collected on {high_date}. ML used on calibration data as well,'
+             f'which is split into half for training and half for prediction.')
 
 for data_group in data_groups:
     print(f'\nProcessing {data_group}...')
 
     # read calibration data
     # cal_data = dataReader.read_raw_data(data_group, cal_rep_rate)
-    cal_data = calReader.read_raw_data(f'{cal_rep_rate}kHz', data_group, cal_keyword, concatenate=True, return_file_names=False)
+    cal_data = dataReader.read_raw_data(f'{cal_rep_rate}kHz', data_group, cal_date, concatenate=True, return_file_names=False)
     calTraces = Traces(cal_rep_rate, cal_data, parse_data=True, trigger_delay=0)
 
     # Train an ip classifier, and use it to label the calibration data
@@ -55,8 +55,6 @@ for data_group in data_groups:
     pns, cal_distrib = calTraces.pn_distribution(normalised=True)
     print(f'PN distribution is {cal_distrib}')
 
-    results_dir = os.path.join(config.home_dir, '..', 'Results', data_name, modeltype,
-                               f'{cal_name}_trained_{date_keywords}_data_{config.time_stamp}')
     results_df = pd.DataFrame(columns=['rep_rate', 'num_traces', 'acc_score', 'training_t', 'predict_t'] + list(pns))
     results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
@@ -64,59 +62,46 @@ for data_group in data_groups:
     cal_baseline = calTraces.find_offset()
     calTraces.data = calTraces.data - cal_baseline  # remove the baseline
 
-    np.savetxt(results_dir + rf'\cal_data_{data_group}.txt', calTraces.data)
-
     # ML for higher rep rates
-    for i_rep, high_rep_rate in enumerate(high_rep_rates):
+    for i_rep, rep_rate in enumerate([cal_rep_rate, high_rep_rate]):
         print('')
 
-        # file to save classifier
-        filedir = results_dir + r'\saved_classifiers'
-        filename = rf'{modeltype}_trained_by_{data_group}_{high_rep_rate}kHz'
-
-        if high_rep_rate == cal_rep_rate:
+        if rep_rate == cal_rep_rate:
             # use half the 100kHz data to train classifier, classifier to predict the rest
             training_data = calTraces.data[:calTraces.num_traces // 2]
             training_labels = calTraces.labels[:len(training_data)]
-            trainingTraces = Traces(high_rep_rate, training_data, labels=training_labels, parse_data=False)
+            trainingTraces = Traces(rep_rate, training_data, labels=training_labels, parse_data=False)
 
             actual_data = calTraces.data[calTraces.num_traces // 2:]
-            actualTraces = Traces(high_rep_rate, actual_data, parse_data=False)
+            actualTraces = Traces(rep_rate, actual_data, parse_data=False)
 
             print(
-                f'Load first half of {high_rep_rate}kHz traces as training data, use classifier to predict second half')
+                f'Load first half of {rep_rate}kHz traces as training data, '
+                f'use classifier to predict second half')
 
         else:
-            # Load actual traces
+            # Load actual traces for non-100kHz data
             ti = time.time()
-            # actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
-            actual_data = dataReader.read_raw_data(f'{high_rep_rate}kHz', data_group, date_keywords[i_rep], concatenate=True, return_file_names=False)
-            actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay='automatic')
+            actual_data = dataReader.read_raw_data(f'{rep_rate}kHz', data_group, high_date, concatenate=True, return_file_names=False)
+            actualTraces = Traces(rep_rate, actual_data, parse_data=True, trigger_delay='automatic')
             trigger_delay = actualTraces.trigger_delay
             tf = time.time()
             print(f'Load high rep rate data into traces took {tf - ti}s')
 
             # Generate training
             ti = time.time()
-            trainingTraces = generate_training_traces(calTraces, high_rep_rate, trigger_delay=trigger_delay)
+            trainingTraces = generate_training_traces(calTraces, rep_rate, trigger_delay=trigger_delay)
             # correct for the vertical shift
-            # offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
-            # trainingTraces.data = trainingTraces.data - offset
+            offset = np.max(trainingTraces.average_trace()) - np.max(actualTraces.average_trace())
+            trainingTraces.data = trainingTraces.data - offset
             tf = time.time()
             print(f'Generate training traces took {tf - ti}s')
 
-        np.savetxt(results_dir + rf'\actual_data_{data_group}_{high_rep_rate}kHz.txt', actualTraces.data)
-        np.savetxt(results_dir + rf'\training_data_{data_group}_{high_rep_rate}kHz.txt', trainingTraces.data)
-
         # ML Classifier
-        print(f'Training ml classifier for {high_rep_rate}kHz')
+        print(f'Training ml classifier for {rep_rate}kHz')
         t1 = time.time()
-        if modeltype == 'CNN':
-            mlClassifier = CNNClassifier(test_size=test_size)
-            mlClassifier.train(trainingTraces, checkpoint_file=os.path.join(filedir, filename + '_checkpoint'))
-        else:
-            mlClassifier = TabularClassifier(modeltype, test_size=test_size)
-            mlClassifier.train(trainingTraces)
+        mlClassifier = TabularClassifier(modeltype, test_size=test_size)
+        mlClassifier.train(trainingTraces)
         t2 = time.time()
 
         accuracy = mlClassifier.accuracy_score
@@ -130,7 +115,8 @@ for data_group in data_groups:
 
         # results
         raw_labels = actualTraces.labels
-        np.savetxt(DFUtils.create_filename(results_dir + rf'\{modeltype}_pn_labels_{high_rep_rate}kHz_{data_group}.txt'), raw_labels)
+        np.savetxt(DFUtils.create_filename(results_dir + rf'\{modeltype}_pn_labels_{rep_rate}kHz_{data_group}.txt'),
+                   raw_labels)
 
         pn_labels, predicted_distrib = actualTraces.pn_distribution(normalised=True)
         yvals = np.zeros_like(cal_distrib)
@@ -138,11 +124,7 @@ for data_group in data_groups:
         print(f'Predicted pn distribution = {yvals}')
 
         # Save results
-        results_df.loc[i_rep] = [high_rep_rate, actualTraces.num_traces, accuracy, t2 - t1, t4 - t3] + list(yvals)
+        results_df.loc[i_rep] = [rep_rate, actualTraces.num_traces, accuracy, t2 - t1, t4 - t3] + list(yvals)
         results_df.to_csv(DFUtils.create_filename(results_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
 
-        # mlClassifier.save(filename=filename, filedir=filedir)
 
-    # update params folder
-    if update_params:
-        results_df.to_csv(DFUtils.create_filename(params_dir + rf'\{modeltype}_results_{data_group}.csv'), index=False)
