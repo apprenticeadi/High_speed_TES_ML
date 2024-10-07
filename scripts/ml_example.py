@@ -12,27 +12,27 @@ from tes_resolver import Traces, DataChopper, config, generate_training_traces
 from tes_resolver.classifier import InnerProductClassifier, TabularClassifier, CNNClassifier
 from utils import DFUtils, tvd, DataReader, RuquReader
 
-'''Run ml classifier to classify all the data in a certain folder. '''
+'''Run ml classifier'''
 # parameters
 cal_rep_rate = 100  # the rep rate to generate training
 high_rep_rate = 800  # the higher rep rates to predict
 sampling_rate = 5e4
-data_keywords = ['1.75nmPump', '1570nmBPF', 'Chan[1]']
 
 modeltype = 'KNN'  # machine learning model
 test_size = 0.1  # machine learning test-train split ratio
 plot_training = True  # whether to plot the calibration data and how training traces is generated
 traces_to_plot = 100
+
 # read data
-sqReader = RuquReader(r'Data\TES data backup 20240711\squeezed states 2024_07_11')
+dataReader = DataReader('Data/Tomography_data_2024_04')
+data_group = 'power_6'
 
 # read calibration data
-cal_data = sqReader.read_raw_data(f'{cal_rep_rate}kHz', '112uW', '-1859_', *data_keywords, concatenate=True)
+cal_data = dataReader.read_raw_data(data_group, cal_rep_rate)
 calTraces = Traces(cal_rep_rate, cal_data, parse_data=True, trigger_delay=0)
 
 # Load actual traces
-actual_data = sqReader.read_raw_data(f'{high_rep_rate}kHz', '900uW', '-1842_', *data_keywords, concatenate=False)[:4]
-actual_data = np.concatenate(actual_data)
+actual_data = dataReader.read_raw_data(data_group, high_rep_rate)
 actualTraces = Traces(high_rep_rate, actual_data, parse_data=True, trigger_delay= 'automatic')
 
 # remove saturating traces, if necessary
