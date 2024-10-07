@@ -10,7 +10,7 @@ from utils import DFUtils, DataReader, RuquReader
 '''Run ml classifier to classify all the data in a certain folder. '''
 # parameters
 cal_rep_rate = 100  # the rep rate to generate training
-high_rep_rates = [100, 800] # np.arange(100, 1100, 100)  # the higher rep rates to predict
+high_rep_rates = [800] # np.arange(100, 1100, 100)  # the higher rep rates to predict
 
 modeltype = 'KNN'  # machine learning model
 test_size = 0.1  # machine learning test-train split ratio
@@ -18,7 +18,7 @@ test_size = 0.1  # machine learning test-train split ratio
 # read data
 sampling_rate = 5e4
 data_name = r'squeezed states 2024_07_17'
-cal_name = 'coh_states_2024_07_11'
+cal_name = 'squeezed states 2024_07_17'
 # dataReader = DataReader(f'Data/{data_name}')
 # powers = np.arange(0, 12)
 # data_groups = np.array([f'power_{p}' for p in powers])
@@ -26,8 +26,8 @@ cal_name = 'coh_states_2024_07_11'
 dataReader = RuquReader(rf'Data\{data_name}')
 calReader = RuquReader(rf'Data\{cal_name}')
 data_groups = ['Chan[1]', 'Chan[2]']
-date_keywords = ['2024-07-17-1954', '2024-07-17-2010']
-cal_keyword = 'power_1'
+date_keywords = ['2024-07-17-2010']
+cal_keyword = '2024-07-17-1954'
 
 update_params = False  # whether to save the results in a params folder
 if update_params:
