@@ -1,7 +1,7 @@
 # Software package for TES discrimination
 
-This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier 
-and a machine learning tabular classifier (e.g. Random Forest). The methods are based on [insert paper]
+This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier, 
+a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on [insert paper]
 
 ### Installation
 The package can be installed by cloning the repository: 
