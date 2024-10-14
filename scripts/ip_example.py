@@ -5,38 +5,28 @@ import matplotlib.pyplot as plt
 
 from tes_resolver.classifier.inner_product import InnerProductClassifier
 from tes_resolver import Traces, DataChopper
-from utils import DataReader, DFUtils, poisson_norm, estimate_av_pn
+from utils import DataReader, RuquReader
 
 '''Script that runs inner product classifier on given data. Plots raw traces, stegosaurus, and photon number 
 distribution'''
+raw_traces_to_plot = 100
 
-'''Data'''
+'''Read data'''
+# coherent state data
 dataReader = DataReader('Data/Tomography_data_2024_04')
-
-data_group = 'power_0'
-rep_rate = 500
+data_group = 'power_6'
+rep_rate = 100
 file_num = 0
-raw_traces_to_plot = 1000
-
-'''Estimate mean photon number '''
-attenuation_db = -60.16
-bs_ratio = 98.35526316
-bs_ratio_error = 0.73315
-pm_reading = 8.710 * 1e-6  # W
-pm_reading_error = 0.01 * 1e-6
-
-est_mean_ph, est_error = estimate_av_pn(rep_rate, pm_reading, attenuation_db, bs_ratio, pm_error=pm_reading_error, bs_error=bs_ratio_error)
-print(rf'Estimated mean photon number = {est_mean_ph} with error= {est_error}')
-
-'''Read data '''
 data_raw = dataReader.read_raw_data(data_group, rep_rate, file_num=file_num)
 
-if rep_rate <= 300:
-    trigger_delay = 0
-else:
-    trigger_delay = DataChopper.find_trigger(data_raw, samples_per_trace=int(5e4 / rep_rate))
+# # squeezed state data
+# dataReader = RuquReader(r'Data/squeezed states 2024_07_17')
+# rep_rate = 100
+# data_keywords = [f'{rep_rate}kHz', '2024-07-17-1954_', '2nmPump', '1570nmBPF', 'Chan[1]']
+# data_raw = dataReader.read_raw_data(*data_keywords, concatenate=True)
 
-targetTraces = Traces(rep_rate, data_raw, parse_data=True, trigger_delay=0)
+'''Parse data'''
+targetTraces = Traces(rep_rate, data_raw, parse_data=True, trigger_delay='automatic')
 
 '''Run the inner product classifier'''
 ipClassifier = InnerProductClassifier(multiplier=1., num_bins=1000)
@@ -64,29 +54,27 @@ ax.set_xlabel('Inner product')
 ax.set_ylabel('Counts')
 
 ax = axs[1]
-# for i in range(raw_traces_to_plot):
-#     ax.plot(targetTraces.data[i], alpha=0.1)
-# characeristic_traces = targetTraces.characteristic_traces()
-# for pn in characeristic_traces.keys():
-#     ax.plot(characeristic_traces[pn], color='red', alpha=1., label='Characteristic traces')
+for i in range(raw_traces_to_plot):
+    ax.plot(targetTraces.data[i], alpha=0.1)
+characeristic_traces = targetTraces.characteristic_traces()
+for pn in characeristic_traces.keys():
+    if pn == 0:
+        ax.plot(characeristic_traces[pn], color='blue', alpha=0.5, label='Characteristic traces')
+    else:
+        ax.plot(characeristic_traces[pn], color='blue', alpha=0.5)
 ax.set_xlabel('Samples')
 ax.set_title(f'First {raw_traces_to_plot} raw traces')
+ave_trace = targetTraces.average_trace()
+ax.plot(ave_trace, color='black', alpha=1., label='Average trace')
+ax.legend()
 
 ax = axs[2]
 ax.set_title('PN distribution')
 ax.bar(pns, freq)
 ax.set_xlabel('Photon number')
+#
 
-ax.plot(pns, poisson_norm(pns, mean_photon_number), '-o', color='red', label=f'mean={mean_photon_number}')
-ax.plot(pns, poisson_norm(pns, est_mean_ph), '-o', color='orange', label=f'mean={est_mean_ph}')
-ax.legend()
 #
-# ave_trace = targetTraces.average_trace()
-# plt.plot(ave_trace, color='black', alpha=1.)
-#
-fig2, ax2 = plt.subplots(figsize=(20, 8))
-ax2.plot(targetTraces.data[:100000, :].flatten())
-ax2.set_xlabel('Samples')
 
 plt.show()
 

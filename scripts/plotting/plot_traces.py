@@ -11,7 +11,7 @@ from tes_resolver.classifier import InnerProductClassifier
 '''Which data to use'''
 dataReader = DataReader(r'\Data\Tomography_data_2024_04')
 data_group = 'power_6'
-save_dir = r'../../Plots/Tomography_data_2024_04/trace_plots'
+save_dir = r'../../Plots/Tomography_data_2024_04/old_trace_plots'
 
 rep_rates = [100, 500, 800]
 
