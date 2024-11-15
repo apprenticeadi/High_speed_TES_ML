@@ -1,31 +1,12 @@
 # Software package for TES discrimination
 
-This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier 
-and a machine learning tabular classifier (e.g. Random Forest). The methods are based on [insert paper]
+This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier, 
+a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on [insert paper]
 
 ### Installation
-**Branch protection is enabled for the main branch. If you plan to make changes, please create a new branch.**
-
 The package can be installed by cloning the repository: 
 ```sh
 git clone https://github.com/apprenticeadi/TES_python.git
-```
-
-After installation, you can create a new branch:
-```commandline
-git checkout -b new_branch_name existing_branch_name
-```
-Once you have made changes to the code and wish to push them to the remote repository, follow the commands below:
-```commandline
-git add --all
-git commit -m 'Your commit message' 
-git push -u origin new_branch_name
-```
-This will create a new tracking branch at remote. After the initial push, subsequent changes can be committed and pushed more easily. 
-```commandline
-git add --all
-git commit -m 'Your commit message' 
-git push 
 ```
 
 ### Required packages 
