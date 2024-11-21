@@ -4,10 +4,7 @@ This package provides the code for discriminating TES voltage signals. The main 
 a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on [insert paper]
 
 ### Installation
-The package can be installed by cloning the repository: 
-```sh
-git clone https://github.com/apprenticeadi/TES_python.git
-```
+Users interested in using the code are welcome to fork this repository. 
 
 ### Required packages 
 The code is written in Python 3.10 and requires the following packages:
