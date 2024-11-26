@@ -1,4 +1,4 @@
-# Software package for TES discrimination
+# Python package for TES signal discrimination
 
 This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier, 
 a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on our paper, ["Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning"](https://arxiv.org/abs/2411.15360). 
