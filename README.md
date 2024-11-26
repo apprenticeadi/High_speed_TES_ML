@@ -1,7 +1,7 @@
 # Software package for TES discrimination
 
 This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier, 
-a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on [insert paper]
+a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on our paper, ["Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning"](https://arxiv.org/abs/2411.15360). 
 
 ### Installation
 Users interested in using the code are welcome to fork this repository. 
@@ -102,3 +102,15 @@ rfClassifier.predict(highTraces, update=True)
 ```
 ## Citing
 We would appreciate citations to the following paper: 
+
+Li, Z., Kendall, M. J. H., Machado, G. J., Zhu, R., Mer, E., Zhan, H., Zhang, A., Yu, S., Walmsley, I. A., & Patel, R. B. (2024). Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning. [_arXiv preprint arXiv:2411.15360_](https://arxiv.org/abs/2411.15360).
+
+```bibtex
+@article{Li2024_boosting,
+	author = {Li, Zhenghao and Kendall, Matthew J. H. and Machado, Gerard J. and Zhu, Ruidi and Mer, Ewan and Zhan, Hao and Zhang, Aonan and Yu, Shang and Walmsley, Ian A. and Patel, Raj B.},
+	title = {{Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning}},
+	journal = {arXiv preprint arXiv:2411.15360},
+	year = {2024},
+	doi = {10.48550/arXiv.2411.15360}
+}
+```
