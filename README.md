@@ -1,7 +1,7 @@
 # Python package for TES signal discrimination
 
 This package provides the code for discriminating TES voltage signals. The main methods are an inner product classifier, 
-a supervsied machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on our paper, ["Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning"](https://arxiv.org/abs/2411.15360). 
+a supervised machine learning classifier (e.g. Random Forest), and an unsupervised clustering classifier. The methods are based on our paper, ["Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning"](https://doi.org/10.1364/OPTICAQ.555325). 
 
 ### Installation
 Users interested in using the code are welcome to fork this repository. 
@@ -103,14 +103,21 @@ rfClassifier.predict(highTraces, update=True)
 ## Citing
 We would appreciate citations to the following paper: 
 
-Li, Z., Kendall, M. J. H., Machado, G. J., Zhu, R., Mer, E., Zhan, H., Zhang, A., Yu, S., Walmsley, I. A., & Patel, R. B. (2024). Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning. [_arXiv preprint arXiv:2411.15360_](https://arxiv.org/abs/2411.15360).
+Zhenghao Li, Matthew J. H. Kendall, Gerard J. Machado, Ruidi Zhu, Ewan Mer, Hao Zhan, Aonan Zhang, Shang Yu, Ian A. Walmsley, and Raj B. Patel, "Boosting photon-number-resolved detection rates of transition-edge sensors by machine learning," Optica Quantum 3, 246-255 (2025).
 
 ```bibtex
-@article{Li2024_boosting,
-	author = {Li, Zhenghao and Kendall, Matthew J. H. and Machado, Gerard J. and Zhu, Ruidi and Mer, Ewan and Zhan, Hao and Zhang, Aonan and Yu, Shang and Walmsley, Ian A. and Patel, Raj B.},
-	title = {{Boosting Photon-Number-Resolved Detection Rates of Transition-Edge Sensors by Machine Learning}},
-	journal = {arXiv preprint arXiv:2411.15360},
-	year = {2024},
-	doi = {10.48550/arXiv.2411.15360}
+@article{Li2025_boosting,
+	author = {Zhenghao Li and Matthew J. H. Kendall and Gerard J. Machado and Ruidi Zhu and Ewan Mer and Hao Zhan and Aonan Zhang and Shang Yu and Ian A. Walmsley and Raj B. Patel},
+	journal = {Optica Quantum},
+	keywords = {Quantum computation; Quantum detectors; Quantum technology; Signal processing; Squeezed states; Superconducting nanowire single photon detectors},
+	number = {3},
+	pages = {246--255},
+	publisher = {Optica Publishing Group},
+	title = {Boosting photon-number-resolved detection rates of transition-edge sensors by machine learning},
+	volume = {3},
+	month = {Jun},
+	year = {2025},
+	url = {https://opg.optica.org/opticaq/abstract.cfm?URI=opticaq-3-3-246},
+	doi = {10.1364/OPTICAQ.555325},
 }
 ```
